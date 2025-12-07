@@ -36,12 +36,12 @@ export class B2bService {
 
         //   KEY CONTACT MAPPING FIX
         keyContacts: dto.keyContacts?.map((k) => ({
-          name: k.keyContactName,
-          position: k.keyContactPosition,
-          department: k.keyContactDepartment,
-          phone: k.keyContactPhone,
-          email: k.keyContactEmail,
-          linkedIn: k.keyContactLinkedIn,
+          name: k.name,
+          position: k.position,
+          department: k.department,
+          phone: k.phone,
+          email: k.email,
+          linkedIn: k.linkedIn,
         })),
 
         //   META TAGS ARRAY → STRING (since entity uses string)

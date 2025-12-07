@@ -20,27 +20,27 @@ const urlRegex = /^(https?:\/\/|www\.)/;
 class KeyContactDto {
   @IsOptional()
   @IsString()
-  keyContactName?: string;
+  name?: string;
 
   @IsOptional()
   @IsString()
-  keyContactPosition?: string;
+  position?: string;
 
   @IsOptional()
   @IsString()
-  keyContactDepartment?: string;
+  department?: string;
 
   @IsOptional()
   @Matches(phoneRegex, { message: 'Enter a valid phone number' })
-  keyContactPhone?: string;
+  phone?: string;
 
   @IsOptional()
   @IsEmail({}, { message: 'Enter a valid email address' })
-  keyContactEmail?: string;
+  email?: string;
 
   @IsOptional()
   @Matches(/^http/, { message: 'LinkedIn URL must start with http/https' })
-  keyContactLinkedIn?: string;
+  linkedIn?: string;
 }
 
 export class CreateB2BDto {
