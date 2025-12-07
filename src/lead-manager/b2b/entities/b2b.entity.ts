@@ -40,7 +40,7 @@ export class B2BProfileEntity {
   @Column()
   subNiche: string;
 
-  @Column()
+  @Column('text', { array: true, nullable: true })
   serviceName: string;
 
   @Column()

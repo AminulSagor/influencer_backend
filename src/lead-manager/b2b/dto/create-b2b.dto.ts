@@ -87,8 +87,8 @@ export class CreateB2BDto {
   @IsString()
   subNiche: string;
 
-  @IsNotEmpty()
-  @IsString()
+  @IsArray()
+  @ArrayMaxSize(10, { message: 'Max 10 services allowed in serviceName' })
   serviceName: string;
 
   @IsNotEmpty()
@@ -103,8 +103,9 @@ export class CreateB2BDto {
   @IsString()
   serviceDescription?: string;
 
-  @IsIn(['Hourly', 'Fixed', 'Tiered', 'Subscription'])
-  pricingModel: 'Hourly' | 'Fixed' | 'Tiered' | 'Subscription';
+  @IsOptional()
+  @IsString()
+  pricingModel: string;
 
   @IsNotEmpty()
   @IsString()
@@ -114,11 +115,13 @@ export class CreateB2BDto {
   @IsString()
   currency: string;
 
-  @IsIn(['Online', 'On-Site', 'Hybrid'])
-  serviceAvailability: 'Online' | 'On-Site' | 'Hybrid';
+  @IsOptional()
+  @IsString()
+  serviceAvailability: string;
 
-  @IsIn(['Yes', 'No'])
-  onlineService: 'Yes' | 'No';
+  @IsOptional()
+  @IsString()
+  onlineService: string;
 
   // location
   @IsOptional() @IsString() street?: string;
@@ -197,7 +200,7 @@ export class CreateB2BDto {
   // tags: frontend will send tag array; server ensures maximum 10 tags
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(10, { message: 'Max 10 tags allowed' })
+  @ArrayMaxSize(10, { message: 'Max 10 tags allowed in metaTags' })
   @IsString({ each: true })
   metaTags?: string[];
 
