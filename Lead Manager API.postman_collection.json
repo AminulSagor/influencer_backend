@@ -1,0 +1,345 @@
+{
+	"info": {
+		"_postman_id": "7eb650bd-d0c4-4c78-9a60-c26eabac2f9f",
+		"name": "Lead Manager API",
+		"description": "# Lead Manager API\n\n## Overview\n\nThe Lead Manager API is a comprehensive NestJS-based application designed to manage business leads across B2B (Business-to-Business) and B2C (Business-to-Consumer) segments. This API provides a complete set of endpoints for creating, retrieving, and searching lead entries with secure authentication.\n\n## Authentication\n\nThis API uses JWT (JSON Web Token) based authentication. To access protected endpoints:\n\n1. **Login**: Send a POST request to `/auth/login` with your credentials\n2. **Receive Token**: The API will return an access token upon successful authentication\n3. **Use Token**: Include the token in the `Authorization` header for subsequent requests as `Bearer <token>`\n\nThe token will be automatically stored in the collection variable `{{token}}` after successful login, making it available for all requests in this collection.\n\n## Available Modules\n\n### Authentication Module\n- User login and token generation\n- Secure access to protected endpoints\n\n### B2B Management Module\nManage business-to-business leads with the following capabilities:\n- Create new B2B business entries\n- Retrieve all B2B entries\n- Search B2B entries with query parameters\n\n### B2C Management Module\nManage business-to-consumer leads with the following capabilities:\n- Create new B2C customer entries\n- Retrieve all B2C entries\n- Search B2C entries with query parameters\n\n## Getting Started\n\n### Step 1: Configure Variables\nBefore using this collection, configure the following variables:\n- `baseUrl`: The base URL of your API server (default: `http://localhost:3000`)\n- `localUrl`: Alternative local URL for development (default: `http://localhost:3000`)\n- `token`: Authentication token (automatically populated after login)\n\n### Step 2: Authenticate\n1. Navigate to the **Authentication** folder\n2. Open the **User Login** request\n3. Update the request body with your credentials\n4. Send the request to receive your access token\n\n### Step 3: Use the API\nOnce authenticated, you can:\n- Create new leads using the POST endpoints in B2B or B2C folders\n- Retrieve all entries using the GET endpoints\n- Search for specific entries using the search endpoints with query parameters\n\n## Variables Configuration\n\nThis collection uses the following variables:\n\n| Variable | Description | Default Value |\n|----------|-------------|---------------|\n| `baseUrl` | Primary API base URL | `http://localhost:3000` |\n| `localUrl` | Local development URL | `http://localhost:3000` |\n| `token` | JWT authentication token | Auto-populated after login |\n\nTo modify these variables:\n1. Click on the collection name\n2. Navigate to the **Variables** tab\n3. Update the **Current Value** for each variable as needed\n\n**Note**: The `{{baseUrl}}` variable is used throughout all requests. Update this value to point to your API server environment (development, staging, or production).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "36232705"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "User Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate user and receive access token"
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "noauth"
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "B2B Management",
+			"item": [
+				{
+					"name": "Create B2B Entry",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"ShafaCode Ltd\",\n  \"businessType\": \"IT Company\",\n  \"businessDescription\": \"Software Development Agency\",\n  \"registrationNumber\": \"REG-98765\",\n  \"taxId\": \"TIN-556677\",\n  \"establishedDate\": \"2022-01-01\",\n  \"status\": \"Active\",\n\n  \"primaryIndustry\": \"Technology\",\n  \"niche\": \"Software\",\n  \"subNiche\": \"Web Applications\",\n\n  \"serviceName\": \"Full Stack Development\",\n  \"category\": \"Development\",\n  \"subCategory\": \"Web\",\n  \"serviceDescription\": \"Enterprise Web Solutions\",\n\n  \"pricingModel\": \"Hourly\",\n  \"rate\": \"25\",\n  \"currency\": \"USD\",\n\n  \"serviceAvailability\": \"Online\",\n  \"onlineService\": \"Yes\",\n\n  \"city\": \"Dhaka\",\n  \"state\": \"Dhaka\",\n  \"country\": \"Bangladesh\",\n\n  \"businessPhone\": \"+8801700000000\",\n  \"email\": \"info@shafacode.com\",\n  \"website\": \"https://shafacode.com\",\n\n  \"metaTags\": [\"nestjs\", \"react\", \"saas\"]\n}\n"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/b2b/create",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2b",
+								"create"
+							]
+						},
+						"description": "Create a new B2B business entry"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All B2B Entries",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/b2b?page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2b"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Retrieve all B2B business entries"
+					},
+					"response": []
+				},
+				{
+					"name": "Search B2B Entries",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/b2b/search?q=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2b",
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": ""
+								}
+							]
+						},
+						"description": "Search B2B entries with query parameters"
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFiY2QiLCJpYXQiOjE3NjUxMTIxNzQsImV4cCI6MTc2NjQwODE3NH0.v6hh7YkuMbMCi_rjTbAyRWPlTuZ_9FGN3Bp1G6cd9-g",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "B2C Management",
+			"item": [
+				{
+					"name": "Create B2C Entry",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"Masum Rahman\",\n  \"nickname\": \"Masum\",\n  \"nationality\": \"Bangladeshi\",\n  \"dob\": \"1999-08-15\",\n  \"gender\": \"male\",\n\n  \"primaryEmail\": \"masum@gmail.com\",\n  \"primaryPhone\": \"+8801700000000\",\n\n  \"country\": \"Bangladesh\",\n  \"city\": \"Dhaka\",\n\n  \"primaryIndustry\": \"Software\",\n  \"industrySubsector\": \"Web Development\",\n\n  \"primarySkills\": \"NestJS, React, PostgreSQL\",\n  \"totalExperience\": \"2\",\n  \"highestDegree\": \"BSc in CSE\",\n\n  \"interests\": [\"Coding\", \"Chess\", \"AI\"],\n\n  \"organizations\": \"IEEE\",\n  \"maritalStatus\": \"Single\",\n  \"householdIncome\": \"50000\",\n  \"salary\": \"35000\"\n}\n"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/b2c/create",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2c",
+								"create"
+							]
+						},
+						"description": "Create a new B2C customer entry"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All B2C Entries",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/b2c?page=1&limit=5",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2c"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "5"
+								}
+							]
+						},
+						"description": "Retrieve all B2C customer entries"
+					},
+					"response": []
+				},
+				{
+					"name": "Search B2C Entries",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/b2c/search?q=software",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2c",
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "software"
+								}
+							]
+						},
+						"description": "Search B2C entries with query parameters"
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFiY2QiLCJpYXQiOjE3NjUxMTIxNzQsImV4cCI6MTc2NjQwODE3NH0.v6hh7YkuMbMCi_rjTbAyRWPlTuZ_9FGN3Bp1G6cd9-g",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000"
+		}
+	]
+}
