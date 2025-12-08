@@ -1,8 +1,21 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CreateB2CDto } from './dto/create-b2c.dto';
 import { B2CEntity } from './entities/b2c.entity';
 import { B2cService } from './b2c.service';
+import { UpdateB2CDto } from './dto/update-b2c.dto';
+import { SearchB2CDto } from './dto/search-b2c.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('b2c')
@@ -15,15 +28,31 @@ export class B2cController {
   }
 
   @Get()
-  async findAll(
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-  ): Promise<{ data: B2CEntity[]; total: number }> {
+  async findAll(@Query('page') page = 1, @Query('limit') limit = 10) {
     return this.b2cservice.findAll(Number(page), Number(limit));
   }
 
   @Get('search')
-  async search(@Query('q') keyword: string): Promise<B2CEntity[]> {
-    return this.b2cservice.search(keyword);
+  search(
+    @Query() filters: SearchB2CDto,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
+    return this.b2cservice.search(filters, Number(page), Number(limit));
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.b2cservice.findById(id);
+  }
+
+  @Put(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateB2CDto) {
+    return this.b2cservice.update(id, dto);
+  }
+
+  @Delete(':id')
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.b2cservice.remove(id);
   }
 }

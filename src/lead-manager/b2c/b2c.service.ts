@@ -1,8 +1,33 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateB2CDto } from './dto/create-b2c.dto';
 import { B2CEntity } from './entities/b2c.entity';
+import { ApiResponse } from 'src/common/interfaces/api-response.interface';
+import { UpdateB2CDto } from './dto/update-b2c.dto';
+import { SearchB2CDto } from './dto/search-b2c.dto';
+import { PaginatedResponse } from 'src/common/interfaces/paginated-response.interface';
+
+export interface B2CListItem {
+  id: number;
+  name: string;
+  gender: string;
+  nationality: string;
+  state?: string;
+  industry: string;
+  subSector: string;
+  skills: string;
+  highestDegree: string;
+  hobbies: string[];
+  organizations: string;
+  maritalStatus: string;
+  income: string;
+  salary: string;
+}
 
 @Injectable()
 export class B2cService {
@@ -16,23 +41,238 @@ export class B2cService {
     return this.repo.save(data);
   }
 
-  async findAll(
-    page = 1,
-    limit = 10,
-  ): Promise<{ data: B2CEntity[]; total: number }> {
-    const [data, total] = await this.repo.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+  async findAll(page = 1, limit = 10): Promise<PaginatedResponse<B2CListItem>> {
+    const [data, total] = await this.repo
+      .createQueryBuilder('b2c')
+      .select([
+        'b2c.id',
+        'b2c.fullName',
+        'b2c.gender',
+        'b2c.nationality',
+        'b2c.state',
+        'b2c.primaryIndustry',
+        'b2c.industrySubsector',
+        'b2c.primarySkills',
+        'b2c.highestDegree',
+        'b2c.interests',
+        'b2c.organizations',
+        'b2c.maritalStatus',
+        'b2c.householdIncome',
+        'b2c.salary',
+      ])
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
 
-    return { data, total };
+    return {
+      success: true,
+      message: 'B2C profiles fetched successfully',
+      data: data.map((item) => ({
+        id: item.id,
+        name: item.fullName,
+        gender: item.gender,
+        nationality: item.nationality,
+        state: item.state,
+        industry: item.primaryIndustry,
+        subSector: item.industrySubsector,
+        skills: item.primarySkills,
+        highestDegree: item.highestDegree,
+        hobbies: item.interests,
+        organizations: item.organizations,
+        maritalStatus: item.maritalStatus,
+        income: item.householdIncome,
+        salary: item.salary,
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+      },
+    };
   }
 
-  async search(keyword: string): Promise<B2CEntity[]> {
-    return this.repo
-      .createQueryBuilder('b2c')
-      .where('b2c.fullName ILIKE :q', { q: `%${keyword}%` })
-      .orWhere('b2c.primaryIndustry ILIKE :q', { q: `%${keyword}%` })
-      .getMany();
+  async search(
+    filters: SearchB2CDto,
+    page = 1,
+    limit = 10,
+  ): Promise<PaginatedResponse<B2CListItem>> {
+    // ✅ At least one filter required
+    if (!Object.values(filters).some(Boolean)) {
+      throw new BadRequestException(
+        'At least one search filter must be provided',
+      );
+    }
+
+    const qb = this.repo.createQueryBuilder('b2c');
+
+    qb.select([
+      'b2c.id',
+      'b2c.fullName',
+      'b2c.gender',
+      'b2c.nationality',
+      'b2c.state',
+      'b2c.primaryIndustry',
+      'b2c.industrySubsector',
+      'b2c.primarySkills',
+      'b2c.highestDegree',
+      'b2c.interests',
+      'b2c.organizations',
+      'b2c.maritalStatus',
+      'b2c.householdIncome',
+      'b2c.salary',
+    ]);
+
+    if (filters.name) {
+      qb.andWhere('b2c.fullName ILIKE :name', {
+        name: `%${filters.name}%`,
+      });
+    }
+
+    if (filters.gender) {
+      qb.andWhere('b2c.gender ILIKE :gender', {
+        gender: `%${filters.gender}%`,
+      });
+    }
+
+    if (filters.nationality) {
+      qb.andWhere('b2c.nationality ILIKE :nationality', {
+        nationality: `%${filters.nationality}%`,
+      });
+    }
+
+    if (filters.state) {
+      qb.andWhere('b2c.state ILIKE :state', {
+        state: `%${filters.state}%`,
+      });
+    }
+
+    if (filters.industry) {
+      qb.andWhere('b2c.primaryIndustry ILIKE :industry', {
+        industry: `%${filters.industry}%`,
+      });
+    }
+
+    if (filters.subSector) {
+      qb.andWhere('b2c.industrySubsector ILIKE :subSector', {
+        subSector: `%${filters.subSector}%`,
+      });
+    }
+
+    if (filters.skills) {
+      qb.andWhere('b2c.primarySkills ILIKE :skills', {
+        skills: `%${filters.skills}%`,
+      });
+    }
+
+    if (filters.highestDegree) {
+      qb.andWhere('b2c.highestDegree ILIKE :highestDegree', {
+        highestDegree: `%${filters.highestDegree}%`,
+      });
+    }
+
+    if (filters.hobbies) {
+      qb.andWhere(':hobbies = ANY(b2c.interests)', {
+        hobbies: filters.hobbies,
+      });
+    }
+
+    if (filters.organizations) {
+      qb.andWhere('b2c.organizations ILIKE :organizations', {
+        organizations: `%${filters.organizations}%`,
+      });
+    }
+
+    if (filters.maritalStatus) {
+      qb.andWhere('b2c.maritalStatus ILIKE :maritalStatus', {
+        maritalStatus: `%${filters.maritalStatus}%`,
+      });
+    }
+
+    if (filters.income) {
+      qb.andWhere('b2c.householdIncome ILIKE :income', {
+        income: `%${filters.income}%`,
+      });
+    }
+
+    if (filters.salary) {
+      qb.andWhere('b2c.salary ILIKE :salary', {
+        salary: `%${filters.salary}%`,
+      });
+    }
+
+    qb.skip((page - 1) * limit).take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+
+    return {
+      success: true,
+      message: 'Filtered B2C search results',
+      data: data.map((item) => ({
+        id: item.id,
+        name: item.fullName,
+        gender: item.gender,
+        nationality: item.nationality,
+        state: item.state,
+        industry: item.primaryIndustry,
+        subSector: item.industrySubsector,
+        skills: item.primarySkills,
+        highestDegree: item.highestDegree,
+        hobbies: item.interests,
+        organizations: item.organizations,
+        maritalStatus: item.maritalStatus,
+        income: item.householdIncome,
+        salary: item.salary,
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+      },
+    };
+  }
+  async findById(id: number): Promise<ApiResponse<B2CEntity>> {
+    const data = await this.repo.findOne({ where: { id } });
+
+    if (!data) {
+      throw new NotFoundException('B2C profile not found');
+    }
+
+    return {
+      success: true,
+      message: 'B2C profile fetched successfully',
+      data,
+    };
+  }
+
+  async update(id: number, dto: UpdateB2CDto): Promise<ApiResponse<B2CEntity>> {
+    const existing = await this.repo.findOne({ where: { id } });
+
+    if (!existing) {
+      throw new NotFoundException('B2C profile not found');
+    }
+
+    const updated = Object.assign(existing, dto);
+    const saved = await this.repo.save(updated);
+
+    return {
+      success: true,
+      message: 'B2C profile updated successfully',
+      data: saved,
+    };
+  }
+
+  async remove(id: number): Promise<ApiResponse<null>> {
+    const existing = await this.repo.findOne({ where: { id } });
+
+    if (!existing) {
+      throw new NotFoundException('B2C profile not found');
+    }
+
+    await this.repo.remove(existing);
+
+    return {
+      success: true,
+      message: 'B2C profile deleted successfully',
+    };
   }
 }

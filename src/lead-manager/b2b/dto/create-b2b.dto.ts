@@ -44,6 +44,10 @@ class KeyContactDto {
 }
 
 export class CreateB2BDto {
+  @IsOptional()
+  @IsString()
+  businessId?: string;
+
   // required
   @IsNotEmpty()
   @IsString()
