@@ -4,6 +4,7 @@ import {
   IsString,
   IsArray,
   IsEmail,
+  IsObject,
 } from 'class-validator';
 
 export class CreateB2CDto {
@@ -258,17 +259,9 @@ export class CreateB2CDto {
   // ------------------------
   // SOCIAL / CIVIC
   // ------------------------
-  @IsNotEmpty()
-  @IsString()
-  organizations: string;
-
   @IsOptional()
-  @IsString()
-  role?: string;
-
-  @IsOptional()
-  @IsString()
-  activities?: string;
+  @IsArray()
+  civicActivities?: any[];
 
   @IsOptional()
   @IsString()
@@ -355,13 +348,13 @@ export class CreateB2CDto {
   // ------------------------
   // FINANCIAL
   // ------------------------
-  @IsNotEmpty()
-  @IsString()
-  salary: string;
+  @IsOptional()
+  @IsObject()
+  salary?: { salaryCurrency: string; salaryAmount: string };
 
   @IsOptional()
-  @IsString()
-  totalIncome?: string;
+  @IsObject()
+  totalIncome?: { totalCurrency: string; totalAmount: string };
 
   @IsOptional()
   @IsString()

@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsObject, IsOptional, IsString, IsArray } from 'class-validator';
 
 export class SearchB2CDto {
   @IsOptional()
@@ -34,22 +34,22 @@ export class SearchB2CDto {
   highestDegree?: string;
 
   @IsOptional()
-  @IsString()
-  hobbies?: string;
+  @IsArray()
+  interests?: string[]; // Fix: hobbies field mapped to interests as an array
 
   @IsOptional()
   @IsString()
-  organizations?: string;
+  company?: string; // Fix: organizations field mapped to company
 
   @IsOptional()
   @IsString()
   maritalStatus?: string;
 
   @IsOptional()
-  @IsString()
-  income?: string;
+  @IsObject()
+  salary?: string; // Fix: salary should be an object with `salaryCurrency` and `salaryAmount`
 
   @IsOptional()
-  @IsString()
-  salary?: string;
+  @IsObject()
+  totalIncome?: string; // Fix: totalIncome should be an object with `totalCurrency` and `totalAmount`
 }

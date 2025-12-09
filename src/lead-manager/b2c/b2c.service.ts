@@ -22,11 +22,11 @@ export interface B2CListItem {
   subSector: string;
   skills: string;
   highestDegree: string;
-  hobbies: string[];
-  organizations: string;
+  interests: string[];
+  company: string;
   maritalStatus: string;
-  income: string;
-  salary: string;
+  income: any;
+  salary: any;
 }
 
 @Injectable()
@@ -54,8 +54,8 @@ export class B2cService {
         'b2c.industrySubsector',
         'b2c.primarySkills',
         'b2c.highestDegree',
-        'b2c.interests',
-        'b2c.organizations',
+        'b2c.interests', // mapped as hobbies
+        'b2c.company', // mapped as organizations
         'b2c.maritalStatus',
         'b2c.householdIncome',
         'b2c.salary',
@@ -77,8 +77,8 @@ export class B2cService {
         subSector: item.industrySubsector,
         skills: item.primarySkills,
         highestDegree: item.highestDegree,
-        hobbies: item.interests,
-        organizations: item.organizations,
+        interests: item.interests || [], // Fix: ensure interests is always an array
+        company: item.company || '', // Fix: ensure organizations (company) is included
         maritalStatus: item.maritalStatus,
         income: item.householdIncome,
         salary: item.salary,
@@ -115,13 +115,14 @@ export class B2cService {
       'b2c.industrySubsector',
       'b2c.primarySkills',
       'b2c.highestDegree',
-      'b2c.interests',
-      'b2c.organizations',
+      'b2c.interests', // mapped as hobbies
+      'b2c.company', // mapped as organizations
       'b2c.maritalStatus',
       'b2c.householdIncome',
       'b2c.salary',
     ]);
 
+    // Filters
     if (filters.name) {
       qb.andWhere('b2c.fullName ILIKE :name', {
         name: `%${filters.name}%`,
@@ -170,15 +171,15 @@ export class B2cService {
       });
     }
 
-    if (filters.hobbies) {
+    if (filters.interests) {
       qb.andWhere(':hobbies = ANY(b2c.interests)', {
-        hobbies: filters.hobbies,
+        hobbies: filters.interests,
       });
     }
 
-    if (filters.organizations) {
-      qb.andWhere('b2c.organizations ILIKE :organizations', {
-        organizations: `%${filters.organizations}%`,
+    if (filters.company) {
+      qb.andWhere('b2c.company ILIKE :organizations', {
+        organizations: `%${filters.company}%`, // mapped as organizations
       });
     }
 
@@ -188,9 +189,9 @@ export class B2cService {
       });
     }
 
-    if (filters.income) {
+    if (filters.totalIncome) {
       qb.andWhere('b2c.householdIncome ILIKE :income', {
-        income: `%${filters.income}%`,
+        income: `%${filters.totalIncome}%`,
       });
     }
 
@@ -217,8 +218,8 @@ export class B2cService {
         subSector: item.industrySubsector,
         skills: item.primarySkills,
         highestDegree: item.highestDegree,
-        hobbies: item.interests,
-        organizations: item.organizations,
+        interests: item.interests || [], // Ensure interests is always an array
+        company: item.company || '', // Ensure organizations is always included
         maritalStatus: item.maritalStatus,
         income: item.householdIncome,
         salary: item.salary,
@@ -230,6 +231,7 @@ export class B2cService {
       },
     };
   }
+
   async findById(id: number): Promise<ApiResponse<B2CEntity>> {
     const data = await this.repo.findOne({ where: { id } });
 
