@@ -1,10 +1,31 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './lead-manager/auth/auth.module';
+import { B2bModule } from './lead-manager/b2b/b2b.module';
+import { B2CModule } from './lead-manager/b2c/b2c.module';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DB_HOST,
+      port: 5432,
+      username: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      autoLoadEntities: true,
+      synchronize: true,
+      // ssl: {
+      //   rejectUnauthorized: false,
+      // },
+    }),
+    AuthModule,
+    B2bModule,
+    B2CModule,
+  ],
 })
 export class AppModule {}

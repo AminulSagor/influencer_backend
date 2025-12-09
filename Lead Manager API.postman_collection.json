@@ -1,0 +1,630 @@
+{
+	"info": {
+		"_postman_id": "7eb650bd-d0c4-4c78-9a60-c26eabac2f9f",
+		"name": "Lead Manager API",
+		"description": "# Lead Manager API\n\n## Overview\n\nThe Lead Manager API is a comprehensive NestJS-based application designed to manage business leads across B2B (Business-to-Business) and B2C (Business-to-Consumer) segments. This API provides a complete set of endpoints for creating, retrieving, updating, deleting, and searching lead entries with secure authentication.\n\n## Authentication\n\nThis API uses JWT (JSON Web Token) based authentication. To access protected endpoints:\n\n1. **Login**: Send a POST request to `/auth/login` with your credentials\n2. **Receive Token**: The API will return an access token upon successful authentication\n3. **Use Token**: Include the token in the `Authorization` header for subsequent requests as `Bearer <token>`\n\nThe token will be automatically stored in the collection variable `{{token}}` after successful login, making it available for all requests in this collection.\n\n## Available Modules\n\n### Authentication Module\n- User login and token generation\n- Secure access to protected endpoints\n\n### B2B Management Module\nManage business-to-business leads with full CRUD capabilities:\n- **POST** `/b2b/create` - Create new B2B business entries\n- **GET** `/b2b` - Retrieve all B2B entries (with pagination)\n- **GET** `/b2b/:id` - Get a specific B2B entry by ID\n- **PUT** `/b2b/:id` - Update an existing B2B entry\n- **DELETE** `/b2b/:id` - Delete a B2B entry\n- **GET** `/b2b/search` - Search B2B entries with query parameters\n\n### B2C Management Module\nManage business-to-consumer leads with full CRUD capabilities:\n- **POST** `/b2c/create` - Create new B2C customer entries\n- **GET** `/b2c` - Retrieve all B2C entries (with pagination)\n- **GET** `/b2c/:id` - Get a specific B2C entry by ID\n- **PUT** `/b2c/:id` - Update an existing B2C entry\n- **DELETE** `/b2c/:id` - Delete a B2C entry\n- **GET** `/b2c/search` - Search B2C entries with query parameters\n\n## Getting Started\n\n### Step 1: Configure Variables\nBefore using this collection, configure the following variables:\n- `baseUrl`: The base URL of your API server (default: `http://localhost:7000`)\n- `localUrl`: Alternative local URL for development (default: `http://localhost:7000`)\n- `token`: Authentication token (automatically populated after login)\n\n### Step 2: Authenticate\n1. Navigate to the **Authentication** folder\n2. Open the **User Login** request\n3. Update the request body with your credentials\n4. Send the request to receive your access token\n\n### Step 3: Use the API\nOnce authenticated, you can:\n- **Create** new leads using the POST endpoints in B2B or B2C folders\n- **Retrieve** all entries using the GET endpoints with pagination\n- **Get** individual entries by ID using the GET `:id` endpoints\n- **Update** existing entries using the PUT `:id` endpoints\n- **Delete** entries using the DELETE `:id` endpoints\n- **Search** for specific entries using the search endpoints with query parameters\n\n## Variables Configuration\n\nThis collection uses the following variables:\n\n| Variable | Description | Default Value |\n|----------|-------------|---------------|\n| `baseUrl` | Primary API base URL | `http://localhost:7000` |\n| `localUrl` | Local development URL | `http://localhost:7000` |\n| `token` | JWT authentication token | Auto-populated after login |\n\nTo modify these variables:\n1. Click on the collection name\n2. Navigate to the **Variables** tab\n3. Update the **Current Value** for each variable as needed\n\n**Note**: The `{{baseUrl}}` variable is used throughout all requests. Update this value to point to your API server environment (development, staging, or production). The API server is currently configured to run on port 7000.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "36232705",
+		"_collection_link": "https://lead-manager-api-team-8716.postman.co/workspace/5f4714b9-39df-4e8e-8aed-fefe8b71da70/collection/36232705-7eb650bd-d0c4-4c78-9a60-c26eabac2f9f?action=share&source=collection_link&creator=36232705"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "User Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"abcd\",\n  \"password\": \"1234\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate user and receive access token"
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "noauth"
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "B2B Management",
+			"item": [
+				{
+					"name": "Create B2B Entry",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Tech Solutions Ltd\",\n  \"businessType\": \"IT Services\",\n  \"businessDescription\": \"We provide AI and ML-based enterprise solutions.\",\n  \"registrationNumber\": \"REG-123456\",\n  \"taxId\": \"TAX-987654\",\n  \"establishedDate\": \"2010-05-12\",\n  \"status\": \"active\",\n  \"primaryIndustry\": \"Technology\",\n  \"niche\": \"Artificial Intelligence\",\n  \"subNiche\": \"Machine Learning\",\n\n  \"serviceName\": [\"Saas\", \"ERP\", \"Agile\", \"Ecommerse\", \"CLoud\", \"AI\", \"ML\", \"NLP\", \"Deep Learning\", \"Computer Vision\"],\n  \"category\": \"Software Development\",\n  \"subCategory\": \"AI Services\",\n  \"serviceDescription\": \"Providing AI model training and deployment services.\",\n  \"pricingModel\": \"Fixed\",\n  \"rate\": \"5000\",\n  \"currency\": \"USD\",\n  \"serviceAvailability\": \"Global\",\n  \"onlineService\": \"Yes\",\n\n  \"street\": \"123 Tech Avenue\",\n  \"subCity\": \"Banani\",\n  \"city\": \"Dhaka\",\n  \"state\": \"Dhaka\",\n  \"postalCode\": \"1213\",\n  \"country\": \"Bangladesh\",\n\n  \"businessPhone\": \"+8801777777777\",\n  \"secondaryPhone\": \"+8801888888888\",\n  \"email\": \"info@techsolutions.com\",\n  \"supportEmail\": \"support@techsolutions.com\",\n  \"website\": \"https://techsolutions.com\",\n\n  \"keyContacts\": [\n    {\n      \"name\": \"John Doe\",\n      \"position\": \"CEO\",\n      \"department\": \"Management\",\n      \"phone\": \"+8801999999999\",\n      \"email\": \"john@techsolutions.com\",\n      \"linkedIn\": \"https://linkedin.com/in/johndoe\"\n    },\n    {\n      \"name\": \"Sarah Khan\",\n      \"position\": \"CTO\",\n      \"department\": \"Technology\",\n      \"phone\": \"+8801888888999\",\n      \"email\": \"sarah@techsolutions.com\"\n    },\n    {\n      \"name\": \"John Doe\",\n      \"position\": \"CEO\",\n      \"department\": \"Management\",\n      \"phone\": \"+8801999999999\",\n      \"email\": \"john@techsolutions.com\",\n      \"linkedIn\": \"https://linkedin.com/in/johndoe\"\n    },\n    {\n      \"name\": \"Sarah Khan\",\n      \"position\": \"CTO\",\n      \"department\": \"Technology\",\n      \"phone\": \"+8801888888999\",\n      \"email\": \"sarah@techsolutions.com\"\n    }\n  ],\n\n  \"opFacebook\": \"https://facebook.com/techsolutions\",\n  \"opInstagram\": \"https://instagram.com/techsolutions\",\n  \"opLinkedin\": \"https://linkedin.com/company/techsolutions\",\n  \"opTwitter\": \"https://twitter.com/techsolutions\",\n  \"opYoutube\": \"https://youtube.com/@techsolutions\",\n  \"opTiktok\": \"https://tiktok.com/@techsolutions\",\n  \"opGoogleBusiness\": \"https://google.com/business/techsolutions\",\n  \"opDirectoryListings\": \"YellowPages, Crunchbase\",\n\n  \"operationsOpeningHours\": \"9 AM - 6 PM\",\n  \"operationsTimeZone\": \"GMT+6\",\n  \"operationsEmployees\": \"50\",\n  \"operationsTools\": \"Slack, Jira, AWS\",\n  \"operationsCertifications\": \"ISO 9001\",\n\n  \"fnPaymentMethods\": \"Bank Transfer, Credit Card\",\n  \"fnBillingAddress\": \"123 Tech Avenue, Dhaka\",\n  \"fnInvoiceContact\": \"billing@techsolutions.com\",\n  \"fnPrimaryCurrency\": \"USD\",\n  \"fnPaymentTerms\": \"Net 30\",\n\n  \"legalLicenses\": \"Trade License 2024\",\n  \"legalPermits\": \"IT Service Provider Permit\",\n  \"legalInsurance\": \"General Liability Insurance\",\n  \"legalComplianceCertificates\": \"ISO/IEC 27001\",\n\n  \"marketingTargetAudience\": \"Enterprises, Startups\",\n  \"marketingValueProposition\": \"AI-driven transformation\",\n  \"marketingMainCompetitors\": \"ABC AI, ML Corp\",\n  \"marketingKeywords\": \"AI, ML, Data Science\",\n\n  \"metaTags\": [\"tech, ai, business\"],\n  \"metaNotes\": \"High-value B2B client\",\n  \"metaDateAdded\": \"2025-01-01\",\n  \"metaLastUpdated\": \"2025-01-15\"\n}\n"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/b2b/create",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2b",
+								"create"
+							]
+						},
+						"description": "Create a new B2B business entry"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All B2B Entries",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/b2b?page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2b"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Retrieve all B2B business entries"
+					},
+					"response": []
+				},
+				{
+					"name": "Search B2B Entries",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/b2b/search?businessType&primaryIndustry=Technology&niche&serviceName&city=Dhaka&country&page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2b",
+								"search"
+							],
+							"query": [
+								{
+									"key": "businessType",
+									"value": null
+								},
+								{
+									"key": "primaryIndustry",
+									"value": "Technology"
+								},
+								{
+									"key": "niche",
+									"value": null
+								},
+								{
+									"key": "serviceName",
+									"value": null
+								},
+								{
+									"key": "city",
+									"value": "Dhaka"
+								},
+								{
+									"key": "country",
+									"value": null
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Search B2B entries with query parameters"
+					},
+					"response": []
+				},
+				{
+					"name": "Get B2B Entry by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/b2b/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2b",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "2e865071-473d-45ea-bc6c-0ad6ab9036a6"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update B2B Entry",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"TechNova Solutions\",\r\n  \"businessType\": \"software-company\",\r\n  \"serviceName\": [\"Saas\"],\r\n  \"keyContacts\": [\r\n    {\r\n      \"name\": \"John Doe\",\r\n      \"position\": \"CEO\",\r\n      \"department\": \"Management\",\r\n      \"phone\": \"+8801999999999\",\r\n      \"email\": \"john@techsolutions.com\",\r\n      \"linkedIn\": \"https://linkedin.com/in/johndoe\"\r\n    },\r\n    {\r\n      \"name\": \"Sarah Khan\",\r\n      \"position\": \"CTO\",\r\n      \"department\": \"Technology\",\r\n      \"phone\": \"+8801888888999\",\r\n      \"email\": \"sarah@techsolutions.com\"\r\n    }\r\n  ],\r\n  \"operationsOpeningHours\": \"8 AM - 5 PM\"\r\n\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/b2b/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2b",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "5cf6a5ae-dad0-4047-a53e-1aaaccc4ad1c"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete B2B Entry",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/b2b/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2b",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "b56d9ac6-18c4-469b-b0b6-3c7972add5cf"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFiY2QiLCJpYXQiOjE3NjUxMTIxNzQsImV4cCI6MTc2NjQwODE3NH0.v6hh7YkuMbMCi_rjTbAyRWPlTuZ_9FGN3Bp1G6cd9-g",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "B2C Management",
+			"item": [
+				{
+					"name": "Create B2C Entry",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"Michael Smith\",\n  \"nickname\": \"Mike\",\n  \"nationality\": \"Bangladeshi\",\n  \"dob\": \"1995-06-21\",\n  \"gender\": \"Male\",\n\n  \"primaryEmail\": \"mike@example.com\",\n  \"secondaryEmail\": \"mike.alt@example.com\",\n  \"primaryPhone\": \"+8801777777777\",\n  \"secondaryPhone\": \"+8801888888888\",\n  \"whatsapp\": \"+8801999999999\",\n  \"telegram\": \"mike_telegram\",\n  \"wechat\": \"mike_wechat\",\n  \"prefferedContactMethod\": \"Email\",\n\n  \"country\": \"Bangladesh\",\n  \"state\": \"Dhaka\",\n  \"city\": \"Dhaka\",\n  \"subCity\": \"Uttara\",\n  \"cityCorporation\": \"Dhaka North\",\n  \"street\": \"Sector 10\",\n  \"postalCode\": \"1230\",\n  \"timeZone\": \"GMT+6\",\n\n  \"currentJobTitle\": \"Software Engineer\",\n  \"company\": \"TechHub Ltd\",\n  \"workType\": \"Full-time\",\n  \"workModel\": \"Remote\",\n  \"primaryIndustry\": \"Technology\",\n  \"industrySubsector\": \"Software\",\n  \"coreResponsibilities\": \"Backend development, API design\",\n  \"keyTools\": \"Node.js, NestJS, PostgreSQL\",\n\n  \"primarySkills\": \"Node.js, TypeScript\",\n  \"secondarySkills\": \"React, Python\",\n  \"technicalTools\": \"Docker, AWS\",\n  \"topSoftSkills\": \"Communication, Teamwork\",\n  \"professionalCertifications\": \"AWS Developer\",\n  \"licenses\": \"Driving License\",\n  \"credentials\": \"Certified Scrum Master\",\n\n  \"totalExperience\": \"5 years\",\n  \"careerHighlight\": \"Led a team of 10 engineers\",\n\n  \"highestDegree\": \"Bachelor of Science in CSE\",\n  \"degreesEarned\": \"BSc in CSE\",\n  \"institutions\": \"NSU\",\n  \"fieldsOfStudy\": \"Computer Science\",\n  \"graduationDates\": \"2018\",\n  \"gpa\": \"3.50\",\n  \"academicHonors\": \"Dean's List\",\n  \"publications\": \"AI Research Paper\",\n  \"researchAreas\": \"Machine Learning\",\n  \"thesisTitle\": \"Deep Learning in NLP\",\n  \"academicIds\": \"123456\",\n\n  \"personalWebsite\": \"https://mike.dev\",\n  \"portfolio\": \"https://mike.dev/portfolio\",\n  \"blog\": \"https://medium.com/@mike\",\n  \"onlineResume\": \"https://resume.mike.dev\",\n\n  \"others\": [\"Photography\", \"Gaming\"],\n  \"interests\": [\"AI\", \"Coding\", \"Music\", \"Travel\"],\n\n  \"lifestylePreferences\": \"Night Owl\",\n\n  \"organizations\": \"Developers Club\",\n  \"role\": \"Member\",\n  \"activities\": \"Community Events\",\n  \"civicEngagement\": \"Volunteer Work\",\n  \"policyInterests\": \"Tech Policy\",\n\n  \"maritalStatus\": \"Single\",\n  \"partnerSpouse\": null,\n  \"childrenDependents\": null,\n  \"householdSize\": \"1\",\n  \"householdIncome\": \"50000\",\n  \"familyMedicalHistory\": \"None\",\n  \"guardianshipStatus\": \"Independent\",\n\n  \"heightWeightBMI\": \"175cm, 70kg, BMI 22.8\",\n  \"allergies\": \"None\",\n  \"chronicIllnesses\": \"None\",\n  \"disabilities\": \"None\",\n  \"diagnoses\": null,\n  \"medications\": null,\n  \"surgeries\": null,\n  \"vaccinationRecords\": \"Covid-19, Hepatitis B\",\n  \"medicalDevices\": null,\n  \"healthInsurance\": \"ABC Insurance\",\n\n  \"salary\": \"1500 USD\",\n  \"totalIncome\": \"2000 USD\",\n  \"incomeHistory\": \"Steady Growth\",\n  \"savings\": \"5000 USD\",\n  \"investments\": \"Stocks, Crypto\",\n  \"cryptocurrency\": \"Bitcoin, Ethereum\",\n  \"loans\": \"Education Loan\",\n  \"debts\": \"None\",\n  \"bankAccounts\": \"DBBL, Brac Bank\",\n  \"creditScore\": \"750\",\n  \"transactionHistory\": \"Stable\",\n  \"insurancePolicies\": \"Health, Life\",\n  \"assets\": \"Laptop, Car\",\n\n  \"nationalId\": \"1234567890\",\n  \"passport\": \"A12345678\",\n  \"driversLicense\": \"DL-987654\",\n  \"visaWorkPermit\": \"Not Required\",\n  \"criminalBackground\": \"Clear\",\n  \"courtRecords\": \"None\",\n  \"contractsSigned\": \"Employment Contract\",\n  \"consentRecords\": \"Yes\",\n  \"taxIdentificationNumber\": \"TIN-98765\",\n\n  \"clubs\": \"Photography Club\",\n  \"alumniGroups\": \"NSU Alumni\",\n  \"professionalAssociations\": \"IEEE\",\n  \"nonprofits\": \"Charity Org\",\n  \"loyaltyPrograms\": \"ABC Rewards\",\n  \"volunteerActivities\": \"Teaching coding\",\n\n  \"createdAt\": \"2025-01-20T10:00:00.000Z\",\n  \"updatedAt\": \"2025-01-20T10:00:00.000Z\"\n}\n"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/b2c/create",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2c",
+								"create"
+							]
+						},
+						"description": "Create a new B2C customer entry"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All B2C Entries",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/b2c?page=1&limit=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2c"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Retrieve all B2C customer entries"
+					},
+					"response": []
+				},
+				{
+					"name": "Search B2C Entries",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/b2c/search?page=1&limit=10&name&gender&nationality&state&industry=software&subSector&skills&highestDegree&hobbies&organizations&maritalStatus&income&salary",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2c",
+								"search"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "name",
+									"value": null
+								},
+								{
+									"key": "gender",
+									"value": null
+								},
+								{
+									"key": "nationality",
+									"value": null
+								},
+								{
+									"key": "state",
+									"value": null
+								},
+								{
+									"key": "industry",
+									"value": "software"
+								},
+								{
+									"key": "subSector",
+									"value": null
+								},
+								{
+									"key": "skills",
+									"value": null
+								},
+								{
+									"key": "highestDegree",
+									"value": null
+								},
+								{
+									"key": "hobbies",
+									"value": null
+								},
+								{
+									"key": "organizations",
+									"value": null
+								},
+								{
+									"key": "maritalStatus",
+									"value": null
+								},
+								{
+									"key": "income",
+									"value": null
+								},
+								{
+									"key": "salary",
+									"value": null
+								}
+							]
+						},
+						"description": "Search B2C entries with query parameters"
+					},
+					"response": []
+				},
+				{
+					"name": "Get B2C Entry by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/b2c/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2c",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update B2C Entry",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"fullName\": \"John Smith\",\r\n  \"nickname\": \"Mike\",\r\n  \"nationality\": \"USA\",\r\n  \"dob\": \"1990-12-25\",\r\n  \"gender\": \"Male\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/b2c/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2c",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete B2C Entry",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/b2c/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2c",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "4"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFiY2QiLCJpYXQiOjE3NjUxMTIxNzQsImV4cCI6MTc2NjQwODE3NH0.v6hh7YkuMbMCi_rjTbAyRWPlTuZ_9FGN3Bp1G6cd9-g",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000"
+		}
+	]
+}
