@@ -157,14 +157,8 @@ export class B2CEntity {
   lifestylePreferences?: string;
 
   // SOCIAL / CIVIC
-  @Column()
-  organizations: string;
-
-  @Column({ nullable: true })
-  role?: string;
-
-  @Column({ nullable: true })
-  activities?: string;
+  @Column({ type: 'jsonb', nullable: true })
+  civicActivities: any[];
 
   @Column({ nullable: true })
   civicEngagement?: string;
@@ -226,11 +220,11 @@ export class B2CEntity {
   healthInsurance?: string;
 
   //   Financial
-  @Column()
-  salary: string;
+  @Column({ type: 'jsonb', nullable: true })
+  salary: { salaryCurrency: string; salaryAmount: string };
 
-  @Column({ nullable: true })
-  totalIncome?: string;
+  @Column({ type: 'jsonb', nullable: true })
+  totalIncome: { totalCurrency: string; totalAmount: string };
 
   @Column({ nullable: true })
   incomeHistory?: string;
