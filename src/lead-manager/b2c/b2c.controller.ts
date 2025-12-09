@@ -8,14 +8,17 @@ import {
   Post,
   Put,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { CreateB2CDto } from './dto/create-b2c.dto';
 import { B2CEntity } from './entities/b2c.entity';
 import { B2cService } from './b2c.service';
 import { UpdateB2CDto } from './dto/update-b2c.dto';
 import { SearchB2CDto } from './dto/search-b2c.dto';
+import { exportToExcel } from 'src/common/helpers/excel-export.helper';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('b2c')
@@ -25,6 +28,11 @@ export class B2cController {
   @Post('create')
   async create(@Body() dto: CreateB2CDto): Promise<B2CEntity> {
     return this.b2cservice.create(dto);
+  }
+
+  @Post('/bulk-create')
+  async bulkCreate(@Body() body: { records: CreateB2CDto[] }) {
+    return this.b2cservice.bulkCreate(body.records);
   }
 
   @Get()
@@ -39,6 +47,12 @@ export class B2cController {
     @Query('limit') limit = 10,
   ) {
     return this.b2cservice.search(filters, Number(page), Number(limit));
+  }
+
+  @Get('export')
+  async exportToExcel(@Query() filters: SearchB2CDto, @Res() res: Response) {
+    const data = await this.b2cservice.getForExport(filters);
+    return exportToExcel(res, data, 'b2c-export-data');
   }
 
   @Get(':id')

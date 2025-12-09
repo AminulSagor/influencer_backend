@@ -11,6 +11,8 @@ import { ApiResponse } from 'src/common/interfaces/api-response.interface';
 import { UpdateB2CDto } from './dto/update-b2c.dto';
 import { SearchB2CDto } from './dto/search-b2c.dto';
 import { PaginatedResponse } from 'src/common/interfaces/paginated-response.interface';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
 export interface B2CListItem {
   id: number;
@@ -39,6 +41,53 @@ export class B2cService {
   async create(dto: CreateB2CDto): Promise<B2CEntity> {
     const data = this.repo.create(dto);
     return this.repo.save(data);
+  }
+
+  async bulkCreate(dtos: CreateB2CDto[]) {
+    const results: any[] = [];
+
+    const errors: {
+      row: number;
+      message: string[];
+    }[] = [];
+
+    for (let i = 0; i < dtos.length; i++) {
+      const dto = dtos[i];
+
+      try {
+        const dtoInstance = plainToInstance(CreateB2CDto, dto);
+        const validationErrors = await validate(dtoInstance);
+
+        if (validationErrors.length > 0) {
+          const messages = validationErrors.flatMap((v) => {
+            if (!v.constraints) return ['Invalid value'];
+            return Object.values(v.constraints);
+          });
+
+          errors.push({
+            row: i + 1,
+            message: messages,
+          });
+
+          continue;
+        }
+
+        const created = await this.create(dto);
+        results.push(created);
+      } catch (err) {
+        errors.push({
+          row: i + 1,
+          message: [err.message],
+        });
+      }
+    }
+
+    return {
+      success: true,
+      created: results.length,
+      failed: errors.length,
+      errors,
+    };
   }
 
   async findAll(page = 1, limit = 10): Promise<PaginatedResponse<B2CListItem>> {
@@ -96,7 +145,7 @@ export class B2cService {
     page = 1,
     limit = 10,
   ): Promise<PaginatedResponse<B2CListItem>> {
-    // ✅ At least one filter required
+    //  At least one filter required
     if (!Object.values(filters).some(Boolean)) {
       throw new BadRequestException(
         'At least one search filter must be provided',
@@ -230,6 +279,94 @@ export class B2cService {
         limit,
       },
     };
+  }
+
+  async getForExport(filters?: SearchB2CDto): Promise<any[]> {
+    const qb = this.repo.createQueryBuilder('b2c');
+
+    if (filters && Object.values(filters).some(Boolean)) {
+      if (filters.name) {
+        qb.andWhere('b2c.fullName ILIKE :name', {
+          name: `%${filters.name}%`,
+        });
+      }
+
+      if (filters.gender) {
+        qb.andWhere('b2c.gender ILIKE :gender', {
+          gender: `%${filters.gender}%`,
+        });
+      }
+
+      if (filters.nationality) {
+        qb.andWhere('b2c.nationality ILIKE :nationality', {
+          nationality: `%${filters.nationality}%`,
+        });
+      }
+
+      if (filters.state) {
+        qb.andWhere('b2c.state ILIKE :state', {
+          state: `%${filters.state}%`,
+        });
+      }
+
+      if (filters.industry) {
+        qb.andWhere('b2c.primaryIndustry ILIKE :industry', {
+          industry: `%${filters.industry}%`,
+        });
+      }
+
+      if (filters.subSector) {
+        qb.andWhere('b2c.industrySubsector ILIKE :subSector', {
+          subSector: `%${filters.subSector}%`,
+        });
+      }
+
+      if (filters.skills) {
+        qb.andWhere('b2c.primarySkills ILIKE :skills', {
+          skills: `%${filters.skills}%`,
+        });
+      }
+
+      if (filters.highestDegree) {
+        qb.andWhere('b2c.highestDegree ILIKE :highestDegree', {
+          highestDegree: `%${filters.highestDegree}%`,
+        });
+      }
+
+      if (filters.interests) {
+        qb.andWhere(':hobbies = ANY(b2c.interests)', {
+          hobbies: filters.interests,
+        });
+      }
+
+      if (filters.company) {
+        qb.andWhere('b2c.company ILIKE :organizations', {
+          organizations: `%${filters.company}%`, // mapped as organizations
+        });
+      }
+
+      if (filters.maritalStatus) {
+        qb.andWhere('b2c.maritalStatus ILIKE :maritalStatus', {
+          maritalStatus: `%${filters.maritalStatus}%`,
+        });
+      }
+
+      if (filters.totalIncome) {
+        qb.andWhere('b2c.householdIncome ILIKE :income', {
+          income: `%${filters.totalIncome}%`,
+        });
+      }
+
+      if (filters.salary) {
+        qb.andWhere('b2c.salary ILIKE :salary', {
+          salary: `%${filters.salary}%`,
+        });
+      }
+    }
+
+    const data = await qb.getMany();
+
+    return data;
   }
 
   async findById(id: number): Promise<ApiResponse<B2CEntity>> {

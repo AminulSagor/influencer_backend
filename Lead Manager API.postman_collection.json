@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "7eb650bd-d0c4-4c78-9a60-c26eabac2f9f",
 		"name": "Lead Manager API",
-		"description": "# Lead Manager API\n\n## Overview\n\nThe Lead Manager API is a comprehensive NestJS-based application designed to manage business leads across B2B (Business-to-Business) and B2C (Business-to-Consumer) segments. This API provides a complete set of endpoints for creating, retrieving, updating, deleting, and searching lead entries with secure authentication.\n\n## Authentication\n\nThis API uses JWT (JSON Web Token) based authentication. To access protected endpoints:\n\n1. **Login**: Send a POST request to `/auth/login` with your credentials\n2. **Receive Token**: The API will return an access token upon successful authentication\n3. **Use Token**: Include the token in the `Authorization` header for subsequent requests as `Bearer <token>`\n\nThe token will be automatically stored in the collection variable `{{token}}` after successful login, making it available for all requests in this collection.\n\n## Available Modules\n\n### Authentication Module\n- User login and token generation\n- Secure access to protected endpoints\n\n### B2B Management Module\nManage business-to-business leads with full CRUD capabilities:\n- **POST** `/b2b/create` - Create new B2B business entries\n- **GET** `/b2b` - Retrieve all B2B entries (with pagination)\n- **GET** `/b2b/:id` - Get a specific B2B entry by ID\n- **PUT** `/b2b/:id` - Update an existing B2B entry\n- **DELETE** `/b2b/:id` - Delete a B2B entry\n- **GET** `/b2b/search` - Search B2B entries with query parameters\n\n### B2C Management Module\nManage business-to-consumer leads with full CRUD capabilities:\n- **POST** `/b2c/create` - Create new B2C customer entries\n- **GET** `/b2c` - Retrieve all B2C entries (with pagination)\n- **GET** `/b2c/:id` - Get a specific B2C entry by ID\n- **PUT** `/b2c/:id` - Update an existing B2C entry\n- **DELETE** `/b2c/:id` - Delete a B2C entry\n- **GET** `/b2c/search` - Search B2C entries with query parameters\n\n## Getting Started\n\n### Step 1: Configure Variables\nBefore using this collection, configure the following variables:\n- `baseUrl`: The base URL of your API server (default: `http://localhost:7000`)\n- `localUrl`: Alternative local URL for development (default: `http://localhost:7000`)\n- `token`: Authentication token (automatically populated after login)\n\n### Step 2: Authenticate\n1. Navigate to the **Authentication** folder\n2. Open the **User Login** request\n3. Update the request body with your credentials\n4. Send the request to receive your access token\n\n### Step 3: Use the API\nOnce authenticated, you can:\n- **Create** new leads using the POST endpoints in B2B or B2C folders\n- **Retrieve** all entries using the GET endpoints with pagination\n- **Get** individual entries by ID using the GET `:id` endpoints\n- **Update** existing entries using the PUT `:id` endpoints\n- **Delete** entries using the DELETE `:id` endpoints\n- **Search** for specific entries using the search endpoints with query parameters\n\n## Variables Configuration\n\nThis collection uses the following variables:\n\n| Variable | Description | Default Value |\n|----------|-------------|---------------|\n| `baseUrl` | Primary API base URL | `http://localhost:7000` |\n| `localUrl` | Local development URL | `http://localhost:7000` |\n| `token` | JWT authentication token | Auto-populated after login |\n\nTo modify these variables:\n1. Click on the collection name\n2. Navigate to the **Variables** tab\n3. Update the **Current Value** for each variable as needed\n\n**Note**: The `{{baseUrl}}` variable is used throughout all requests. Update this value to point to your API server environment (development, staging, or production). The API server is currently configured to run on port 7000.",
+		"description": "# Lead Manager API\n\n## Overview\n\nThe Lead Manager API is a comprehensive NestJS-based application designed to manage business leads across B2B (Business-to-Business) and B2C (Business-to-Consumer) segments. This API provides a complete set of endpoints for creating, retrieving, updating, deleting, and searching lead entries with secure authentication.\n\n## Authentication\n\nThis API uses JWT (JSON Web Token) based authentication. To access protected endpoints:\n\n1. **Login**: Send a POST request to `/auth/login` with your credentials\n2. **Receive Token**: The API will return an access token upon successful authentication\n3. **Use Token**: Include the token in the `Authorization` header for subsequent requests as `Bearer <token>`\n\nThe token will be automatically stored in the collection variable `{{token}}` after successful login, making it available for all requests in this collection.\n\n## Available Modules\n\n### Authentication Module\n- User login and token generation\n- Secure access to protected endpoints\n\n### B2B Management Module\nManage business-to-business leads with full CRUD capabilities:\n- **POST** `/b2b/create` - Create new B2B business entries\n- **GET** `/b2b` - Retrieve all B2B entries (with pagination)\n- **GET** `/b2b/:id` - Get a specific B2B entry by ID\n- **PUT** `/b2b/:id` - Update an existing B2B entry\n- **DELETE** `/b2b/:id` - Delete a B2B entry\n- **GET** `/b2b/search` - Search B2B entries with query parameters\n- **POST** `/b2b/bulk-create` - Bulk create multiple B2B entries at once\n- **GET** `/b2b/export` - Export B2B entries to file\n\n### B2C Management Module\nManage business-to-consumer leads with full CRUD capabilities:\n- **POST** `/b2c/create` - Create new B2C customer entries\n- **GET** `/b2c` - Retrieve all B2C entries (with pagination)\n- **GET** `/b2c/:id` - Get a specific B2C entry by ID\n- **PUT** `/b2c/:id` - Update an existing B2C entry\n- **DELETE** `/b2c/:id` - Delete a B2C entry\n- **GET** `/b2c/search` - Search B2C entries with query parameters\n- **POST** `/b2c/bulk-create` - Bulk create multiple B2C entries at once\n- **GET** `/b2c/export` - Export B2C entries to file\n\n## Getting Started\n\n### Step 1: Configure Variables\nBefore using this collection, configure the following variables:\n- `baseUrl`: The base URL of your API server (default: `http://localhost:7000`)\n- `localUrl`: Alternative local URL for development (default: `http://localhost:7000`)\n- `token`: Authentication token (automatically populated after login)\n\n### Step 2: Authenticate\n1. Navigate to the **Authentication** folder\n2. Open the **User Login** request\n3. Update the request body with your credentials\n4. Send the request to receive your access token\n\n### Step 3: Use the API\nOnce authenticated, you can:\n- **Create** new leads using the POST endpoints in B2B or B2C folders\n- **Retrieve** all entries using the GET endpoints with pagination\n- **Get** individual entries by ID using the GET `:id` endpoints\n- **Update** existing entries using the PUT `:id` endpoints\n- **Delete** entries using the DELETE `:id` endpoints\n- **Search** for specific entries using the search endpoints with query parameters\n- **Bulk Create** multiple entries at once using the bulk-create endpoints\n- **Export** entries to file using the export endpoints\n\n## Variables Configuration\n\nThis collection uses the following variables:\n\n| Variable | Description | Default Value |\n|----------|-------------|---------------|\n| `baseUrl` | Primary API base URL | `http://localhost:7000` |\n| `localUrl` | Local development URL | `http://localhost:7000` |\n| `token` | JWT authentication token | Auto-populated after login |\n\nTo modify these variables:\n1. Click on the collection name\n2. Navigate to the **Variables** tab\n3. Update the **Current Value** for each variable as needed\n\n**Note**: The `{{baseUrl}}` variable is used throughout all requests. Update this value to point to your API server environment (development, staging, or production). The API server is currently configured to run on port 7000.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "36232705",
 		"_collection_link": "https://lead-manager-api-team-8716.postman.co/workspace/5f4714b9-39df-4e8e-8aed-fefe8b71da70/collection/36232705-7eb650bd-d0c4-4c78-9a60-c26eabac2f9f?action=share&source=collection_link&creator=36232705"
@@ -293,6 +293,65 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Bulk Create B2B Entries",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"records\": [\r\n    {\r\n      \"name\": \"TechVision Solutions\",\r\n      \"businessType\": \"Software Company\",\r\n      \"primaryIndustry\": \"IT\",\r\n      \"niche\": \"SaaS\",\r\n      \"serviceOverview\": [{ \"serviceName\": \"Cloud Consulting\" }],\r\n      \"country\": \"USA\",\r\n      \"city\": \"San Francisco\"\r\n    },\r\n    {\r\n      \"name\": \"MarketBridge Analytics\",\r\n      \"businessType\": \"Marketing Agency\",\r\n      \"primaryIndustry\": \"Marketing\",\r\n      \"niche\": \"Digital Marketing\",\r\n      \"serviceOverview\": [{ \"serviceName\": \"SEO Services\" }],\r\n      \"country\": \"UK\",\r\n      \"city\": \"London\"\r\n    },\r\n    {\r\n      \"name\": \"Nova Manufacturing Ltd\",\r\n      \"businessType\": \"Manufacturer\",\r\n      \"primaryIndustry\": \"Industrial\",\r\n      \"niche\": \"Electronics\",\r\n      \"serviceOverview\": [{ \"serviceName\": \"PCB Assembly\" }],\r\n      \"country\": \"Germany\",\r\n      \"city\": \"Berlin\"\r\n    },\r\n    {\r\n      \"name\": \"FinEdge Advisors\",\r\n      \"businessType\": \"Finance Company\",\r\n      \"primaryIndustry\": \"Finance\",\r\n      \"niche\": \"Investment\",\r\n      \"serviceOverview\": [{ \"serviceName\": \"Portfolio Management\" }],\r\n      \"country\": \"Canada\",\r\n      \"city\": \"Toronto\"\r\n    },\r\n    {\r\n      \"name\": \"GreenLeaf Imports\",\r\n      \"businessType\": \"Import/Export\",\r\n      \"primaryIndustry\": \"Trade\",\r\n      \"niche\": \"Organic Products\",\r\n      \"serviceOverview\": [{ \"serviceName\": \"Bulk Shipping\" }],\r\n      \"country\": \"Australia\",\r\n      \"city\": \"Sydney\"\r\n    },\r\n    {\r\n      \"name\": \"BlueWave Technologies\",\r\n      \"businessType\": \"Technology Firm\",\r\n      \"primaryIndustry\": \"IT\",\r\n      \"niche\": \"AI\",\r\n      \"serviceOverview\": [{ \"serviceName\": \"AI Automation\" }],\r\n      \"country\": \"India\",\r\n      \"city\": \"Bangalore\"\r\n    },\r\n    {\r\n      \"name\": \"Prime Logistics Hub\",\r\n      \"businessType\": \"Logistics Company\",\r\n      \"primaryIndustry\": \"Logistics\",\r\n      \"niche\": \"Freight\",\r\n      \"serviceOverview\": [{ \"serviceName\": \"Cargo Transport\" }],\r\n      \"country\": \"UAE\",\r\n      \"city\": \"Dubai\"\r\n    },\r\n    {\r\n      \"name\": \"UrbanBuild Contractors\",\r\n      \"businessType\": \"Construction\",\r\n      \"primaryIndustry\": \"Real Estate\",\r\n      \"niche\": \"Commercial Buildings\",\r\n      \"serviceOverview\": [{ \"serviceName\": \"Building Planning\" }],\r\n      \"country\": \"Singapore\",\r\n      \"city\": \"Singapore\"\r\n    },\r\n    {\r\n      \"name\": \"CyberShield Networks\",\r\n      \"businessType\": \"Security Company\",\r\n      \"primaryIndustry\": \"Cybersecurity\",\r\n      \"niche\": \"Network Security\",\r\n      \"serviceOverview\": [{ \"serviceName\": \"Penetration Testing\" }],\r\n      \"country\": \"USA\",\r\n      \"city\": \"New York\"\r\n    },\r\n    {\r\n      \"name\": \"Alpha HR Consulting\",\r\n      \"businessType\": \"HR Agency\",\r\n      \"primaryIndustry\": \"HR\",\r\n      \"niche\": \"Recruitment\",\r\n      \"serviceOverview\": [{ \"serviceName\": \"Talent Acquisition\" }],\r\n      \"country\": \"Bangladesh\",\r\n      \"city\": \"Dhaka\"\r\n    }\r\n  ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/b2b/bulk-create",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2b",
+								"bulk-create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Export B2B Entries",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/b2b/export",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2b",
+								"export"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"auth": {
@@ -300,7 +359,7 @@
 				"bearer": [
 					{
 						"key": "token",
-						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFiY2QiLCJpYXQiOjE3NjUxMTIxNzQsImV4cCI6MTc2NjQwODE3NH0.v6hh7YkuMbMCi_rjTbAyRWPlTuZ_9FGN3Bp1G6cd9-g",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFiY2QiLCJpYXQiOjE3NjUyOTAyNzUsImV4cCI6MTc2NjU4NjI3NX0.AhlTBEeTJpaMkhuPP5pHDpn4Kw-GgXgRoZek0DP9U3E",
 						"type": "string"
 					}
 				]
@@ -583,6 +642,65 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Bulk Create B2C Entries",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"records\": [\r\n    {\r\n      \"name\": \"John Doe\",\r\n      \"email\": \"john@example.com\",\r\n      \"phone\": \"1234567890\",\r\n      \"country\": \"USA\",\r\n      \"city\": \"New York\",\r\n      \"interests\": [\"Fitness\", \"Technology\"]\r\n    },\r\n    {\r\n      \"name\": \"Sarah Khan\",\r\n      \"email\": \"sarahkhan@example.com\",\r\n      \"phone\": \"9876543210\",\r\n      \"country\": \"Bangladesh\",\r\n      \"city\": \"Dhaka\",\r\n      \"interests\": [\"Fashion\", \"Beauty\"]\r\n    },\r\n    {\r\n      \"name\": \"Michael Brown\",\r\n      \"email\": \"michael@example.com\",\r\n      \"phone\": \"5551237777\",\r\n      \"country\": \"Canada\",\r\n      \"city\": \"Toronto\",\r\n      \"interests\": [\"Travel\", \"Photography\"]\r\n    },\r\n    {\r\n      \"name\": \"Aisha Rahman\",\r\n      \"email\": \"aisha@example.com\",\r\n      \"phone\": \"7778889990\",\r\n      \"country\": \"UK\",\r\n      \"city\": \"London\",\r\n      \"interests\": [\"Cooking\", \"Lifestyle\"]\r\n    },\r\n    {\r\n      \"name\": \"David Lee\",\r\n      \"email\": \"david@example.com\",\r\n      \"phone\": \"1112223333\",\r\n      \"country\": \"Singapore\",\r\n      \"city\": \"Singapore\",\r\n      \"interests\": [\"Gaming\", \"Tech Reviews\"]\r\n    },\r\n    {\r\n      \"name\": \"Emily Carter\",\r\n      \"email\": \"emily@example.com\",\r\n      \"phone\": \"6665554444\",\r\n      \"country\": \"Australia\",\r\n      \"city\": \"Sydney\",\r\n      \"interests\": [\"Travel\", \"Food Blogging\"]\r\n    },\r\n    {\r\n      \"name\": \"Hiroshi Tanaka\",\r\n      \"email\": \"hiroshi@example.com\",\r\n      \"phone\": \"9998887776\",\r\n      \"country\": \"Japan\",\r\n      \"city\": \"Tokyo\",\r\n      \"interests\": [\"Tech\", \"Gadgets\"]\r\n    },\r\n    {\r\n      \"name\": \"Maria Gomez\",\r\n      \"email\": \"maria@example.com\",\r\n      \"phone\": \"3322114455\",\r\n      \"country\": \"Spain\",\r\n      \"city\": \"Madrid\",\r\n      \"interests\": [\"Fashion\", \"Art\"]\r\n    },\r\n    {\r\n      \"name\": \"Ahmed Hassan\",\r\n      \"email\": \"ahmed@example.com\",\r\n      \"phone\": \"4445556666\",\r\n      \"country\": \"UAE\",\r\n      \"city\": \"Dubai\",\r\n      \"interests\": [\"Luxury\", \"Lifestyle\"]\r\n    },\r\n    {\r\n      \"name\": \"Sophia Wilson\",\r\n      \"email\": \"sophia@example.com\",\r\n      \"phone\": \"1231231234\",\r\n      \"country\": \"France\",\r\n      \"city\": \"Paris\",\r\n      \"interests\": [\"Beauty\", \"Makeup\"]\r\n    }\r\n  ]\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/b2c/bulk-create",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2c",
+								"bulk-create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Export B2C Entries",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/b2c/export",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"b2c",
+								"export"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"auth": {
@@ -590,7 +708,7 @@
 				"bearer": [
 					{
 						"key": "token",
-						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFiY2QiLCJpYXQiOjE3NjUxMTIxNzQsImV4cCI6MTc2NjQwODE3NH0.v6hh7YkuMbMCi_rjTbAyRWPlTuZ_9FGN3Bp1G6cd9-g",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFiY2QiLCJpYXQiOjE3NjUyOTAyNzUsImV4cCI6MTc2NjU4NjI3NX0.AhlTBEeTJpaMkhuPP5pHDpn4Kw-GgXgRoZek0DP9U3E",
 						"type": "string"
 					}
 				]
@@ -621,10 +739,41 @@
 			]
 		}
 	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
 	"variable": [
 		{
 			"key": "baseUrl",
 			"value": "http://localhost:3000"
+		},
+		{
+			"key": "localUrl",
+			"value": ""
+		},
+		{
+			"value": ""
 		}
 	]
 }
