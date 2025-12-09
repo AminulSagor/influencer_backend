@@ -40,32 +40,19 @@ export class B2BProfileEntity {
   @Column()
   subNiche: string;
 
-  @Column('text', { array: true, nullable: true })
-  serviceName: string;
-
-  @Column()
-  category: string;
-
-  @Column({ nullable: true })
-  subCategory: string;
-
-  @Column({ nullable: true })
-  serviceDescription: string;
-
-  @Column()
-  pricingModel: string;
-
-  @Column()
-  rate: string;
-
-  @Column()
-  currency: string;
-
-  @Column()
-  serviceAvailability: string;
-
-  @Column()
-  onlineService: string;
+  // Service Overview
+  @Column('jsonb', { nullable: true })
+  serviceOverview: Array<{
+    serviceName: string;
+    category: string;
+    subCategory: string;
+    serviceDescription: string;
+    pricingModel: string;
+    rate: string;
+    currency: string;
+    serviceAvailability: string;
+    onlineService: string;
+  }>;
 
   // location
   @Column({ nullable: true })

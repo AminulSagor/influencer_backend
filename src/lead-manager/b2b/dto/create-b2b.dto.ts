@@ -20,27 +20,65 @@ const urlRegex = /^(https?:\/\/|www\.)/;
 class KeyContactDto {
   @IsOptional()
   @IsString()
-  name?: string;
+  keyContactName?: string;
 
   @IsOptional()
   @IsString()
-  position?: string;
+  keyContactPosition?: string;
 
   @IsOptional()
   @IsString()
-  department?: string;
+  keyContactDepartment?: string;
 
   @IsOptional()
   @Matches(phoneRegex, { message: 'Enter a valid phone number' })
-  phone?: string;
+  keyContactPhone?: string;
 
   @IsOptional()
   @IsEmail({}, { message: 'Enter a valid email address' })
-  email?: string;
+  keyContactEmail?: string;
 
   @IsOptional()
   @Matches(/^http/, { message: 'LinkedIn URL must start with http/https' })
-  linkedIn?: string;
+  keyContactLinkedIn?: string;
+}
+
+class ServiceOverviewDto {
+  @IsNotEmpty()
+  @IsString()
+  serviceName: string;
+
+  @IsNotEmpty()
+  @IsString()
+  category: string;
+
+  @IsOptional()
+  @IsString()
+  subCategory?: string;
+
+  @IsOptional()
+  @IsString()
+  serviceDescription?: string;
+
+  @IsNotEmpty()
+  @IsString()
+  pricingModel: string;
+
+  @IsNotEmpty()
+  @IsString()
+  rate: string;
+
+  @IsNotEmpty()
+  @IsString()
+  currency: string;
+
+  @IsNotEmpty()
+  @IsString()
+  serviceAvailability: string;
+
+  @IsNotEmpty()
+  @IsString()
+  onlineService: string;
 }
 
 export class CreateB2BDto {
@@ -92,40 +130,10 @@ export class CreateB2BDto {
   subNiche: string;
 
   @IsArray()
-  @ArrayMaxSize(10, { message: 'Max 10 services allowed in serviceName' })
-  serviceName: string;
-
-  @IsNotEmpty()
-  @IsString()
-  category: string;
-
-  @IsOptional()
-  @IsString()
-  subCategory?: string;
-
-  @IsOptional()
-  @IsString()
-  serviceDescription?: string;
-
-  @IsOptional()
-  @IsString()
-  pricingModel: string;
-
-  @IsNotEmpty()
-  @IsString()
-  rate: string;
-
-  @IsNotEmpty()
-  @IsString()
-  currency: string;
-
-  @IsOptional()
-  @IsString()
-  serviceAvailability: string;
-
-  @IsOptional()
-  @IsString()
-  onlineService: string;
+  @ValidateNested({ each: true })
+  @ArrayMaxSize(10, { message: 'Max 10 services allowed' })
+  @Type(() => ServiceOverviewDto)
+  serviceOverview: ServiceOverviewDto[];
 
   // location
   @IsOptional() @IsString() street?: string;
