@@ -196,6 +196,9 @@ export class B2BProfileEntity {
   @Column({ nullable: true })
   metaLastUpdated: string;
 
+  @Column({ nullable: true })
+  companyImgUrl?: string;
+
   @CreateDateColumn()
   createdAt: Date;
 }

@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './lead-manager/auth/auth.module';
 import { B2bModule } from './lead-manager/b2b/b2b.module';
 import { B2CModule } from './lead-manager/b2c/b2c.module';
+import { UploaderModule } from './uploader/uploader.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { B2CModule } from './lead-manager/b2c/b2c.module';
     AuthModule,
     B2bModule,
     B2CModule,
+    UploaderModule,
   ],
 })
 export class AppModule {}
