@@ -219,4 +219,5 @@ export class CreateB2BDto {
   @IsOptional() @IsString() metaNotes?: string;
   @IsOptional() @IsString() metaDateAdded?: string;
   @IsOptional() @IsString() metaLastUpdated?: string;
+  @IsOptional() @IsString() companyLogoUrl?: string;
 }

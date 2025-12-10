@@ -306,6 +306,9 @@ export class B2CEntity {
   @Column({ nullable: true })
   volunteerActivities?: string;
 
+  @Column({ nullable: true })
+  profileImgUrl?: string;
+
   // Timestamps
   @CreateDateColumn()
   createdAt: Date;

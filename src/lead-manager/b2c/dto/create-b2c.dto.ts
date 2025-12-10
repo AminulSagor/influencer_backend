@@ -465,4 +465,7 @@ export class CreateB2CDto {
   @IsOptional()
   @IsString()
   volunteerActivities?: string;
+
+  //images
+  @IsOptional() @IsString() companyLogoUrl?: string;
 }
