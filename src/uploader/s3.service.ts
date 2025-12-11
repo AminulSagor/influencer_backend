@@ -18,8 +18,6 @@ export class S3Service {
     this.s3Client = new S3Client({
       region: this.configService.get<string>('AWS_REGION'),
     });
-
-    console.log('AWS_REGION: ', this.s3Client);
   }
 
   async generateUploadUrl(key: string, contentType: string) {

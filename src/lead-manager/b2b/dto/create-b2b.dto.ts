@@ -12,7 +12,8 @@ import {
   ArrayMaxSize,
   MinLength,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
+import { EmptyToNull } from 'src/common/decorators/empty-to-null.decorator';
 
 const phoneRegex = /^\+?[0-9\s\-().]{7,20}$/;
 const urlRegex = /^(https?:\/\/|www\.)/;
@@ -31,16 +32,19 @@ class KeyContactDto {
   keyContactDepartment?: string;
 
   @IsOptional()
+  @EmptyToNull()
   @Matches(phoneRegex, { message: 'Enter a valid phone number' })
-  keyContactPhone?: string;
+  keyContactPhone?: string | null;
 
   @IsOptional()
-  @IsEmail({}, { message: 'Enter a valid email address' })
-  keyContactEmail?: string;
+  @EmptyToNull()
+  @IsEmail({}, { message: 'Invalid support email format' })
+  keyContactEmail?: string | null;
 
   @IsOptional()
+  @EmptyToNull()
   @Matches(/^http/, { message: 'LinkedIn URL must start with http/https' })
-  keyContactLinkedIn?: string;
+  keyContactLinkedIn?: string | null;
 }
 
 class ServiceOverviewDto {
@@ -89,7 +93,6 @@ export class CreateB2BDto {
   // required
   @IsNotEmpty()
   @IsString()
-  @MinLength(2, { message: 'Business name is required' })
   name: string;
 
   @IsNotEmpty()
@@ -125,9 +128,9 @@ export class CreateB2BDto {
   @IsString()
   niche: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  subNiche: string;
+  subNiche?: string;
 
   @IsArray()
   @ValidateNested({ each: true })
@@ -145,22 +148,27 @@ export class CreateB2BDto {
 
   // contact info
   @IsOptional()
+  @EmptyToNull()
   @Matches(phoneRegex, { message: 'Enter a valid phone number' })
   businessPhone?: string;
 
   @IsOptional()
+  @EmptyToNull()
   @Matches(phoneRegex, { message: 'Enter a valid phone number' })
   secondaryPhone?: string;
 
   @IsOptional()
-  @IsEmail({}, { message: 'Enter a valid email' })
-  email?: string;
+  @EmptyToNull()
+  @IsEmail({}, { message: 'Invalid support email format' })
+  email?: string | null;
 
   @IsOptional()
-  @IsEmail({}, { message: 'Enter a valid support email' })
-  supportEmail?: string;
+  @EmptyToNull()
+  @IsEmail({}, { message: 'Invalid support email format' })
+  supportEmail?: string | null;
 
   @IsOptional()
+  @EmptyToNull()
   @Matches(urlRegex, {
     message:
       'Enter a valid website (include http:// or https:// or start with www.)',
@@ -176,13 +184,41 @@ export class CreateB2BDto {
   keyContacts?: KeyContactDto[];
 
   // online presence ... optional strings and url checks
-  @IsOptional() @Matches(/^http/, { each: false }) opFacebook?: string;
-  @IsOptional() @Matches(/^http/, { each: false }) opInstagram?: string;
-  @IsOptional() @Matches(/^http/, { each: false }) opLinkedin?: string;
-  @IsOptional() @Matches(/^http/, { each: false }) opTwitter?: string;
-  @IsOptional() @Matches(/^http/, { each: false }) opYoutube?: string;
-  @IsOptional() @Matches(/^http/, { each: false }) opTiktok?: string;
-  @IsOptional() @Matches(/^http/, { each: false }) opGoogleBusiness?: string;
+  @IsOptional()
+  @EmptyToNull()
+  @Matches(/^http/, { each: false })
+  opFacebook?: string | null;
+  @IsOptional()
+  @EmptyToNull()
+  @Matches(/^http/, { each: false })
+  opInstagram?: string | null;
+  @IsOptional()
+  @EmptyToNull()
+  @Matches(/^http/, { each: false })
+  opLinkedin?: string | null;
+  @IsOptional()
+  @EmptyToNull()
+  @Matches(/^http/, { each: false })
+  opTwitter?: string | null;
+  @IsOptional()
+  @EmptyToNull()
+  @Matches(/^http/, { each: false })
+  opYoutube?: string | null;
+  @IsOptional()
+  @EmptyToNull()
+  @Matches(/^http/, { each: false })
+  opTiktok?: string | null;
+  @IsOptional()
+  @EmptyToNull()
+  @Matches(/^http/, { each: false })
+  opGoogleBusiness?: string | null;
+  // @IsOptional() @IsString() opFacebook?: string;
+  // @IsOptional() @IsString() opInstagram?: string;
+  // @IsOptional() @IsString() opLinkedin?: string;
+  // @IsOptional() @IsString() opTwitter?: string;
+  // @IsOptional() @IsString() opYoutube?: string;
+  // @IsOptional() @IsString() opTiktok?: string;
+  // @IsOptional() @IsString() opGoogleBusiness?: string;
   @IsOptional() @IsString() opDirectoryListings?: string;
 
   // operations, financials, legal, marketing — optional strings
@@ -211,9 +247,19 @@ export class CreateB2BDto {
   // meta
   // tags: frontend will send tag array; server ensures maximum 10 tags
   @IsOptional()
+  @Transform(({ value }) => {
+    if (!value) return []; // empty → return empty array
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      return value
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+    }
+    return [];
+  })
   @IsArray()
-  @ArrayMaxSize(10, { message: 'Max 10 tags allowed in metaTags' })
-  @IsString({ each: true })
+  // @MaxLength(10, { each: false, message: 'Max 10 tags allowed' })
   metaTags?: string[];
 
   @IsOptional() @IsString() metaNotes?: string;

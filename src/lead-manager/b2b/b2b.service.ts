@@ -36,11 +36,11 @@ export class B2bService {
   async create(dto: CreateB2BDto): Promise<any> {
     try {
       //  service tag validation
-      if (dto.metaTags?.length && dto.metaTags.length > 10) {
-        throw new BadRequestException(
-          'Service name tag limit exceeded (max 10)',
-        );
-      }
+      // if (dto.metaTags?.length && dto.metaTags.length > 10) {
+      //   throw new BadRequestException(
+      //     'Service name tag limit exceeded (max 10)',
+      //   );
+      // }
 
       // key contact max 5 (SAFE FIX  )
       if (dto.keyContacts?.length && dto.keyContacts.length > 5) {

@@ -39,7 +39,7 @@ export class CreateB2CDto {
   primaryEmail?: string;
 
   @IsOptional()
-  @IsEmail()
+  @IsString()
   secondaryEmail?: string;
 
   @IsOptional()
@@ -467,5 +467,5 @@ export class CreateB2CDto {
   volunteerActivities?: string;
 
   //images
-  @IsOptional() @IsString() companyLogoUrl?: string;
+  @IsOptional() @IsString() profileImgUrl?: string;
 }

@@ -74,53 +74,53 @@ export class B2BProfileEntity {
   country: string;
 
   // contact info
-  @Column({ nullable: true })
-  businessPhone: string;
+  @Column({ type: 'varchar', nullable: true })
+  businessPhone: string | null;
 
-  @Column({ nullable: true })
-  secondaryPhone: string;
+  @Column({ type: 'varchar', nullable: true })
+  secondaryPhone: string | null;
 
-  @Column({ nullable: true })
-  email: string;
+  @Column({ type: 'varchar', nullable: true })
+  email: string | null;
 
-  @Column({ nullable: true })
-  supportEmail: string;
+  @Column({ type: 'varchar', nullable: true })
+  supportEmail: string | null;
 
-  @Column({ nullable: true })
-  website: string;
+  @Column({ type: 'varchar', nullable: true })
+  website: string | null;
 
   // keyContacts stored as JSON array, max 5
   @Column({ type: 'json', nullable: true })
   keyContacts: Array<{
-    name?: string;
-    position?: string;
-    department?: string;
-    phone?: string;
-    email?: string;
-    linkedIn?: string;
+    name?: string | null;
+    position?: string | null;
+    department?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    linkedIn?: string | null;
   }>;
 
   // online presence
-  @Column({ nullable: true })
-  opFacebook: string;
+  @Column({ type: 'varchar', nullable: true })
+  opFacebook: string | null;
 
-  @Column({ nullable: true })
-  opInstagram: string;
+  @Column({ type: 'varchar', nullable: true })
+  opInstagram: string | null;
 
-  @Column({ nullable: true })
-  opLinkedin: string;
+  @Column({ type: 'varchar', nullable: true })
+  opLinkedin: string | null;
 
-  @Column({ nullable: true })
-  opTwitter: string;
+  @Column({ type: 'varchar', nullable: true })
+  opTwitter: string | null;
 
-  @Column({ nullable: true })
-  opYoutube: string;
+  @Column({ type: 'varchar', nullable: true })
+  opYoutube: string | null;
 
-  @Column({ nullable: true })
-  opTiktok: string;
+  @Column({ type: 'varchar', nullable: true })
+  opTiktok: string | null;
 
-  @Column({ nullable: true })
-  opGoogleBusiness: string;
+  @Column({ type: 'varchar', nullable: true })
+  opGoogleBusiness: string | null;
 
   @Column({ nullable: true })
   opDirectoryListings: string;
