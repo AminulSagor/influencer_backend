@@ -7,15 +7,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
-
-// Entities
 import { UserEntity } from '../user/entities/user.entity';
 import { InfluencerProfileEntity } from '../influencer/entities/influencer-profile.entity';
+import { InfluencerModule } from '../influencer/influencer.module';
+import { CommonModule } from 'src/common/common.module';
 
 @Module({
   imports: [
     // Register Entities for this module
     TypeOrmModule.forFeature([UserEntity, InfluencerProfileEntity]),
+    InfluencerModule,
+    CommonModule,
     PassportModule,
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({
@@ -31,4 +33,4 @@ import { InfluencerProfileEntity } from '../influencer/entities/influencer-profi
   providers: [AuthService, JwtStrategy],
   exports: [AuthService],
 })
-export class AuthModule {}
+export class AuthInfluecerModule {}

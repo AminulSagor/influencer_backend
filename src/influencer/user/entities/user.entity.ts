@@ -23,40 +23,38 @@ export class UserEntity {
   @Column({ unique: true })
   email: string;
 
-  @Column({ unique: true })
+  @Column({ unique: true, nullable: true }) // Phone might be null initially for some roles
   phone: string;
 
-  @Column({ select: false }) // Don't return password by default
+  @Column({ select: false })
   password: string;
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.INFLUENCER })
   role: UserRole;
 
   @Column({ default: false })
-  isVerified: boolean; // Global verification status
+  isVerified: boolean;
 
   @Column({ default: false })
   isPhoneVerified: boolean;
 
-  // Status for Screen 08 "Admin Approval"
   @Column({ default: false })
   isEmailVerified: boolean;
 
-  // Temporary OTP fields (Hidden from API responses)
-  @Column({ nullable: true, select: false })
-  otpCode: string | null; // Store hashed ideally, or plain for simple MVP
+  // --- FIX: Added explicit 'type' ---
+  @Column({ type: 'varchar', nullable: true, select: false })
+  otpCode: string | null;
 
-  @Column({ nullable: true, select: false })
+  @Column({ type: 'timestamp', nullable: true, select: false })
   otpExpires: Date | null;
 
-  // --- Password Reset Fields ---
-  @Column({ nullable: true, select: false }) // Hidden by default
+  @Column({ type: 'varchar', nullable: true, select: false })
   resetPasswordToken: string | null;
 
-  @Column({ nullable: true, select: false }) // Hidden by default
+  @Column({ type: 'timestamp', nullable: true, select: false })
   resetPasswordExpires: Date | null;
+  // ----------------------------------
 
-  // One-to-One: A User HAS ONE Influencer Profile
   @OneToOne(() => InfluencerProfileEntity, (profile) => profile.user)
   influencerProfile: InfluencerProfileEntity;
 
