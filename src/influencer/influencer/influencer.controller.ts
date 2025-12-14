@@ -16,9 +16,13 @@ import {
   AddPayoutDto,
   AddSkillsDto,
 } from './dto/update-verification.dto';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { UserRole } from '../user/entities/user.entity';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 
 @Controller('influencer/profile')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+@Roles(UserRole.INFLUENCER)
 export class InfluencerController {
   constructor(private readonly influencerService: InfluencerService) {}
 
@@ -44,7 +48,7 @@ export class InfluencerController {
     // Map Socials (If provided)
     if (dto.socialLinks) updateData.socialLinks = dto.socialLinks;
     if (dto.website) updateData.website = dto.website;
-    if (dto.bio) updateData.bio = dto.bio;
+    // if (dto.bio) updateData.bio = dto.bio;
 
     // Map NID (If provided)
     if (dto.nidNumber) updateData.nidNumber = dto.nidNumber;

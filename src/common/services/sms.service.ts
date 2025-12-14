@@ -13,14 +13,14 @@ export class SmsService {
   constructor(private configService: ConfigService) {}
 
   async sendOtp(phone: string, otp: string): Promise<boolean> {
-    const apiKey = this.configService.get<string>('ALPHA_SMS_API_KEY'); // Add this to your .env
-    const apiUrl = 'https://api.sms.net.bd/sendsms';
+    const apiKey = this.configService.get<string>('SMS_API_KEY'); // Add this to your .env
+    const apiUrl = this.configService.get<string>('SMS_API_URL'); // 'https://api.sms.net.bd/sendsms';
 
     const message = `Your verification code is ${otp}.`;
 
     try {
       // Alpha SMS uses a POST request (or GET)
-      const response = await axios.post(apiUrl, {
+      const response = await axios.post(apiUrl!, {
         api_key: apiKey,
         msg: message,
         to: phone,

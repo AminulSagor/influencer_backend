@@ -43,41 +43,54 @@ export class B2cService {
     return this.repo.save(data);
   }
 
-  async bulkCreate(dtos: CreateB2CDto[]) {
+  async bulkCreate(rawDtos: CreateB2CDto[]) {
     const results: any[] = [];
+    const errors: { row: number; message: string[] }[] = [];
 
-    const errors: {
-      row: number;
-      message: string[];
-    }[] = [];
+    // Safety check
+    if (!rawDtos || !rawDtos.length) {
+      return { success: false, message: 'No data provided' };
+    }
 
-    for (let i = 0; i < dtos.length; i++) {
-      const dto = dtos[i];
+    for (let i = 0; i < rawDtos.length; i++) {
+      const rawDto = rawDtos[i];
 
       try {
-        const dtoInstance = plainToInstance(CreateB2CDto, dto);
+        // 1. Transform JSON -> DTO Class (This enables validation decorators)
+        const dtoInstance = plainToInstance(CreateB2CDto, rawDto);
+
+        // 2. Validate
         const validationErrors = await validate(dtoInstance);
 
         if (validationErrors.length > 0) {
+          // Flatten errors nicely
           const messages = validationErrors.flatMap((v) => {
-            if (!v.constraints) return ['Invalid value'];
-            return Object.values(v.constraints);
+            // Handle nested errors (like inside salary object)
+            if (v.children && v.children.length > 0) {
+              return v.children.flatMap((c) =>
+                Object.values(c.constraints || {}),
+              );
+            }
+            return v.constraints
+              ? Object.values(v.constraints)
+              : ['Invalid value'];
           });
 
           errors.push({
             row: i + 1,
             message: messages,
           });
-
-          continue;
+          continue; // Skip this row, move to next
         }
 
-        const created = await this.create(dto);
+        // 3. Save if valid
+        const created = await this.create(dtoInstance);
         results.push(created);
       } catch (err) {
+        console.error('Save Error:', err);
         errors.push({
           row: i + 1,
-          message: [err.message],
+          message: [err.message || 'Database error'],
         });
       }
     }
