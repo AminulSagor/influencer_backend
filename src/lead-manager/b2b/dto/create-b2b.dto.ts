@@ -105,7 +105,7 @@ export class CreateB2BDto {
 
   // ... other optional fields
   @IsOptional()
-  @IsString()
+  // @IsString()
   registrationNumber?: string;
 
   @IsOptional()
@@ -113,7 +113,7 @@ export class CreateB2BDto {
   taxId?: string;
 
   @IsOptional()
-  @IsString()
+  // @IsString()
   establishedDate?: string;
 
   @IsNotEmpty()
@@ -141,30 +141,30 @@ export class CreateB2BDto {
   // location
   @IsOptional() @IsString() street?: string;
   @IsOptional() @IsString() subCity?: string;
-  @IsNotEmpty() @IsString() city: string;
-  @IsNotEmpty() @IsString() state: string;
+  @IsOptional() @IsString() city?: string;
+  @IsOptional() @IsString() state?: string;
   @IsOptional() @IsString() postalCode?: string;
-  @IsNotEmpty() @IsString() country: string;
+  @IsOptional() @IsString() country?: string;
 
   // contact info
   @IsOptional()
   @EmptyToNull()
-  @Matches(phoneRegex, { message: 'Enter a valid phone number' })
+  // @Matches(phoneRegex, { message: 'Enter a valid phone number' })
   businessPhone?: string;
 
   @IsOptional()
   @EmptyToNull()
-  @Matches(phoneRegex, { message: 'Enter a valid phone number' })
+  // @Matches(phoneRegex, { message: 'Enter a valid phone number' })
   secondaryPhone?: string;
 
   @IsOptional()
   @EmptyToNull()
-  @IsEmail({}, { message: 'Invalid support email format' })
+  // @IsEmail({}, { message: 'Invalid support email format' })
   email?: string | null;
 
   @IsOptional()
   @EmptyToNull()
-  @IsEmail({}, { message: 'Invalid support email format' })
+  // @IsEmail({}, { message: 'Invalid support email format' })
   supportEmail?: string | null;
 
   @IsOptional()
@@ -265,5 +265,5 @@ export class CreateB2BDto {
   @IsOptional() @IsString() metaNotes?: string;
   @IsOptional() @IsString() metaDateAdded?: string;
   @IsOptional() @IsString() metaLastUpdated?: string;
-  @IsOptional() @IsString() companyLogoUrl?: string;
+  @IsOptional() @IsString() companyImgUrl?: string;
 }

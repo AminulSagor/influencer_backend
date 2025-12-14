@@ -31,15 +31,22 @@ export class B2cController {
   }
 
   @Post('/bulk-create')
-  async bulkCreate(@Body() body: any[]) {
-    if (!body || !Array.isArray(body) || body.length === 0) {
+  async bulkCreate(@Body() body: any) {
+    // 1. Extract the array regardless of how it's sent
+    // If body is array -> use body. If body has 'records' -> use body.records
+    const data = Array.isArray(body) ? body : body.records;
+
+    // 2. Validate the extracted data
+    if (!data || !Array.isArray(data) || data.length === 0) {
       return {
         success: false,
         message:
-          'No data provided. Ensure request body is a JSON Array [{},{}]',
+          'Invalid format. Please send a JSON Array [{},{}] or { "records": [{},{}] }',
       };
     }
-    return this.b2cservice.bulkCreate(body);
+
+    // 3. Pass the array to the service
+    return this.b2cservice.bulkCreate(data);
   }
 
   @Get()
