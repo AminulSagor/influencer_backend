@@ -290,9 +290,9 @@ export class CreateB2CDto {
   @IsString()
   householdSize?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  householdIncome: string;
+  householdIncome?: string;
 
   @IsOptional()
   @IsString()

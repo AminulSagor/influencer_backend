@@ -5,6 +5,10 @@ import { AuthModule } from './lead-manager/auth/auth.module';
 import { B2bModule } from './lead-manager/b2b/b2b.module';
 import { B2CModule } from './lead-manager/b2c/b2c.module';
 import { UploaderModule } from './uploader/uploader.module';
+import { InfluencerModule } from './influencer/influencer/influencer.module';
+import { AuthInfluecerModule } from './influencer/auth/auth.module';
+import { AdminModule } from './influencer/admin/admin.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -28,6 +32,10 @@ import { UploaderModule } from './uploader/uploader.module';
     B2bModule,
     B2CModule,
     UploaderModule,
+    InfluencerModule,
+    AuthInfluecerModule,
+    CommonModule,
+    AdminModule,
   ],
 })
 export class AppModule {}

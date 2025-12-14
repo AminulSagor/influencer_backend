@@ -31,8 +31,15 @@ export class B2cController {
   }
 
   @Post('/bulk-create')
-  async bulkCreate(@Body() body: { records: CreateB2CDto[] }) {
-    return this.b2cservice.bulkCreate(body.records);
+  async bulkCreate(@Body() body: any[]) {
+    if (!body || !Array.isArray(body) || body.length === 0) {
+      return {
+        success: false,
+        message:
+          'No data provided. Ensure request body is a JSON Array [{},{}]',
+      };
+    }
+    return this.b2cservice.bulkCreate(body);
   }
 
   @Get()
