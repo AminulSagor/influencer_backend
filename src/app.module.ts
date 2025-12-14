@@ -9,6 +9,7 @@ import { InfluencerModule } from './influencer/influencer/influencer.module';
 import { AuthInfluecerModule } from './influencer/auth/auth.module';
 import { AdminModule } from './influencer/admin/admin.module';
 import { CommonModule } from './common/common.module';
+import { NotificationModule } from './influencer/notification/notification.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { CommonModule } from './common/common.module';
     UploaderModule,
     InfluencerModule,
     AuthInfluecerModule,
+    NotificationModule,
     CommonModule,
     AdminModule,
   ],

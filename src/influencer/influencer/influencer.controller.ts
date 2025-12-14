@@ -54,7 +54,10 @@ export class InfluencerController {
     if (dto.nidNumber) updateData.nidNumber = dto.nidNumber;
     if (dto.nidFrontImg) {
       updateData.nidFrontImg = dto.nidFrontImg;
-      updateData.nidStatus = 'pending'; // Auto-set status to pending
+      updateData.nidVerification = {
+        nidStatus: 'pending',
+        nidRejectReason: '',
+      }; // Auto-set status to pending
     }
     if (dto.nidBackImg) updateData.nidBackImg = dto.nidBackImg;
 

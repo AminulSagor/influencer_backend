@@ -1,0 +1,40 @@
+import {
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { NotificationService } from './notification.service';
+
+@Controller('notifications')
+@UseGuards(AuthGuard('jwt-brandguru')) // Or 'jwt-influencer' etc based on your strategy naming
+export class NotificationController {
+  constructor(private readonly notificationService: NotificationService) {}
+
+  @Get()
+  async getMyNotifications(
+    @Request() req,
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+  ) {
+    return this.notificationService.getUserNotifications(
+      req.user.userId,
+      Number(page) || 1,
+      Number(limit) || 10,
+    );
+  }
+
+  @Patch(':id/read')
+  async markRead(@Param('id') id: string) {
+    return this.notificationService.markAsRead(id);
+  }
+
+  @Patch('read-all')
+  async markAllRead(@Request() req) {
+    return this.notificationService.markAllAsRead(req.user.userId);
+  }
+}

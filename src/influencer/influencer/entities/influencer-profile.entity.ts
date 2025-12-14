@@ -63,8 +63,8 @@ export class InfluencerProfileEntity {
   @Column({ nullable: true })
   nidBackImg: string; // S3 URL
 
-  @Column({ default: 'unverified' })
-  nidStatus: string;
+  @Column('jsonb', { nullable: true })
+  nidVerification: { nidStatus: string; nidRejectReason: string };
 
   // --- Payments (Array of payouts) ---
   // Stores multiple payouts like Bank, Bkash, Nagad
