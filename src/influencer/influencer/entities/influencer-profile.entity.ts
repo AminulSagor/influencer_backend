@@ -50,7 +50,7 @@ export class InfluencerProfileEntity {
   @Column({ nullable: true })
   website: string;
   // Figma: "Social Links" (Storing as JSON is efficient for flexible platforms)
-  @Column('jsonb')
+  @Column('jsonb', { nullable: true })
   socialLinks: { platform: string; url: string; status: string }[];
 
   // Figma: "NID Info" & Documents (S3 URLs)
@@ -63,8 +63,8 @@ export class InfluencerProfileEntity {
   @Column({ nullable: true })
   nidBackImg: string; // S3 URL
 
-  @Column({ default: 'unverified' })
-  nidStatus: string;
+  @Column('jsonb', { nullable: true })
+  nidVerification: { nidStatus: string; nidRejectReason: string };
 
   // --- Payments (Array of payouts) ---
   // Stores multiple payouts like Bank, Bkash, Nagad

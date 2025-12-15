@@ -6,11 +6,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { JwtStrategy } from './jwt.strategy';
 import { UserEntity } from '../user/entities/user.entity';
 import { InfluencerProfileEntity } from '../influencer/entities/influencer-profile.entity';
 import { InfluencerModule } from '../influencer/influencer.module';
 import { CommonModule } from 'src/common/common.module';
+import { JwtStrategy } from './jwt.strategy';
 
 @Module({
   imports: [
@@ -23,7 +23,8 @@ import { CommonModule } from 'src/common/common.module';
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('BRANDGURU_JWT_SECRET'),
         signOptions: {
-          expiresIn: config.get<string>('BRANDGURU_JWT_EXPIRE') as any,
+          expiresIn:
+            (config.get<string>('BRANDGURU_JWT_EXPIRE') as any) || '15d',
         },
       }),
       inject: [ConfigService],

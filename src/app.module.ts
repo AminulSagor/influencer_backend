@@ -11,6 +11,7 @@ import { AdminModule } from './influencer/admin/admin.module';
 import { CommonModule } from './common/common.module';
 import { ClientModule } from './influencer/client/client.module';
 import { CampaignModule } from './influencer/campaign/campaign.module';
+import { NotificationModule } from './influencer/notification/notification.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { CampaignModule } from './influencer/campaign/campaign.module';
     UploaderModule,
     InfluencerModule,
     AuthInfluecerModule,
+    NotificationModule,
     CommonModule,
     AdminModule,
     ClientModule,

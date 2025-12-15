@@ -21,6 +21,8 @@ import {
 // import { UserEntity } from '../user/entities/user.entity';
 import { InfluencerProfileEntity } from '../influencer/entities/influencer-profile.entity';
 import { ClientProfileEntity } from '../client/entities/client-profile.entity';
+import { NotificationService } from '../notification/notification.service';
+import { UserRole } from '../user/entities/user.entity';
 
 @Injectable()
 export class AdminService {
@@ -31,7 +33,29 @@ export class AdminService {
     private readonly profileRepo: Repository<InfluencerProfileEntity>,
     @InjectRepository(ClientProfileEntity)
     private readonly clientProfileRepo: Repository<ClientProfileEntity>,
+    private readonly notificationService: NotificationService,
   ) {}
+
+  // Helper to send rejection notification
+  private async notifyIfRejected(
+    userId: string,
+    item: string,
+    status: ApprovalStatus,
+    reason?: string,
+  ) {
+    if (status === ApprovalStatus.REJECTED) {
+      await this.notificationService.createNotification(
+        userId,
+        UserRole.INFLUENCER,
+        `${item} Rejected`,
+        `Your submission for ${item} was rejected. Reason: ${reason || 'Not specified'}`,
+        'verification',
+      );
+    } else if (status === ApprovalStatus.APPROVED) {
+      // Optional: Notify on approval too?
+      // await this.notificationService.createNotification(userId, UserRole.INFLUENCER, `${item} Approved`, `Your ${item} has been verified.`);
+    }
+  }
 
   // 1. Get Pending Profiles
   async getPendingProfiles(page = 1, limit = 10) {
@@ -68,7 +92,16 @@ export class AdminService {
 
     if (profile.niches) {
       profile.niches = profile.niches.map((n) =>
-        n.niche === dto.identifier ? { ...n, status: dto.status } : n,
+        n.niche === dto.identifier
+          ? {
+              ...n,
+              status: dto.status,
+              rejectReason:
+                dto.status === ApprovalStatus.REJECTED
+                  ? dto.rejectReason
+                  : undefined,
+            }
+          : n,
       );
     }
     return this.profileRepo.save(profile);
@@ -83,7 +116,16 @@ export class AdminService {
 
     if (profile.skills) {
       profile.skills = profile.skills.map((s) =>
-        s.skill === dto.identifier ? { ...s, status: dto.status } : s,
+        s.skill === dto.identifier
+          ? {
+              ...s,
+              status: dto.status,
+              rejectReason:
+                dto.status === ApprovalStatus.REJECTED
+                  ? dto.rejectReason
+                  : undefined,
+            }
+          : s,
       );
     }
     return this.profileRepo.save(profile);
@@ -98,7 +140,16 @@ export class AdminService {
 
     if (profile.socialLinks) {
       profile.socialLinks = profile.socialLinks.map((s) =>
-        s.url === dto.identifier ? { ...s, status: dto.status } : s,
+        s.url === dto.identifier
+          ? {
+              ...s,
+              status: dto.status,
+              rejectReason:
+                dto.status === ApprovalStatus.REJECTED
+                  ? dto.rejectReason
+                  : undefined,
+            }
+          : s,
       );
     }
 
@@ -122,7 +173,14 @@ export class AdminService {
     if (profile.payouts && profile.payouts.bank) {
       profile.payouts.bank = profile.payouts.bank.map((acc) =>
         acc.bankAccNo === dto.accountNo
-          ? { ...acc, accStatus: dto.status }
+          ? {
+              ...acc,
+              accStatus: dto.status,
+              accRejectReason:
+                dto.status === ApprovalStatus.REJECTED
+                  ? dto.rejectReason
+                  : undefined,
+            }
           : acc,
       );
     }
@@ -140,7 +198,14 @@ export class AdminService {
       profile.payouts.mobileBanking = profile.payouts.mobileBanking.map(
         (acc) =>
           acc.accountNo === dto.accountNo
-            ? { ...acc, accStatus: dto.status }
+            ? {
+                ...acc,
+                accStatus: dto.status,
+                accRejectReason:
+                  dto.status === ApprovalStatus.REJECTED
+                    ? dto.rejectReason
+                    : undefined,
+              }
             : acc,
       );
     }
@@ -148,18 +213,30 @@ export class AdminService {
   }
 
   // 8. Approve/Reject NID
-  async updateNidStatus(
-    userId: string,
-    dto: UpdateNidStatusDto,
-  ): Promise<InfluencerProfileEntity> {
+  async updateNidStatus(userId: string, dto: UpdateNidStatusDto) {
     const profile = await this.getProfileDetails(userId);
 
-    profile.nidStatus = dto.nidStatus;
-    // profile.verificationSteps = {
-    //   ...profile.verificationSteps,
-    //   nid: dto.status,
-    // };
+    if (!profile.nidVerification) {
+      profile.nidVerification = { nidStatus: 'pending', nidRejectReason: '' };
+    }
 
+    profile.nidVerification.nidStatus = dto.nidStatus;
+    if (dto.nidStatus === ApprovalStatus.REJECTED) {
+      profile.nidVerification.nidRejectReason =
+        dto.rejectReason || 'No reason specified';
+    } else {
+      profile.nidVerification.nidRejectReason = ''; // Clear reason if approved/pending
+    }
+
+    // // Update verificationSteps
+    // profile.verificationSteps = { ...profile.verificationSteps, nid: dto.status };
+
+    await this.notifyIfRejected(
+      userId,
+      'NID Document',
+      dto.nidStatus,
+      dto.rejectReason,
+    );
     return this.profileRepo.save(profile);
   }
 

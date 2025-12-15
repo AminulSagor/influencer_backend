@@ -38,24 +38,30 @@ export class AuthService {
     await queryRunner.startTransaction();
 
     try {
+      console.log('--- Starting Signup Process ---'); // Debug Log
+
       // A. Generate OTP
       const otp = Math.floor(1000 + Math.random() * 9000).toString();
       const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
 
       const salt = await bcrypt.genSalt();
+
       // B. Create User
       const user = new UserEntity();
       user.email = dto.email;
       user.phone = dto.phone;
       user.password = await bcrypt.hash(dto.password, salt);
-      user.role = UserRole.INFLUENCER;
+      user.role = dto.role as UserRole; // Use the Role from DTO, not hardcoded
       user.otpCode = await bcrypt.hash(otp, 10);
       user.otpExpires = otpExpires;
       user.isPhoneVerified = false;
 
+      // Debug: Log before saving user
+      console.log('Saving UserEntity...');
       const savedUser = await queryRunner.manager.save(UserEntity, user);
+      console.log('User saved with ID:', savedUser.id);
 
-      // Dynamic Profile Creation based on Role
+      // C. Dynamic Profile Creation based on Role
       if (dto.role === UserRole.INFLUENCER) {
         if (!dto.firstName || !dto.lastName)
           throw new BadRequestException('Name required for Influencers');
@@ -64,16 +70,8 @@ export class AuthService {
         profile.userId = savedUser.id;
         profile.firstName = dto.firstName;
         profile.lastName = dto.lastName;
-        // Initialize verification steps...
-        // profile.verificationSteps = {
-        //   nid: 'unverified',
-        //   socialProfile: 'unverified',
-        //   // paymentSetup: 'unverified',
-        //   tradeLicense: 'unverified',
-        //   tin: 'unverified',
-        //   bin: 'unverified',
-        // };
 
+        console.log('Saving InfluencerProfileEntity...');
         await queryRunner.manager.save(InfluencerProfileEntity, profile);
       }
       // else if (dto.role === UserRole.BRAND) {
@@ -97,10 +95,19 @@ export class AuthService {
       //   await queryRunner.manager.save(AgencyProfileEntity, profile);
       // }
 
-      // D. Send SMS
-      await this.smsService.sendOtp(dto.phone, otp);
+      // D. Send SMS (Wrapped to identify if SMS is the cause of failure)
+      console.log(`Attempting to send OTP: ${otp} to ${dto.phone}`);
+      try {
+        await this.smsService.sendOtp(dto.phone, otp);
+      } catch (smsError) {
+        console.error('SMS Service Failed:', smsError.message);
+        // Note: We throw here to rollback user creation if SMS fails.
+        // If you are testing offline, comment this throw out.
+        throw new InternalServerErrorException('Failed to send SMS OTP');
+      }
 
       await queryRunner.commitTransaction();
+      console.log('Signup Transaction Committed');
 
       return {
         message: 'Signup successful. OTP sent to phone.',
@@ -108,11 +115,21 @@ export class AuthService {
         role: dto.role,
       };
     } catch (error) {
+      // 1. Rollback changes
       await queryRunner.rollbackTransaction();
+
+      // 2. LOG THE ACTUAL ERROR (This fixes your debugging issue)
+      console.error('------------------------------------------');
+      console.error('SIGNUP ERROR DETAILS:', error);
+      console.error('------------------------------------------');
+
+      // 3. Handle specific DB errors (Duplicate entry)
       if (error.code === '23505') {
         throw new ConflictException('Email or Phone already exists');
       }
-      throw new InternalServerErrorException('Signup failed');
+
+      // 4. Throw the actual error message so you see it in Postman
+      throw new InternalServerErrorException(`Signup failed: ${error.message}`);
     } finally {
       await queryRunner.release();
     }
@@ -126,6 +143,7 @@ export class AuthService {
       select: [
         'id',
         'email',
+        'phone',
         'role',
         'otpCode',
         'otpExpires',
@@ -168,10 +186,15 @@ export class AuthService {
     // // if (userBase.role === UserRole.AGENCY) relations = ['agencyProfile'];
 
     const user = await this.userRepo.findOne({
-      where: { email: dto.email },
-      select: ['id', 'email', 'password', 'role', 'isPhoneVerified'],
+      where: { phone: dto.phone },
+      select: ['id', 'email', 'phone', 'password', 'role', 'isPhoneVerified'],
       // relations: relations,
     });
+    if (!user?.isPhoneVerified) {
+      throw new UnauthorizedException(
+        'Phone number is not verified. Please verify OTP first.',
+      );
+    }
     if (!user) throw new UnauthorizedException('Invalid credentials');
     const isMatch = await bcrypt.compare(dto.password, user!.password);
     if (!isMatch) throw new UnauthorizedException('Invalid credentials');
@@ -311,7 +334,12 @@ export class AuthService {
   }
 
   private async generateToken(user: UserEntity) {
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+    };
     return {
       accessToken: await this.jwtService.signAsync(payload),
       message: 'Successful',

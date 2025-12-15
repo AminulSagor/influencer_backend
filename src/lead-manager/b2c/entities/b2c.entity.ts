@@ -179,8 +179,8 @@ export class B2CEntity {
   @Column({ nullable: true })
   householdSize?: string;
 
-  @Column()
-  householdIncome: string;
+  @Column({ nullable: true })
+  householdIncome?: string;
 
   @Column({ nullable: true })
   familyMedicalHistory?: string;

@@ -24,7 +24,7 @@ import { AdminService } from './admin.service';
 import { UserRole } from '../user/entities/user.entity';
 import { Roles } from 'src/common/decorators/roles.decorator';
 
-@UseGuards(AuthGuard('jwt'), RolesGuard) // 1. Apply Guards
+@UseGuards(AuthGuard('jwt-brandguru'), RolesGuard) // 1. Apply Guards
 @Roles(UserRole.ADMIN)
 @Controller('influencer/admin')
 export class AdminController {

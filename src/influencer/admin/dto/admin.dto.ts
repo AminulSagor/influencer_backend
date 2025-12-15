@@ -33,6 +33,10 @@ export class UpdateItemStatusDto {
   @IsNotEmpty()
   @IsEnum(ApprovalStatus)
   status: ApprovalStatus;
+
+  @IsOptional()
+  @IsString()
+  rejectReason?: string;
 }
 
 // For Payouts
@@ -44,19 +48,30 @@ export class UpdatePayoutStatusDto {
   @IsNotEmpty()
   @IsEnum(ApprovalStatus)
   status: ApprovalStatus;
+
+  @IsOptional()
+  @IsString()
+  rejectReason?: string; // Add this
 }
 
-// For Single Sections (NID)
 export class UpdateSectionStatusDto {
   @IsNotEmpty()
   @IsEnum(ApprovalStatus)
   status: ApprovalStatus;
+
+  @IsOptional()
+  @IsString()
+  rejectReason?: string; // Add this
 }
 
 export class UpdateNidStatusDto {
   @IsNotEmpty()
   @IsEnum(ApprovalStatus)
   nidStatus: ApprovalStatus;
+
+  @IsOptional()
+  @IsString()
+  rejectReason?: string; // Add this
 }
 
 // --- Client Verification DTOs ---
