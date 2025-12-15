@@ -109,6 +109,16 @@ export class AdminController {
     return this.adminService.updateMobileStatus(userId, dto);
   }
 
+  // FORCE APPROVE ENDPOINT
+  @Patch('verification/profile/:userId/approve')
+  async forceApprove(@Param('userId') userId: string) {
+    return this.adminService.forceApproveUser(userId);
+  }
+
+  // REVOKE FORCE APPROVE ENDPOINT
+  @Patch('verification/profile/:userId/revoke')
+  async revokeApprove(@Param('userId') userId: string) {
+    return this.adminService.revokeVerification(userId);
   // =============================================
   // CLIENT VERIFICATION
   // =============================================

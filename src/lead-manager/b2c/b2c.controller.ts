@@ -50,15 +50,15 @@ export class B2cController {
   }
 
   @Get()
-  async findAll(@Query('page') page = 1, @Query('limit') limit = 10) {
+  async findAll(@Query('page') page: number, @Query('limit') limit: number) {
     return this.b2cservice.findAll(Number(page), Number(limit));
   }
 
   @Get('search')
   search(
     @Query() filters: SearchB2CDto,
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
+    @Query('page') page: number,
+    @Query('limit') limit: number,
   ) {
     return this.b2cservice.search(filters, Number(page), Number(limit));
   }

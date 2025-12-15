@@ -1,4 +1,12 @@
-import { IsObject, IsOptional, IsString, IsArray } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsObject,
+  IsOptional,
+  IsString,
+  IsArray,
+  IsNumber,
+  Min,
+} from 'class-validator';
 
 export class SearchB2CDto {
   @IsOptional()
@@ -33,9 +41,9 @@ export class SearchB2CDto {
   @IsString()
   highestDegree?: string;
 
-  @IsOptional()
-  @IsArray()
-  interests?: string[]; // Fix: hobbies field mapped to interests as an array
+  // @IsOptional()
+  // @IsArray()
+  // interests?: string[]; // Fix: hobbies field mapped to interests as an array
 
   @IsOptional()
   @IsString()
@@ -45,11 +53,40 @@ export class SearchB2CDto {
   @IsString()
   maritalStatus?: string;
 
+  // --- FIX 1: Change Object to String ---
+  // Query params are strings (e.g. ?salary=5000)
+  // Your service uses 'ILIKE', so this must be a string.
   @IsOptional()
-  @IsObject()
-  salary?: string; // Fix: salary should be an object with `salaryCurrency` and `salaryAmount`
+  @IsString()
+  salary?: string;
 
   @IsOptional()
-  @IsObject()
-  totalIncome?: string; // Fix: totalIncome should be an object with `totalCurrency` and `totalAmount`
+  @IsString()
+  totalIncome?: string;
+
+  // --- FIX 2: Handle Array Transformation ---
+  // If user sends "?interests=coding", this transforms it to ["coding"]
+  // so validation passes.
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return [value];
+    }
+    return value;
+  })
+  @IsArray()
+  @IsString({ each: true })
+  interests?: string[];
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  limit?: number;
 }
