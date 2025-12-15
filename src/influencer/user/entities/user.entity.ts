@@ -1,4 +1,5 @@
 import { InfluencerProfileEntity } from 'src/influencer/influencer/entities/influencer-profile.entity';
+import { ClientProfileEntity } from 'src/influencer/client/entities/client-profile.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -57,6 +58,9 @@ export class UserEntity {
 
   @OneToOne(() => InfluencerProfileEntity, (profile) => profile.user)
   influencerProfile: InfluencerProfileEntity;
+
+  @OneToOne(() => ClientProfileEntity, (profile) => profile.user)
+  clientProfile: ClientProfileEntity;
 
   @CreateDateColumn()
   createdAt: Date;

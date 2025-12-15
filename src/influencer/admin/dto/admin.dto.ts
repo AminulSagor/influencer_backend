@@ -73,3 +73,34 @@ export class UpdateNidStatusDto {
   @IsString()
   rejectReason?: string; // Add this
 }
+
+// --- Client Verification DTOs ---
+export class UpdateClientNidStatusDto {
+  @IsNotEmpty()
+  @IsEnum(ApprovalStatus)
+  nidStatus: ApprovalStatus;
+
+  @IsOptional()
+  @IsString()
+  rejectionReason?: string;
+}
+
+export class UpdateClientTradeLicenseStatusDto {
+  @IsNotEmpty()
+  @IsEnum(ApprovalStatus)
+  tradeLicenseStatus: ApprovalStatus;
+
+  @IsOptional()
+  @IsString()
+  rejectionReason?: string;
+}
+
+export class UpdateClientSocialStatusDto {
+  @IsNotEmpty()
+  @IsString()
+  profileUrl: string; // The URL of the social link to update
+
+  @IsNotEmpty()
+  @IsEnum(ApprovalStatus)
+  status: ApprovalStatus;
+}

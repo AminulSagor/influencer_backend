@@ -7,10 +7,11 @@ import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { UserEntity } from '../user/entities/user.entity';
 import { InfluencerProfileEntity } from '../influencer/entities/influencer-profile.entity';
+import { ClientProfileEntity } from '../client/entities/client-profile.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, InfluencerProfileEntity]), // Register Repos
+    TypeOrmModule.forFeature([UserEntity, InfluencerProfileEntity, ClientProfileEntity]), // Register Repos
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
