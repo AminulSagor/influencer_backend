@@ -119,6 +119,7 @@ export class AdminController {
   @Patch('verification/profile/:userId/revoke')
   async revokeApprove(@Param('userId') userId: string) {
     return this.adminService.revokeVerification(userId);
+  }
   // =============================================
   // CLIENT VERIFICATION
   // =============================================
