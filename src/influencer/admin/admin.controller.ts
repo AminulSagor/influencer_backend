@@ -14,6 +14,9 @@ import {
   UpdateItemStatusDto,
   UpdateNidStatusDto,
   UpdatePayoutStatusDto,
+  UpdateClientNidStatusDto,
+  UpdateClientTradeLicenseStatusDto,
+  UpdateClientSocialStatusDto,
 } from './dto/admin.dto';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { AuthGuard } from '@nestjs/passport';
@@ -33,6 +36,10 @@ export class AdminController {
   // async login(@Body() dto: AdminLoginDto) {
   //   return this.adminService.login(dto);
   // }
+
+  // =============================================
+  // INFLUENCER VERIFICATION
+  // =============================================
 
   // List all profiles for verification
   @Get('verification/profiles')
@@ -112,5 +119,76 @@ export class AdminController {
   @Patch('verification/profile/:userId/revoke')
   async revokeApprove(@Param('userId') userId: string) {
     return this.adminService.revokeVerification(userId);
+  // =============================================
+  // CLIENT VERIFICATION
+  // =============================================
+
+  // List all client profiles for verification
+  @Get('verification/clients')
+  async getClientProfiles(
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+  ) {
+    return this.adminService.getClientProfiles(
+      Number(page) || 1,
+      Number(limit) || 10,
+    );
+  }
+
+  // Get clients pending NID verification
+  @Get('verification/clients/pending-nid')
+  async getClientsPendingNid(
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+  ) {
+    return this.adminService.getClientsPendingNidVerification(
+      Number(page) || 1,
+      Number(limit) || 10,
+    );
+  }
+
+  // Get clients pending Trade License verification
+  @Get('verification/clients/pending-trade-license')
+  async getClientsPendingTradeLicense(
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+  ) {
+    return this.adminService.getClientsPendingTradeLicenseVerification(
+      Number(page) || 1,
+      Number(limit) || 10,
+    );
+  }
+
+  // Get details of one client profile
+  @Get('verification/client/:userId')
+  async getClientProfile(@Param('userId') userId: string) {
+    return this.adminService.getClientProfileDetails(userId);
+  }
+
+  // Approve/Reject Client NID
+  @Patch('verification/client/:userId/nid')
+  async updateClientNid(
+    @Param('userId') userId: string,
+    @Body() dto: UpdateClientNidStatusDto,
+  ) {
+    return this.adminService.updateClientNidStatus(userId, dto);
+  }
+
+  // Approve/Reject Client Trade License
+  @Patch('verification/client/:userId/trade-license')
+  async updateClientTradeLicense(
+    @Param('userId') userId: string,
+    @Body() dto: UpdateClientTradeLicenseStatusDto,
+  ) {
+    return this.adminService.updateClientTradeLicenseStatus(userId, dto);
+  }
+
+  // Approve/Reject Client Social Link
+  @Patch('verification/client/:userId/social')
+  async updateClientSocial(
+    @Param('userId') userId: string,
+    @Body() dto: UpdateClientSocialStatusDto,
+  ) {
+    return this.adminService.updateClientSocialStatus(userId, dto);
   }
 }

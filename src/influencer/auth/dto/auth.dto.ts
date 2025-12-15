@@ -43,3 +43,11 @@ export class VerifyOtpDto {
   @IsString()
   otp: string;
 }
+
+export class ResendOtpDto {
+  @IsNotEmpty()
+  @Matches(/^\+?[0-9]{11,14}$/, {
+    message: 'Enter a valid BD phone number e.g. +8801XXXXXXXXX',
+  })
+  phone: string;
+}

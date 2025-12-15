@@ -10,7 +10,7 @@ import { UserEntity } from '../user/entities/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([InfluencerProfileEntity, UserEntity]), // Register Repos
+    TypeOrmModule.forFeature([UserEntity, InfluencerProfileEntity, ClientProfileEntity]), // Register Repos
     PassportModule,
     // JwtModule.registerAsync({
     //   imports: [ConfigModule],
