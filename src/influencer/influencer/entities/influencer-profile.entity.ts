@@ -66,6 +66,9 @@ export class InfluencerProfileEntity {
   @Column('jsonb', { nullable: true })
   nidVerification: { nidStatus: string; nidRejectReason: string };
 
+  @Column({ nullable: true })
+  profileImg: string; // S3 URL
+
   // --- Payments (Array of payouts) ---
   // Stores multiple payouts like Bank, Bkash, Nagad
   @Column('jsonb', { nullable: true })

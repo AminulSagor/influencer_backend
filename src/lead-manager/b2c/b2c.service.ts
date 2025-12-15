@@ -103,7 +103,10 @@ export class B2cService {
     };
   }
 
-  async findAll(page = 1, limit = 10): Promise<PaginatedResponse<B2CListItem>> {
+  async findAll(
+    page: number,
+    limit: number,
+  ): Promise<PaginatedResponse<B2CListItem>> {
     const [data, total] = await this.repo
       .createQueryBuilder('b2c')
       .select([
@@ -155,8 +158,8 @@ export class B2cService {
 
   async search(
     filters: SearchB2CDto,
-    page = 1,
-    limit = 10,
+    page: number,
+    limit: number,
   ): Promise<PaginatedResponse<B2CListItem>> {
     //  At least one filter required
     if (!Object.values(filters).some(Boolean)) {

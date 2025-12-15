@@ -41,8 +41,8 @@ export class B2bController {
   @Get('search')
   search(
     @Query() filters: SearchB2BDto,
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
+    @Query('page') page: number,
+    @Query('limit') limit: number,
   ) {
     return this.b2bservice.search(filters, Number(page), Number(limit));
   }

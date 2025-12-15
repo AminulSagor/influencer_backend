@@ -144,7 +144,10 @@ export class B2bService {
   }
 
   //   GET WITH PAGINATION
-  async findAll(page = 1, limit = 10): Promise<PaginatedResponse<B2BListItem>> {
+  async findAll(
+    page: number,
+    limit: number,
+  ): Promise<PaginatedResponse<B2BListItem>> {
     const [data, total] = await this.b2bRepo.findAndCount({
       select: [
         'businessId',
@@ -189,8 +192,8 @@ export class B2bService {
   //   SEARCH
   async search(
     filters: SearchB2BDto,
-    page = 1,
-    limit = 10,
+    page: number,
+    limit: number,
   ): Promise<PaginatedResponse<B2BListItem>> {
     //  At least ONE filter must be provided
     if (!Object.values(filters).some(Boolean)) {

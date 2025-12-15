@@ -6,6 +6,8 @@ import {
   Request,
   Get,
   Post,
+  Delete,
+  Param,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { InfluencerService } from './influencer.service';
@@ -19,6 +21,10 @@ import {
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import {
+  DeleteItemDto,
+  UpdateInfluencerDto,
+} from './dto/update-influencer.dto';
 
 @Controller('influencer/profile')
 @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
@@ -88,5 +94,26 @@ export class InfluencerController {
   @Get()
   async getProfile(@Request() req) {
     return this.influencerService.getProfile(req.user.userId);
+  }
+
+  @Patch('basic-info')
+  updateBasic(@Request() req, @Body() dto: UpdateInfluencerDto) {
+    return this.influencerService.updateBasicProfile(req.user.userId, dto);
+  }
+
+  @Delete('profile-image')
+  removeImage(@Request() req) {
+    return this.influencerService.deleteProfileImage(req.user.userId);
+  }
+
+  @Delete('niche/:nicheName')
+  removeNiche(@Request() req, @Param('nicheName') niche: string) {
+    return this.influencerService.deleteNiche(req.user.userId, niche);
+  }
+
+  // For payouts, since we need type + id, we use Body or Query
+  @Delete('payouts')
+  removePayout(@Request() req, @Body() dto: DeleteItemDto) {
+    return this.influencerService.deletePayout(req.user.userId, dto);
   }
 }
