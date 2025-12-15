@@ -14,9 +14,13 @@ import {
   UpdateNidStatusDto,
   UpdatePayoutStatusDto,
   UpdateSectionStatusDto,
+  UpdateClientNidStatusDto,
+  UpdateClientTradeLicenseStatusDto,
+  UpdateClientSocialStatusDto,
 } from './dto/admin.dto';
 // import { UserEntity } from '../user/entities/user.entity';
 import { InfluencerProfileEntity } from '../influencer/entities/influencer-profile.entity';
+import { ClientProfileEntity } from '../client/entities/client-profile.entity';
 
 @Injectable()
 export class AdminService {
@@ -25,6 +29,8 @@ export class AdminService {
     // private readonly userRepo: Repository<UserEntity>,
     @InjectRepository(InfluencerProfileEntity)
     private readonly profileRepo: Repository<InfluencerProfileEntity>,
+    @InjectRepository(ClientProfileEntity)
+    private readonly clientProfileRepo: Repository<ClientProfileEntity>,
   ) {}
 
   // 1. Get Pending Profiles
@@ -155,6 +161,126 @@ export class AdminService {
     // };
 
     return this.profileRepo.save(profile);
+  }
+
+  // =============================================
+  // CLIENT VERIFICATION METHODS
+  // =============================================
+
+  // 9. Get All Client Profiles for Verification
+  async getClientProfiles(page = 1, limit = 10) {
+    const [data, total] = await this.clientProfileRepo.findAndCount({
+      take: limit,
+      skip: (page - 1) * limit,
+      relations: ['user'],
+      order: { updatedAt: 'DESC' },
+    });
+
+    return {
+      data,
+      meta: { total, page, limit },
+    };
+  }
+
+  // 10. Get Clients Pending NID Verification
+  async getClientsPendingNidVerification(page = 1, limit = 10) {
+    const [data, total] = await this.clientProfileRepo.findAndCount({
+      where: { nidStatus: 'pending' },
+      take: limit,
+      skip: (page - 1) * limit,
+      relations: ['user'],
+      order: { updatedAt: 'DESC' },
+    });
+
+    return {
+      data,
+      meta: { total, page, limit },
+    };
+  }
+
+  // 11. Get Clients Pending Trade License Verification
+  async getClientsPendingTradeLicenseVerification(page = 1, limit = 10) {
+    const [data, total] = await this.clientProfileRepo.findAndCount({
+      where: { tradeLicenseStatus: 'pending' },
+      take: limit,
+      skip: (page - 1) * limit,
+      relations: ['user'],
+      order: { updatedAt: 'DESC' },
+    });
+
+    return {
+      data,
+      meta: { total, page, limit },
+    };
+  }
+
+  // 12. Get Single Client Profile Details
+  async getClientProfileDetails(userId: string): Promise<ClientProfileEntity> {
+    const profile = await this.clientProfileRepo.findOne({
+      where: { userId },
+      relations: ['user'],
+    });
+    if (!profile) throw new NotFoundException('Client profile not found');
+    return profile;
+  }
+
+  // 13. Approve/Reject Client NID
+  async updateClientNidStatus(
+    userId: string,
+    dto: UpdateClientNidStatusDto,
+  ): Promise<ClientProfileEntity> {
+    const profile = await this.getClientProfileDetails(userId);
+
+    profile.nidStatus = dto.nidStatus;
+    profile.verificationSteps = {
+      ...profile.verificationSteps,
+      nidVerification: dto.nidStatus,
+    };
+
+    return this.clientProfileRepo.save(profile);
+  }
+
+  // 14. Approve/Reject Client Trade License
+  async updateClientTradeLicenseStatus(
+    userId: string,
+    dto: UpdateClientTradeLicenseStatusDto,
+  ): Promise<ClientProfileEntity> {
+    const profile = await this.getClientProfileDetails(userId);
+
+    profile.tradeLicenseStatus = dto.tradeLicenseStatus;
+    profile.verificationSteps = {
+      ...profile.verificationSteps,
+      tradeLicense: dto.tradeLicenseStatus,
+    };
+
+    return this.clientProfileRepo.save(profile);
+  }
+
+  // 15. Approve/Reject Client Social Link
+  async updateClientSocialStatus(
+    userId: string,
+    dto: UpdateClientSocialStatusDto,
+  ): Promise<ClientProfileEntity> {
+    const profile = await this.getClientProfileDetails(userId);
+
+    if (profile.socialLinks) {
+      profile.socialLinks = profile.socialLinks.map((s) =>
+        s.profileUrl === dto.profileUrl ? { ...s, status: dto.status } : s,
+      );
+    }
+
+    // Update verification step if all social links are verified
+    const allVerified = profile.socialLinks?.every(
+      (s) => (s as any).status === 'approved',
+    );
+    if (allVerified) {
+      profile.verificationSteps = {
+        ...profile.verificationSteps,
+        socialLinks: 'verified',
+      };
+    }
+
+    return this.clientProfileRepo.save(profile);
   }
 
   // Helper: Determine section status based on items

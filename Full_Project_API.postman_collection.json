@@ -1,0 +1,3305 @@
+{
+    "info": {
+        "_postman_id": "e1f2g3h4-i5j6-k7l8-m9n0-o1p2q3r4s5t6",
+        "name": "Influencer Backend API",
+        "description": "Full project API documentation with DTO checks and body responses.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Influencer",
+            "item": [
+                {
+                    "name": "Auth",
+                    "item": [
+                        {
+                            "name": "Signup",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"phone\": \"+8801711111111\",\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"influencer\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/auth/signup",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "auth",
+                                        "signup"
+                                    ]
+                                },
+                                "description": "Register a new influencer.\n\nDTO: SignupDto\n- firstName: string (required)\n- lastName: string (required)\n- phone: string (required, valid BD phone number)\n- email: string (valid email)\n- password: string (min 8 chars)\n- role: enum (influencer, etc.)"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Verify OTP",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"phone\": \"+8801711111111\",\n    \"otp\": \"123456\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/auth/verify-otp",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "auth",
+                                        "verify-otp"
+                                    ]
+                                },
+                                "description": "Verify OTP for phone number verification.\n\nDTO: VerifyOtpDto\n- phone: string (required)\n- otp: string (required)"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Resend OTP",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"phone\": \"+8801711111111\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/auth/resend-otp",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "auth",
+                                        "resend-otp"
+                                    ]
+                                },
+                                "description": "Resend OTP to phone number. Rate limited to 1 request per minute.\n\nDTO: ResendOtpDto\n- phone: string (required, valid BD phone number e.g. +8801XXXXXXXXX)"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Login",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"password123\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/auth/login",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "auth",
+                                        "login"
+                                    ]
+                                },
+                                "description": "Login for influencers.\n\nDTO: LoginDto\n- email: string (valid email)\n- password: string (required)"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Forgot Password",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"identifier\": \"john.doe@example.com\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/auth/forgot-password",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "auth",
+                                        "forgot-password"
+                                    ]
+                                },
+                                "description": "Request password reset OTP.\n\nDTO: ForgotPasswordDto\n- identifier: string (Email or Phone)"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Reset Password",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"identifier\": \"john.doe@example.com\",\n    \"otp\": \"123456\",\n    \"newPassword\": \"newpassword123\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/auth/reset-password",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "auth",
+                                        "reset-password"
+                                    ]
+                                },
+                                "description": "Reset password using OTP.\n\nDTO: ResetPasswordDto\n- identifier: string (Email or Phone)\n- otp: string (required)\n- newPassword: string (min 8 chars)"
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Admin",
+                    "item": [
+                        {
+                            "name": "Get Profiles (Verification)",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/admin/verification/profiles?page=1&limit=10",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "admin",
+                                        "verification",
+                                        "profiles"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "10"
+                                        }
+                                    ]
+                                },
+                                "description": "List all profiles for verification.\n\nQuery Params:\n- page: number\n- limit: number"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Profile Details",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/admin/verification/profile/:userId",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "admin",
+                                        "verification",
+                                        "profile",
+                                        ":userId"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "userId",
+                                            "value": "123"
+                                        }
+                                    ]
+                                },
+                                "description": "Get details of one profile for verification."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Niche Status",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"identifier\": \"Tech\",\n    \"status\": \"approved\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/admin/verification/profile/:userId/niche",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "admin",
+                                        "verification",
+                                        "profile",
+                                        ":userId",
+                                        "niche"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "userId",
+                                            "value": "123"
+                                        }
+                                    ]
+                                },
+                                "description": "Approve or reject a niche.\n\nDTO: UpdateItemStatusDto\n- identifier: string (Name of niche)\n- status: enum (approved, rejected, pending, unverified)"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Skill Status",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"identifier\": \"Video Editing\",\n    \"status\": \"approved\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/admin/verification/profile/:userId/skill",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "admin",
+                                        "verification",
+                                        "profile",
+                                        ":userId",
+                                        "skill"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "userId",
+                                            "value": "123"
+                                        }
+                                    ]
+                                },
+                                "description": "Approve or reject a skill.\n\nDTO: UpdateItemStatusDto\n- identifier: string (Name of skill)\n- status: enum (approved, rejected, pending, unverified)"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Social Status",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"identifier\": \"https://instagram.com/user\",\n    \"status\": \"approved\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/admin/verification/profile/:userId/social",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "admin",
+                                        "verification",
+                                        "profile",
+                                        ":userId",
+                                        "social"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "userId",
+                                            "value": "123"
+                                        }
+                                    ]
+                                },
+                                "description": "Approve or reject a social link.\n\nDTO: UpdateItemStatusDto\n- identifier: string (URL)\n- status: enum (approved, rejected, pending, unverified)"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update NID Status",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"nidStatus\": \"approved\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/admin/verification/profile/:userId/nid",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "admin",
+                                        "verification",
+                                        "profile",
+                                        ":userId",
+                                        "nid"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "userId",
+                                            "value": "123"
+                                        }
+                                    ]
+                                },
+                                "description": "Approve or reject NID verification.\n\nDTO: UpdateNidStatusDto\n- nidStatus: enum (approved, rejected, pending, unverified)"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Bank Status",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"accountNo\": \"123456789\",\n    \"status\": \"approved\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/admin/verification/profile/:userId/payout/bank",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "admin",
+                                        "verification",
+                                        "profile",
+                                        ":userId",
+                                        "payout",
+                                        "bank"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "userId",
+                                            "value": "123"
+                                        }
+                                    ]
+                                },
+                                "description": "Approve or reject bank payout method.\n\nDTO: UpdatePayoutStatusDto\n- accountNo: string\n- status: enum (approved, rejected, pending, unverified)"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Mobile Status",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"accountNo\": \"01711111111\",\n    \"status\": \"approved\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/admin/verification/profile/:userId/payout/mobile",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "admin",
+                                        "verification",
+                                        "profile",
+                                        ":userId",
+                                        "payout",
+                                        "mobile"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "userId",
+                                            "value": "123"
+                                        }
+                                    ]
+                                },
+                                "description": "Approve or reject mobile payout method.\n\nDTO: UpdatePayoutStatusDto\n- accountNo: string\n- status: enum (approved, rejected, pending, unverified)"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get All Client Profiles",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/admin/verification/clients?page=1&limit=10",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "admin",
+                                        "verification",
+                                        "clients"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "10"
+                                        }
+                                    ]
+                                },
+                                "description": "List all client profiles for verification.\n\nQuery Params:\n- page: number\n- limit: number\n\nRequires: JWT Token + Admin Role"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Clients Pending NID",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/admin/verification/clients/pending-nid?page=1&limit=10",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "admin",
+                                        "verification",
+                                        "clients",
+                                        "pending-nid"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "10"
+                                        }
+                                    ]
+                                },
+                                "description": "List client profiles pending NID verification.\n\nQuery Params:\n- page: number\n- limit: number\n\nRequires: JWT Token + Admin Role"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Clients Pending Trade License",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/admin/verification/clients/pending-trade-license?page=1&limit=10",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "admin",
+                                        "verification",
+                                        "clients",
+                                        "pending-trade-license"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "10"
+                                        }
+                                    ]
+                                },
+                                "description": "List client profiles pending Trade License verification.\n\nQuery Params:\n- page: number\n- limit: number\n\nRequires: JWT Token + Admin Role"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Client Profile Details",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/admin/verification/client/:userId",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "admin",
+                                        "verification",
+                                        "client",
+                                        ":userId"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "userId",
+                                            "value": "uuid-here"
+                                        }
+                                    ]
+                                },
+                                "description": "Get details of one client profile for verification.\n\nPath Params:\n- userId: UUID\n\nRequires: JWT Token + Admin Role"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Client NID Status",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"nidStatus\": \"approved\",\n    \"rejectionReason\": \"\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/admin/verification/client/:userId/nid",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "admin",
+                                        "verification",
+                                        "client",
+                                        ":userId",
+                                        "nid"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "userId",
+                                            "value": "uuid-here"
+                                        }
+                                    ]
+                                },
+                                "description": "Approve or reject client NID verification.\n\nDTO: UpdateClientNidStatusDto\n- nidStatus: enum (approved, rejected, pending, unverified)\n- rejectionReason: string (optional)\n\nRequires: JWT Token + Admin Role"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Client Trade License Status",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"tradeLicenseStatus\": \"approved\",\n    \"rejectionReason\": \"\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/admin/verification/client/:userId/trade-license",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "admin",
+                                        "verification",
+                                        "client",
+                                        ":userId",
+                                        "trade-license"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "userId",
+                                            "value": "uuid-here"
+                                        }
+                                    ]
+                                },
+                                "description": "Approve or reject client Trade License verification.\n\nDTO: UpdateClientTradeLicenseStatusDto\n- tradeLicenseStatus: enum (approved, rejected, pending, unverified)\n- rejectionReason: string (optional)\n\nRequires: JWT Token + Admin Role"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Client Social Status",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"profileUrl\": \"https://facebook.com/acmecorp\",\n    \"status\": \"approved\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/admin/verification/client/:userId/social",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "admin",
+                                        "verification",
+                                        "client",
+                                        ":userId",
+                                        "social"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "userId",
+                                            "value": "uuid-here"
+                                        }
+                                    ]
+                                },
+                                "description": "Approve or reject a client's social link.\n\nDTO: UpdateClientSocialStatusDto\n- profileUrl: string (The URL of the social link)\n- status: enum (approved, rejected, pending, unverified)\n\nRequires: JWT Token + Admin Role"
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Profile",
+                    "item": [
+                        {
+                            "name": "Get Profile",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/profile",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "profile"
+                                    ]
+                                },
+                                "description": "Get current logged-in influencer profile."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Onboarding",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"thana\": \"Gulshan\",\n    \"zilla\": \"Dhaka\",\n    \"fullAddress\": \"House 1, Road 2\",\n    \"website\": \"https://example.com\",\n    \"socialLinks\": [\n        { \"platform\": \"Instagram\", \"url\": \"https://instagram.com/user\", \"status\": \"pending\" }\n    ],\n    \"nidNumber\": \"1234567890\",\n    \"nidFrontImg\": \"url_to_front_img\",\n    \"nidBackImg\": \"url_to_back_img\",\n    \"bio\": \"I am an influencer\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/profile/onboarding",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "profile",
+                                        "onboarding"
+                                    ]
+                                },
+                                "description": "Update onboarding details (Address, Socials, NID).\n\nDTO: OnboardingDto"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Niches",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"niches\": [\"Fashion\", \"Tech\"]\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/profile/niches",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "profile",
+                                        "niches"
+                                    ]
+                                },
+                                "description": "Add niches to profile.\n\nDTO: AddNichesDto"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Skills",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"skills\": [\"Video Editing\", \"Modeling\"]\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/profile/skills",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "profile",
+                                        "skills"
+                                    ]
+                                },
+                                "description": "Add skills to profile.\n\nDTO: AddSkillsDto"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Add Payout",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"bank\": {\n        \"bankName\": \"Bank Asia\",\n        \"bankAccHolderName\": \"John Doe\",\n        \"bankAccNo\": \"123456789\",\n        \"bankBranchName\": \"Gulshan\",\n        \"bankRoutingNo\": \"12345\"\n    },\n    \"mobileBanking\": {\n        \"accountNo\": \"01711111111\",\n        \"accountHolderName\": \"John Doe\",\n        \"accountType\": \"Bkash\"\n    }\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/profile/payouts",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "profile",
+                                        "payouts"
+                                    ]
+                                },
+                                "description": "Add payout methods.\n\nDTO: AddPayoutDto"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Add Address",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"addresses\": {\n        \"addressName\": \"Home\",\n        \"thana\": \"Gulshan\",\n        \"zilla\": \"Dhaka\",\n        \"fullAddress\": \"House 1, Road 2\"\n    }\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/influencer/profile/address",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "influencer",
+                                        "profile",
+                                        "address"
+                                    ]
+                                },
+                                "description": "Add address.\n\nDTO: AddLocationDto"
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Client",
+                    "item": [
+                        {
+                            "name": "Signup",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"brandName\": \"Acme Corp\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Smith\",\n    \"email\": \"jane.smith@example.com\",\n    \"phone\": \"+8801711111112\",\n    \"password\": \"password123\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/client/signup",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "client",
+                                        "signup"
+                                    ]
+                                },
+                                "description": "Register a new client. OTP will be sent to phone.\n\nDTO: CreateClientDto\n- brandName: string (required)\n- firstName: string (required)\n- lastName: string (required)\n- email: string (required, valid email)\n- phone: string (required, valid BD phone number like +8801XXXXXXXXX)\n- password: string (required)"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Verify OTP",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"phone\": \"+8801711111112\",\n    \"otp\": \"1234\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/client/verify-otp",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "client",
+                                        "verify-otp"
+                                    ]
+                                },
+                                "description": "Verify OTP sent to client's phone number. Returns JWT token on success.\n\nDTO: VerifyClientOtpDto\n- phone: string (required)\n- otp: string (required)"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Resend OTP",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"phone\": \"+8801711111112\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/client/resend-otp",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "client",
+                                        "resend-otp"
+                                    ]
+                                },
+                                "description": "Resend OTP to client's phone number.\n\nDTO: ResendClientOtpDto\n- phone: string (required)"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Profile",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/client/profile",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "client",
+                                        "profile"
+                                    ]
+                                },
+                                "description": "Get current logged-in client's profile.\n\nRequires: JWT Token"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Address",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"thana\": \"Gulshan\",\n    \"zila\": \"Dhaka\",\n    \"fullAddress\": \"House 1, Road 2, Gulshan 1\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/client/profile/address",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "client",
+                                        "profile",
+                                        "address"
+                                    ]
+                                },
+                                "description": "Update client address (only after phone verification).\n\nDTO: UpdateClientAddressDto\n- thana: string (optional)\n- zila: string (optional)\n- fullAddress: string (optional)\n\nRequires: JWT Token + Phone Verified"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Social Links",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"website\": \"https://acmecorp.com\",\n    \"socialLinks\": [\n        { \"platform\": \"facebook\", \"profileUrl\": \"https://facebook.com/acmecorp\" },\n        { \"platform\": \"instagram\", \"profileUrl\": \"https://instagram.com/acmecorp\" },\n        { \"platform\": \"linkedin\", \"profileUrl\": \"https://linkedin.com/company/acmecorp\" }\n    ]\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/client/profile/social",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "client",
+                                        "profile",
+                                        "social"
+                                    ]
+                                },
+                                "description": "Update website and social media links.\n\nDTO: UpdateClientSocialDto\n- website: string (optional, valid URL)\n- socialLinks: array (optional)\n  - platform: string (e.g., facebook, instagram, linkedin, twitter, youtube, tiktok)\n  - profileUrl: string\n\nRequires: JWT Token + Phone Verified"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update NID",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"nidNumber\": \"1234567890123\",\n    \"nidFrontImg\": \"https://s3.amazonaws.com/bucket/nid-front.jpg\",\n    \"nidBackImg\": \"https://s3.amazonaws.com/bucket/nid-back.jpg\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/client/profile/nid",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "client",
+                                        "profile",
+                                        "nid"
+                                    ]
+                                },
+                                "description": "Update NID information.\n\nDTO: UpdateClientNidDto\n- nidNumber: string (optional)\n- nidFrontImg: string (optional, S3 URL)\n- nidBackImg: string (optional, S3 URL)\n\nRequires: JWT Token + Phone Verified"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Trade License",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"tradeLicenseNumber\": \"TL-2024-12345\",\n    \"tradeLicenseImg\": \"https://s3.amazonaws.com/bucket/trade-license.jpg\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/client/profile/trade-license",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "client",
+                                        "profile",
+                                        "trade-license"
+                                    ]
+                                },
+                                "description": "Update trade license information.\n\nDTO: UpdateClientTradeLicenseDto\n- tradeLicenseNumber: string (optional)\n- tradeLicenseImg: string (optional, S3 URL)\n\nRequires: JWT Token + Phone Verified"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Complete Onboarding",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"thana\": \"Gulshan\",\n    \"zila\": \"Dhaka\",\n    \"fullAddress\": \"House 1, Road 2, Gulshan 1\",\n    \"website\": \"https://acmecorp.com\",\n    \"socialLinks\": [\n        { \"platform\": \"facebook\", \"profileUrl\": \"https://facebook.com/acmecorp\" },\n        { \"platform\": \"instagram\", \"profileUrl\": \"https://instagram.com/acmecorp\" }\n    ],\n    \"nidNumber\": \"1234567890123\",\n    \"nidFrontImg\": \"https://s3.amazonaws.com/bucket/nid-front.jpg\",\n    \"nidBackImg\": \"https://s3.amazonaws.com/bucket/nid-back.jpg\",\n    \"tradeLicenseNumber\": \"TL-2024-12345\",\n    \"tradeLicenseImg\": \"https://s3.amazonaws.com/bucket/trade-license.jpg\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/client/profile/onboarding",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "client",
+                                        "profile",
+                                        "onboarding"
+                                    ]
+                                },
+                                "description": "Complete onboarding with all profile details at once.\n\nDTO: ClientOnboardingDto\n- thana: string (optional)\n- zila: string (optional)\n- fullAddress: string (optional)\n- website: string (optional)\n- socialLinks: array (optional)\n  - platform: string\n  - profileUrl: string\n- nidNumber: string (optional)\n- nidFrontImg: string (optional, S3 URL)\n- nidBackImg: string (optional, S3 URL)\n- tradeLicenseNumber: string (optional)\n- tradeLicenseImg: string (optional, S3 URL)\n\nRequires: JWT Token + Phone Verified"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Profile",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"brandName\": \"Acme Corporation\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Doe\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/client/profile",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "client",
+                                        "profile"
+                                    ]
+                                },
+                                "description": "General profile update.\n\nDTO: UpdateClientDto\n- brandName: string (optional)\n- firstName: string (optional)\n- lastName: string (optional)\n- thana: string (optional)\n- zila: string (optional)\n- fullAddress: string (optional)\n- website: string (optional)\n- socialLinks: array (optional)\n- nidNumber: string (optional)\n- nidFrontImg: string (optional)\n- nidBackImg: string (optional)\n- tradeLicenseNumber: string (optional)\n- tradeLicenseImg: string (optional)\n\nRequires: JWT Token"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get All Clients (Admin)",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/client?page=1&limit=10",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "client"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "10"
+                                        }
+                                    ]
+                                },
+                                "description": "Get all clients with pagination (Admin only).\n\nQuery Params:\n- page: number (default: 1)\n- limit: number (default: 10)\n\nRequires: JWT Token + Admin Role"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Client by ID (Admin)",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/client/:id",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "client",
+                                        ":id"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "uuid-here"
+                                        }
+                                    ]
+                                },
+                                "description": "Get a single client by ID (Admin only).\n\nPath Params:\n- id: UUID (required)\n\nRequires: JWT Token + Admin Role"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Client (Admin)",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/client/:id",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "client",
+                                        ":id"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "uuid-here"
+                                        }
+                                    ]
+                                },
+                                "description": "Delete a client by ID (Admin only).\n\nPath Params:\n- id: UUID (required)\n\nRequires: JWT Token + Admin Role"
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Campaign",
+                    "item": [
+                        {
+                            "name": "Client - Campaign Creation",
+                            "item": [
+                                {
+                                    "name": "Step 1 - Create Campaign (Basic Info)",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"campaignName\": \"Summer Fashion Campaign 2025\",\n    \"campaignType\": \"influencer_promotion\"\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign"
+                                            ]
+                                        },
+                                        "description": "Create a new campaign (Step 1 - Basic Info).\n\nDTO: CreateCampaignStep1Dto\n- campaignName: string (required)\n- campaignType: enum (required) - 'paid_ad' | 'influencer_promotion'\n\nRequires: JWT Token + Client Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Step 2 - Update Targeting & Preferences",
+                                    "request": {
+                                        "method": "PATCH",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"productType\": \"Fashion & Apparel\",\n    \"campaignNiche\": \"Lifestyle & Fashion\",\n    \"preferredInfluencerIds\": [\"uuid-influencer-1\", \"uuid-influencer-2\"],\n    \"notPreferableInfluencerIds\": [\"uuid-influencer-3\"]\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/:id/step-2",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                ":id",
+                                                "step-2"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "id",
+                                                    "value": "campaign-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Update targeting and influencer preferences (Step 2).\n\nDTO: UpdateCampaignStep2Dto\n- productType: string (required)\n- campaignNiche: string (required)\n- preferredInfluencerIds: array of UUIDs (optional)\n- notPreferableInfluencerIds: array of UUIDs (optional)\n\nNote: Preferred and Not Preferable lists must NOT overlap.\n\nRequires: JWT Token + Client Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Step 3 - Update Campaign Details",
+                                    "request": {
+                                        "method": "PATCH",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"campaignGoals\": \"Increase brand awareness and drive sales for summer collection\",\n    \"productServiceDetails\": \"Summer fashion collection including dresses, tops, and accessories\",\n    \"reportingRequirements\": \"Weekly performance reports with engagement metrics\",\n    \"usageRights\": \"Brand can use content for 6 months on all platforms\",\n    \"startingDate\": \"2025-01-15\",\n    \"duration\": 30\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/:id/step-3",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                ":id",
+                                                "step-3"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "id",
+                                                    "value": "campaign-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Update campaign details (Step 3).\n\nDTO: UpdateCampaignStep3Dto\n- campaignGoals: string (required)\n- productServiceDetails: string (required)\n- reportingRequirements: string (optional)\n- usageRights: string (optional)\n- startingDate: Date (required, must be in future)\n- duration: number (required, min 1 day)\n\nRequires: JWT Token + Client Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Step 4 - Update Budget & Milestones",
+                                    "request": {
+                                        "method": "PATCH",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"baseBudget\": 50000,\n    \"milestones\": [\n        {\n            \"contentTitle\": \"Product Unboxing Video\",\n            \"platform\": \"youtube\",\n            \"contentQuantity\": \"1 Sponsored Video\",\n            \"deliveryDays\": 7,\n            \"expectedReach\": 100000,\n            \"expectedViews\": 50000,\n            \"expectedLikes\": 5000,\n            \"expectedComments\": 500\n        },\n        {\n            \"contentTitle\": \"Instagram Reel\",\n            \"platform\": \"instagram\",\n            \"contentQuantity\": \"2 Reels\",\n            \"deliveryDays\": 14,\n            \"expectedReach\": 200000,\n            \"expectedViews\": 100000,\n            \"expectedLikes\": 10000,\n            \"expectedComments\": 1000\n        },\n        {\n            \"contentTitle\": \"TikTok Video\",\n            \"platform\": \"tiktok\",\n            \"contentQuantity\": \"3 Videos\",\n            \"deliveryDays\": 21,\n            \"expectedReach\": 500000,\n            \"expectedViews\": 300000,\n            \"expectedLikes\": 25000,\n            \"expectedComments\": 2000\n        }\n    ]\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/:id/step-4",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                ":id",
+                                                "step-4"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "id",
+                                                    "value": "campaign-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Update budget and milestones (Step 4).\n\nDTO: UpdateCampaignStep4Dto\n- baseBudget: number (required, min 0)\n- milestones: array (required, min 1 item)\n  - contentTitle: string (required)\n  - platform: enum (required) - 'facebook' | 'youtube' | 'tiktok' | 'instagram'\n  - contentQuantity: string (required) - e.g., '1 Sponsored Video'\n  - deliveryDays: number (required, min 1)\n  - expectedReach: number (optional)\n  - expectedViews: number (optional)\n  - expectedLikes: number (optional)\n  - expectedComments: number (optional)\n  - order: number (optional)\n\nBudget Calculation (15% VAT):\n- VAT = baseBudget × 0.15\n- totalBudget = baseBudget + VAT\n- netPayableAmount = totalBudget\n\nRequires: JWT Token + Client Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Step 5 - Update Assets & Final Setup",
+                                    "request": {
+                                        "method": "PATCH",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"assets\": [\n        {\n            \"assetType\": \"brand_logo\",\n            \"fileName\": \"brand-logo.png\",\n            \"fileUrl\": \"https://s3.amazonaws.com/bucket/brand-logo.png\",\n            \"fileSize\": 102400,\n            \"mimeType\": \"image/png\",\n            \"description\": \"Official brand logo\"\n        },\n        {\n            \"assetType\": \"product_demo_video\",\n            \"fileName\": \"product-demo.mp4\",\n            \"fileUrl\": \"https://s3.amazonaws.com/bucket/product-demo.mp4\",\n            \"fileSize\": 52428800,\n            \"mimeType\": \"video/mp4\",\n            \"description\": \"Product demonstration video\"\n        },\n        {\n            \"assetType\": \"brand_guidelines\",\n            \"fileName\": \"brand-guidelines.pdf\",\n            \"fileUrl\": \"https://s3.amazonaws.com/bucket/brand-guidelines.pdf\",\n            \"fileSize\": 2097152,\n            \"mimeType\": \"application/pdf\",\n            \"description\": \"Brand guidelines document\"\n        }\n    ],\n    \"needSampleProduct\": true\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/:id/step-5",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                ":id",
+                                                "step-5"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "id",
+                                                    "value": "campaign-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Update content assets and final setup (Step 5).\n\nDTO: UpdateCampaignStep5Dto\n- assets: array (optional)\n  - assetType: enum (required) - 'brand_logo' | 'product_demo_video' | 'brand_guidelines' | 'image' | 'video' | 'pdf' | 'other'\n  - fileName: string (required)\n  - fileUrl: string (required, S3 URL)\n  - fileSize: number (optional, bytes)\n  - mimeType: string (optional)\n  - description: string (optional)\n- needSampleProduct: boolean (required)\n\nRequires: JWT Token + Client Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Place Campaign (Finalize)",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/:id/place",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                ":id",
+                                                "place"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "id",
+                                                    "value": "campaign-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Place/Submit the campaign for quote. Campaign must have all required fields filled.\n\nValidation Requirements:\n- Step 1: campaignName, campaignType\n- Step 2: productType, campaignNiche\n- Step 3: campaignGoals, productServiceDetails, startingDate, duration (min 1)\n- Step 4: baseBudget (> 0), at least 1 milestone\n\nOnce placed:\n- Campaign becomes visible to admin for quoting\n- Campaign is ready for negotiation\n\nRequires: JWT Token + Client Role"
+                                    },
+                                    "response": []
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Client - Campaign Management",
+                            "item": [
+                                {
+                                    "name": "Get My Campaigns",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/my-campaigns?page=1&limit=10&status=active&campaignType=influencer_promotion&search=summer",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "my-campaigns"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1"
+                                                },
+                                                {
+                                                    "key": "limit",
+                                                    "value": "10"
+                                                },
+                                                {
+                                                    "key": "status",
+                                                    "value": "active",
+                                                    "description": "Optional: needs_quote | active | pending_invitation | completed | paid | cancelled"
+                                                },
+                                                {
+                                                    "key": "campaignType",
+                                                    "value": "influencer_promotion",
+                                                    "description": "Optional: paid_ad | influencer_promotion"
+                                                },
+                                                {
+                                                    "key": "search",
+                                                    "value": "summer",
+                                                    "description": "Optional: Search by campaign name"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get all campaigns for the logged-in client.\n\nQuery Params (SearchCampaignDto):\n- page: number (default: 1)\n- limit: number (default: 10)\n- status: enum (optional) - 'needs_quote' | 'active' | 'pending_invitation' | 'completed' | 'paid' | 'cancelled'\n- campaignType: enum (optional) - 'paid_ad' | 'influencer_promotion'\n- search: string (optional) - Search by campaign name\n\nRequires: JWT Token + Client Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Get Single Campaign",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/:id",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                ":id"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "id",
+                                                    "value": "campaign-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get a single campaign by ID with all relations (milestones, assets, influencers).\n\nPath Params:\n- id: UUID (required)\n\nRequires: JWT Token + Client Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Delete Campaign (Needs Quote Only)",
+                                    "request": {
+                                        "method": "DELETE",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/:id",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                ":id"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "id",
+                                                    "value": "campaign-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Delete a campaign. Only campaigns in 'needs_quote' status can be deleted.\n\nPath Params:\n- id: UUID (required)\n\nRequires: JWT Token + Client Role + Campaign must be in 'needs_quote' status"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Delete Asset",
+                                    "request": {
+                                        "method": "DELETE",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/asset/:assetId",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "asset",
+                                                ":assetId"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "assetId",
+                                                    "value": "asset-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Delete a campaign asset. Cannot delete from active campaigns.\n\nPath Params:\n- assetId: UUID (required)\n\nRequires: JWT Token + Client Role + Campaign must be in 'needs_quote' status"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Get Budget Preview",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/budget/preview?baseBudget=50000",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "budget",
+                                                "preview"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "baseBudget",
+                                                    "value": "50000"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Preview budget calculation with 15% VAT.\n\nQuery Params:\n- baseBudget: number (required)\n\nResponse:\n- baseBudget: number\n- vatAmount: number (15%)\n- totalBudget: number\n- netPayableAmount: number\n\nRequires: JWT Token"
+                                    },
+                                    "response": []
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Client - Negotiation",
+                            "item": [
+                                {
+                                    "name": "Send Counter-Offer",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"action\": \"counter_offer\",\n    \"proposedBaseBudget\": 45000,\n    \"message\": \"I would like to propose a lower budget\"\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/negotiation/respond",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "negotiation",
+                                                "respond"
+                                            ]
+                                        },
+                                        "description": "Send a counter-offer with a different price.\n\nDTO: CreateNegotiationDto\n- campaignId: UUID (required)\n- action: enum (required) - 'counter_offer' | 'message'\n- proposedBaseBudget: number (optional)\n- message: string (optional)\n\nNote: Must be client's turn to respond.\n\nRequires: JWT Token + Client Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Accept Quote",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"message\": \"I accept the quoted price\"\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/negotiation/accept",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "negotiation",
+                                                "accept"
+                                            ]
+                                        },
+                                        "description": "Accept the quoted price. Campaign becomes active.\n\nDTO: AcceptNegotiationDto\n- campaignId: UUID (required)\n- message: string (optional)\n\nEffect:\n- The quoted price is applied to the campaign\n- Campaign status stays 'active'\n- Quote is finalized\n\nRequires: JWT Token + Client Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Reject / Cancel Campaign",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"reason\": \"Unable to meet the proposed budget\"\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/negotiation/reject",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "negotiation",
+                                                "reject"
+                                            ]
+                                        },
+                                        "description": "Cancel the campaign.\n\nDTO: RejectCampaignDto\n- campaignId: UUID (required)\n- reason: string (required)\n\nEffect:\n- Campaign status changes to 'cancelled'\n\nRequires: JWT Token + Client Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Get Negotiation History",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/:id/negotiations",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                ":id",
+                                                "negotiations"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "id",
+                                                    "value": "campaign-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get full negotiation history for a campaign.\n\nPath Params:\n- id: UUID (required) - Campaign ID\n\nResponse includes:\n- Campaign basic info (id, name, status, negotiationTurn)\n- All negotiation entries in chronological order\n\nRequires: JWT Token + Client Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Mark Negotiation as Read",
+                                    "request": {
+                                        "method": "PATCH",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/negotiation/:negotiationId/read",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "negotiation",
+                                                ":negotiationId",
+                                                "read"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "negotiationId",
+                                                    "value": "negotiation-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Mark a negotiation entry as read.\n\nPath Params:\n- negotiationId: UUID (required)\n\nRequires: JWT Token"
+                                    },
+                                    "response": []
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Admin - Campaign Management",
+                            "item": [
+                                {
+                                    "name": "Get All Campaigns",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/admin/all?page=1&limit=10&status=active&campaignType=influencer_promotion&clientId=client-uuid&startDateFrom=2025-01-01&startDateTo=2025-12-31&search=fashion",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "admin",
+                                                "all"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1"
+                                                },
+                                                {
+                                                    "key": "limit",
+                                                    "value": "10"
+                                                },
+                                                {
+                                                    "key": "status",
+                                                    "value": "active",
+                                                    "description": "Optional: needs_quote | active | pending_invitation | completed | paid | cancelled"
+                                                },
+                                                {
+                                                    "key": "campaignType",
+                                                    "value": "influencer_promotion",
+                                                    "description": "Optional: paid_ad | influencer_promotion"
+                                                },
+                                                {
+                                                    "key": "clientId",
+                                                    "value": "client-uuid",
+                                                    "description": "Optional: Filter by client"
+                                                },
+                                                {
+                                                    "key": "startDateFrom",
+                                                    "value": "2025-01-01",
+                                                    "description": "Optional: Filter by start date range"
+                                                },
+                                                {
+                                                    "key": "startDateTo",
+                                                    "value": "2025-12-31",
+                                                    "description": "Optional: Filter by start date range"
+                                                },
+                                                {
+                                                    "key": "search",
+                                                    "value": "fashion",
+                                                    "description": "Optional: Search by campaign name"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get all campaigns with filters (Admin only).\n\nQuery Params (SearchCampaignDto):\n- page: number (default: 1)\n- limit: number (default: 10)\n- status: enum (optional)\n- campaignType: enum (optional)\n- clientId: UUID (optional)\n- startDateFrom: Date (optional)\n- startDateTo: Date (optional)\n- search: string (optional)\n\nRequires: JWT Token + Admin Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Get Single Campaign",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/admin/:id",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "admin",
+                                                ":id"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "id",
+                                                    "value": "campaign-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get a single campaign by ID with all relations (Admin view).\n\nPath Params:\n- id: UUID (required)\n\nRequires: JWT Token + Admin Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Update Campaign Status",
+                                    "request": {
+                                        "method": "PATCH",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"status\": \"active\",\n    \"reason\": \"Campaign approved and ready to start\"\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/admin/:id/status",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "admin",
+                                                ":id",
+                                                "status"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "id",
+                                                    "value": "campaign-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Update campaign status (Admin only).\n\nDTO: UpdateCampaignStatusDto\n- status: enum (required) - 'needs_quote' | 'active' | 'pending_invitation' | 'completed' | 'paid' | 'cancelled'\n- reason: string (optional)\n\nRequires: JWT Token + Admin Role"
+                                    },
+                                    "response": []
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Admin - Negotiation",
+                            "item": [
+                                {
+                                    "name": "Send Quote",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"action\": \"request\",\n    \"proposedBaseBudget\": 60000,\n    \"message\": \"Based on your requirements, this is our quote for the campaign\"\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/admin/negotiation/request",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "admin",
+                                                "negotiation",
+                                                "request"
+                                            ]
+                                        },
+                                        "description": "Send a price quote to client (Admin only).\n\nDTO: CreateNegotiationDto\n- campaignId: UUID (required)\n- action: enum (required) - 'request' | 'counter_offer' | 'message'\n- proposedBaseBudget: number (required for quote)\n- message: string (optional)\n\nEffect:\n- Campaign status changes to 'active'\n- Turn switches to 'client'\n\nRequires: JWT Token + Admin Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Accept Campaign",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"message\": \"Campaign approved as submitted\"\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/admin/negotiation/accept",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "admin",
+                                                "negotiation",
+                                                "accept"
+                                            ]
+                                        },
+                                        "description": "Confirm and activate the campaign (Admin).\n\nDTO: AcceptNegotiationDto\n- campaignId: UUID (required)\n- message: string (optional)\n\nEffect:\n- Campaign status changes to 'active'\n- Quote is finalized\n\nRequires: JWT Token + Admin Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Reject Campaign",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"reason\": \"Campaign does not meet our quality standards\"\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/admin/negotiation/reject",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "admin",
+                                                "negotiation",
+                                                "reject"
+                                            ]
+                                        },
+                                        "description": "Cancel the campaign (Admin).\n\nDTO: RejectCampaignDto\n- campaignId: UUID (required)\n- reason: string (required)\n\nEffect:\n- Campaign status changes to 'cancelled'\n\nRequires: JWT Token + Admin Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Get Negotiation History",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/admin/:id/negotiations",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "admin",
+                                                ":id",
+                                                "negotiations"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "id",
+                                                    "value": "campaign-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get full negotiation history for a campaign (Admin view).\n\nPath Params:\n- id: UUID (required) - Campaign ID\n\nRequires: JWT Token + Admin Role"
+                                    },
+                                    "response": []
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Admin - Campaign Assignment",
+                            "item": [
+                                {
+                                    "name": "Assign Campaign to Influencers",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"assignments\": [\n        {\n            \"influencerId\": \"influencer-uuid-1\",\n            \"offeredAmount\": 25000,\n            \"offerMessage\": \"We would like you to promote our new product\",\n            \"offerTerms\": \"Content must be posted within 7 days of approval\",\n            \"assignedMilestones\": [\n                {\n                    \"contentTitle\": \"Product Review Video\",\n                    \"platform\": \"youtube\",\n                    \"contentQuantity\": \"1 Video\",\n                    \"deliveryDays\": 7,\n                    \"expectedReach\": 50000,\n                    \"expectedViews\": 25000\n                }\n            ],\n            \"offerExpiresAt\": \"2025-01-20\"\n        },\n        {\n            \"influencerId\": \"influencer-uuid-2\",\n            \"offeredAmount\": 15000,\n            \"assignedMilestones\": [\n                {\n                    \"contentTitle\": \"Instagram Reel\",\n                    \"platform\": \"instagram\",\n                    \"contentQuantity\": \"2 Reels\",\n                    \"deliveryDays\": 5\n                }\n            ]\n        }\n    ],\n    \"globalOfferMessage\": \"Join our exciting campaign!\"\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/admin/assign",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "admin",
+                                                "assign"
+                                            ]
+                                        },
+                                        "description": "Assign an active campaign to one or multiple influencers.\n\nDTO: AssignCampaignDto\n- campaignId: UUID (required)\n- assignments: array (required, min 1)\n  - influencerId: UUID (required)\n  - offeredAmount: number (required, min 0)\n  - offerMessage: string (optional)\n  - offerTerms: string (optional)\n  - assignedMilestones: array (optional)\n    - contentTitle: string (required)\n    - platform: enum (required) - 'facebook' | 'youtube' | 'tiktok' | 'instagram'\n    - contentQuantity: string (required)\n    - deliveryDays: number (required, min 1)\n    - expectedReach: number (optional)\n    - expectedViews: number (optional)\n    - expectedLikes: number (optional)\n    - expectedComments: number (optional)\n  - offerExpiresAt: Date (optional)\n- globalOfferMessage: string (optional) - Default message for all influencers\n\nRequires: JWT Token + Admin Role\nNote: Campaign must be in 'active' status"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Get Campaign Assignments",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/admin/:id/assignments",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "admin",
+                                                ":id",
+                                                "assignments"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "id",
+                                                    "value": "campaign-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get all influencer assignments for a specific campaign.\n\nPath Params:\n- id: UUID (required) - Campaign ID\n\nResponse includes:\n- Assignment ID\n- Influencer details (id, name, profileImage)\n- Offered amount & total\n- Status\n- Response timestamp\n\nRequires: JWT Token + Admin Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Get All Assignments",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/admin/assignments/all?page=1&limit=10&status=pending",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "admin",
+                                                "assignments",
+                                                "all"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1"
+                                                },
+                                                {
+                                                    "key": "limit",
+                                                    "value": "10"
+                                                },
+                                                {
+                                                    "key": "status",
+                                                    "value": "pending",
+                                                    "description": "Optional: pending | accepted | rejected | cancelled | in_progress | completed | expired"
+                                                },
+                                                {
+                                                    "key": "campaignId",
+                                                    "value": "",
+                                                    "disabled": true,
+                                                    "description": "Optional: Filter by campaign"
+                                                },
+                                                {
+                                                    "key": "influencerId",
+                                                    "value": "",
+                                                    "disabled": true,
+                                                    "description": "Optional: Filter by influencer"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get all assignments across all campaigns with filters.\n\nQuery Params (SearchAssignmentDto):\n- status: enum (optional) - 'pending' | 'accepted' | 'rejected' | 'cancelled' | 'in_progress' | 'completed' | 'expired'\n- campaignId: UUID (optional)\n- influencerId: UUID (optional)\n- page: number (optional, default: 1)\n- limit: number (optional, default: 10)\n\nRequires: JWT Token + Admin Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Update Assignment",
+                                    "request": {
+                                        "method": "PATCH",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"offeredAmount\": 30000,\n    \"offerMessage\": \"Updated offer with better terms\",\n    \"offerTerms\": \"Extended deadline to 14 days\",\n    \"offerExpiresAt\": \"2025-01-25\"\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/admin/assignment/:assignmentId",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "admin",
+                                                "assignment",
+                                                ":assignmentId"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "assignmentId",
+                                                    "value": "assignment-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Update a pending assignment offer.\n\nPath Params:\n- assignmentId: UUID (required)\n\nDTO: UpdateAssignmentDto\n- offeredAmount: number (optional, min 0)\n- offerMessage: string (optional)\n- offerTerms: string (optional)\n- assignedMilestones: array (optional)\n- offerExpiresAt: Date (optional)\n\nNote: Can only update assignments with 'pending' status\n\nRequires: JWT Token + Admin Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Cancel Assignment",
+                                    "request": {
+                                        "method": "DELETE",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/admin/assignment/:assignmentId",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "admin",
+                                                "assignment",
+                                                ":assignmentId"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "assignmentId",
+                                                    "value": "assignment-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Cancel an assignment (withdraw offer).\n\nPath Params:\n- assignmentId: UUID (required)\n\nNote: Can only cancel assignments with 'pending' or 'accepted' status\n\nRequires: JWT Token + Admin Role"
+                                    },
+                                    "response": []
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Influencer - Assignment",
+                            "item": [
+                                {
+                                    "name": "Get My Assignments",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/influencer/assignments?page=1&limit=10&status=pending",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "influencer",
+                                                "assignments"
+                                            ],
+                                            "query": [
+                                                {
+                                                    "key": "page",
+                                                    "value": "1"
+                                                },
+                                                {
+                                                    "key": "limit",
+                                                    "value": "10"
+                                                },
+                                                {
+                                                    "key": "status",
+                                                    "value": "pending",
+                                                    "description": "Optional: pending | accepted | rejected | in_progress | completed | expired"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get all campaign assignments/offers for the logged-in influencer.\n\nQuery Params (SearchAssignmentDto):\n- status: enum (optional) - 'pending' | 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'expired'\n- page: number (optional, default: 1)\n- limit: number (optional, default: 10)\n\nResponse includes:\n- Assignment ID\n- Campaign details (id, name)\n- Offered amount\n- Status\n- Expiry date\n\nRequires: JWT Token + Influencer Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Get Assignment Details",
+                                    "request": {
+                                        "method": "GET",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/influencer/assignment/:assignmentId",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "influencer",
+                                                "assignment",
+                                                ":assignmentId"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "assignmentId",
+                                                    "value": "assignment-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Get detailed information about a specific assignment offer.\n\nPath Params:\n- assignmentId: UUID (required)\n\nResponse includes:\n- Campaign details (name, goals, product info, dates)\n- Offer details (amount, message, terms)\n- Assigned milestones\n- Status & expiry\n\nRequires: JWT Token + Influencer Role"
+                                    },
+                                    "response": []
+                                },
+                                {
+                                    "name": "Respond to Assignment",
+                                    "request": {
+                                        "method": "POST",
+                                        "header": [
+                                            {
+                                                "key": "Authorization",
+                                                "value": "Bearer {{accessToken}}",
+                                                "type": "text"
+                                            }
+                                        ],
+                                        "body": {
+                                            "mode": "raw",
+                                            "raw": "{\n    \"response\": \"accepted\",\n    \"responseMessage\": \"I'm excited to work on this campaign!\"\n}",
+                                            "options": {
+                                                "raw": {
+                                                    "language": "json"
+                                                }
+                                            }
+                                        },
+                                        "url": {
+                                            "raw": "{{baseUrl}}/campaign/influencer/assignment/:assignmentId/respond",
+                                            "host": [
+                                                "{{baseUrl}}"
+                                            ],
+                                            "path": [
+                                                "campaign",
+                                                "influencer",
+                                                "assignment",
+                                                ":assignmentId",
+                                                "respond"
+                                            ],
+                                            "variable": [
+                                                {
+                                                    "key": "assignmentId",
+                                                    "value": "assignment-uuid-here"
+                                                }
+                                            ]
+                                        },
+                                        "description": "Accept or reject a campaign assignment offer.\n\nPath Params:\n- assignmentId: UUID (required)\n\nDTO: RespondAssignmentDto\n- response: enum (required) - 'accepted' | 'rejected'\n- responseMessage: string (optional)\n- rejectionReason: string (optional, recommended if rejecting)\n\nEffects:\n- If accepted: Status changes to 'in_progress', work can begin\n- If rejected: Status changes to 'rejected'\n\nNote: Can only respond to 'pending' assignments that haven't expired\n\nRequires: JWT Token + Influencer Role"
+                                    },
+                                    "response": []
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Lead Manager",
+            "item": [
+                {
+                    "name": "Auth",
+                    "item": [
+                        {
+                            "name": "Login",
+                            "request": {
+                                "method": "POST",
+                                "header": [],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"username\": \"admin\",\n    \"password\": \"password\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/auth/login",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "auth",
+                                        "login"
+                                    ]
+                                },
+                                "description": "Login for Lead Manager.\n\nDTO: LoginDto"
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "B2B",
+                    "item": [
+                        {
+                            "name": "Create B2B",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Tech Corp\",\n    \"businessType\": \"IT\",\n    \"primaryIndustry\": \"Software\",\n    \"niche\": \"Web Dev\",\n    \"status\": \"Active\",\n    \"city\": \"Dhaka\",\n    \"state\": \"Dhaka\",\n    \"country\": \"Bangladesh\",\n    \"serviceOverview\": [\n        {\n            \"serviceName\": \"Web Dev\",\n            \"category\": \"IT\",\n            \"pricingModel\": \"Fixed\",\n            \"rate\": \"1000\",\n            \"currency\": \"USD\",\n            \"serviceAvailability\": \"Global\",\n            \"onlineService\": \"Yes\"\n        }\n    ]\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2b/create",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2b",
+                                        "create"
+                                    ]
+                                },
+                                "description": "Create a new B2B lead.\n\nDTO: CreateB2BDto"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Bulk Create B2B",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"records\": [\n        { ...CreateB2BDto... },\n        { ...CreateB2BDto... }\n    ]\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2b/bulk-create",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2b",
+                                        "bulk-create"
+                                    ]
+                                },
+                                "description": "Bulk create B2B leads."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Find All B2B",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2b?page=1&limit=10",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2b"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "10"
+                                        }
+                                    ]
+                                },
+                                "description": "Get all B2B leads with pagination."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Search B2B",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2b/search?businessType=IT&page=1&limit=10",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2b",
+                                        "search"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "businessType",
+                                            "value": "IT"
+                                        },
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "10"
+                                        }
+                                    ]
+                                },
+                                "description": "Search B2B leads.\n\nDTO: SearchB2BDto"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Export B2B",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2b/export?businessType=IT",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2b",
+                                        "export"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "businessType",
+                                            "value": "IT"
+                                        }
+                                    ]
+                                },
+                                "description": "Export B2B leads to Excel."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Find One B2B",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2b/:id",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2b",
+                                        ":id"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "123"
+                                        }
+                                    ]
+                                },
+                                "description": "Get a single B2B lead by ID."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update B2B",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Updated Name\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2b/:id",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2b",
+                                        ":id"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "123"
+                                        }
+                                    ]
+                                },
+                                "description": "Update a B2B lead.\n\nDTO: UpdateB2BDto"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete B2B",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2b/:id",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2b",
+                                        ":id"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "123"
+                                        }
+                                    ]
+                                },
+                                "description": "Delete a B2B lead."
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "B2C",
+                    "item": [
+                        {
+                            "name": "Create B2C",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"fullName\": \"Jane Doe\",\n    \"nationality\": \"Bangladeshi\",\n    \"gender\": \"Female\",\n    \"country\": \"Bangladesh\",\n    \"primaryIndustry\": \"IT\",\n    \"industrySubsector\": \"Software\",\n    \"primarySkills\": \"Coding\",\n    \"totalExperience\": \"5 years\",\n    \"highestDegree\": \"BSc\",\n    \"maritalStatus\": \"Single\",\n    \"householdIncome\": \"50000\",\n    \"interests\": [\"Reading\"]\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2c/create",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2c",
+                                        "create"
+                                    ]
+                                },
+                                "description": "Create a new B2C lead.\n\nDTO: CreateB2CDto"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Bulk Create B2C",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"records\": [\n        { ...CreateB2CDto... },\n        { ...CreateB2CDto... }\n    ]\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2c/bulk-create",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2c",
+                                        "bulk-create"
+                                    ]
+                                },
+                                "description": "Bulk create B2C leads."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Find All B2C",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2c?page=1&limit=10",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2c"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "10"
+                                        }
+                                    ]
+                                },
+                                "description": "Get all B2C leads with pagination."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Search B2C",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2c/search?name=Jane&page=1&limit=10",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2c",
+                                        "search"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "name",
+                                            "value": "Jane"
+                                        },
+                                        {
+                                            "key": "page",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "limit",
+                                            "value": "10"
+                                        }
+                                    ]
+                                },
+                                "description": "Search B2C leads.\n\nDTO: SearchB2CDto"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Export B2C",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2c/export?name=Jane",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2c",
+                                        "export"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "name",
+                                            "value": "Jane"
+                                        }
+                                    ]
+                                },
+                                "description": "Export B2C leads to Excel."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Find One B2C",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2c/:id",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2c",
+                                        ":id"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "123"
+                                        }
+                                    ]
+                                },
+                                "description": "Get a single B2C lead by ID."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update B2C",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"fullName\": \"Updated Name\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2c/:id",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2c",
+                                        ":id"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "123"
+                                        }
+                                    ]
+                                },
+                                "description": "Update a B2C lead.\n\nDTO: UpdateB2CDto"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete B2C",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{accessToken}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/b2c/:id",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "b2c",
+                                        ":id"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "123"
+                                        }
+                                    ]
+                                },
+                                "description": "Delete a B2C lead."
+                            },
+                            "response": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Uploader",
+            "item": [
+                {
+                    "name": "Get Signed URL",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{accessToken}}",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"fileName\": \"avatar.jpg\",\n    \"fileType\": \"image/jpeg\",\n    \"module\": \"influencer\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/upload/signed-url",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "upload",
+                                "signed-url"
+                            ]
+                        },
+                        "description": "Get a pre-signed URL for uploading files to S3.\n\nDTO: GetUploadUrlDto"
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000",
+            "type": "string"
+        },
+        {
+            "key": "accessToken",
+            "value": "",
+            "type": "string"
+        }
+    ]
+}

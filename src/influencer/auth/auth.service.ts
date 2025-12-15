@@ -14,7 +14,7 @@ import { UserEntity, UserRole } from '../user/entities/user.entity';
 import { InfluencerProfileEntity } from '../influencer/entities/influencer-profile.entity';
 import { SmsService } from 'src/common/services/sms.service';
 import { InfluencerService } from '../influencer/influencer.service';
-import { SignupDto, VerifyOtpDto } from './dto/auth.dto';
+import { SignupDto, VerifyOtpDto, ResendOtpDto } from './dto/auth.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
 
@@ -259,6 +259,55 @@ export class AuthService {
     await this.userRepo.save(user);
 
     return { message: 'Password reset successful. Please login.' };
+  }
+
+  // --- 6. RESEND OTP ---
+  async resendOtp(dto: ResendOtpDto): Promise<{ message: string }> {
+    const user = await this.userRepo.findOne({
+      where: { phone: dto.phone },
+      select: ['id', 'phone', 'isPhoneVerified', 'otpExpires'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found with this phone number');
+    }
+
+    if (user.isPhoneVerified) {
+      throw new BadRequestException('Phone number is already verified');
+    }
+
+    // Check if the last OTP was sent within 1 minute (rate limiting)
+    if (user.otpExpires) {
+      const lastOtpSentAt = new Date(
+        user.otpExpires.getTime() - 5 * 60 * 1000,
+      ); // OTP expires in 5 mins, so sent time = expiry - 5 mins
+      const timeSinceLastOtp = Date.now() - lastOtpSentAt.getTime();
+      const oneMinute = 60 * 1000;
+
+      if (timeSinceLastOtp < oneMinute) {
+        const remainingSeconds = Math.ceil(
+          (oneMinute - timeSinceLastOtp) / 1000,
+        );
+        throw new BadRequestException(
+          `Please wait ${remainingSeconds} seconds before requesting a new OTP`,
+        );
+      }
+    }
+
+    // Generate new OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+
+    // Hash and save new OTP
+    user.otpCode = await bcrypt.hash(otp, 10);
+    user.otpExpires = otpExpires;
+
+    await this.userRepo.save(user);
+
+    // Send OTP via SMS
+    await this.smsService.sendOtp(dto.phone, otp);
+
+    return { message: 'New OTP has been sent to your phone number' };
   }
 
   private async generateToken(user: UserEntity) {

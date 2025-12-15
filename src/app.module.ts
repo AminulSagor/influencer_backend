@@ -9,6 +9,8 @@ import { InfluencerModule } from './influencer/influencer/influencer.module';
 import { AuthInfluecerModule } from './influencer/auth/auth.module';
 import { AdminModule } from './influencer/admin/admin.module';
 import { CommonModule } from './common/common.module';
+import { ClientModule } from './influencer/client/client.module';
+import { CampaignModule } from './influencer/campaign/campaign.module';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { CommonModule } from './common/common.module';
     AuthInfluecerModule,
     CommonModule,
     AdminModule,
+    ClientModule,
+    CampaignModule,
   ],
 })
 export class AppModule {}
