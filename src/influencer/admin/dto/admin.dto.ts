@@ -4,7 +4,14 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsNumber,
+  IsDateString,
+  Min,
+  Max,
+  IsUUID,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { CampaignStatus } from 'src/influencer/campaign/entities/campaign.entity';
 
 // --- Auth DTO ---
 export class AdminLoginDto {
@@ -103,4 +110,79 @@ export class UpdateClientSocialStatusDto {
   @IsNotEmpty()
   @IsEnum(ApprovalStatus)
   status: ApprovalStatus;
+}
+
+// --- Campaign Management DTOs ---
+export class GetCampaignsQueryDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1, { message: 'Page must be at least 1' })
+  page?: number = 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1, { message: 'Limit must be at least 1' })
+  @Max(100, { message: 'Limit cannot exceed 100' })
+  limit?: number = 10;
+
+  @IsOptional()
+  @IsEnum(CampaignStatus)
+  status?: CampaignStatus;
+
+  @IsOptional()
+  @IsUUID('4', { message: 'Invalid client ID format' })
+  clientId?: string;
+
+  @IsOptional()
+  @IsString()
+  search?: string; // Search by campaign name
+
+  @IsOptional()
+  @IsDateString({}, { message: 'Invalid date format. Use YYYY-MM-DD' })
+  startDateFrom?: string;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'Invalid date format. Use YYYY-MM-DD' })
+  startDateTo?: string;
+}
+
+// Response interface for campaign list
+export interface AdminCampaignListItem {
+  id: string;
+  // Campaign Info
+  campaignName: string;
+  campaignType: string;
+  campaignNiche: string;
+  // Client Info
+  client: {
+    id: string;
+    brandName: string;
+    fullName: string;
+  };
+  // Timeline
+  timeline: {
+    startingDate: Date | null;
+    endDate: Date | null; // Calculated from startingDate + duration
+    duration: number | null; // in days
+  };
+  // Financials
+  financials: {
+    clientBudget: number | null; // baseBudget from client
+    finalQuoteAmount: number | null; // totalBudget after negotiation
+  };
+  // Assigned Personals
+  assignedPersonals: {
+    count: number;
+    influencers: {
+      id: string;
+      name: string;
+      status: string;
+    }[];
+  };
+  // Status
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
 }

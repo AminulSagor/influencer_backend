@@ -8,6 +8,8 @@ import { AdminService } from './admin.service';
 import { InfluencerProfileEntity } from '../influencer/entities/influencer-profile.entity';
 import { UserEntity } from '../user/entities/user.entity';
 import { ClientProfileEntity } from '../client/entities/client-profile.entity';
+import { CampaignEntity } from '../campaign/entities/campaign.entity';
+import { CampaignAssignmentEntity } from '../campaign/entities/campaign-assignment.entity';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { ClientProfileEntity } from '../client/entities/client-profile.entity';
       UserEntity,
       InfluencerProfileEntity,
       ClientProfileEntity,
+      CampaignEntity,
+      CampaignAssignmentEntity,
     ]), // Register Repos
     PassportModule,
     // JwtModule.registerAsync({

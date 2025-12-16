@@ -26,7 +26,8 @@ import {
   SearchCampaignDto,
 } from './dto/update-campaign.dto';
 import {
-  CreateNegotiationDto,
+  SendQuoteDto,
+  CounterOfferDto,
   AcceptNegotiationDto,
   RejectCampaignDto,
 } from './dto/campaign-negotiation.dto';
@@ -49,7 +50,7 @@ export class CampaignController {
   // ============================================
 
   // --- Step 1: Create Campaign (Basic Info) ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Post()
   createCampaign(@Request() req, @Body() dto: CreateCampaignStep1Dto) {
@@ -57,7 +58,7 @@ export class CampaignController {
   }
 
   // --- Step 2: Update Targeting & Preferences ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Patch(':id/step-2')
   updateStep2(
@@ -69,7 +70,7 @@ export class CampaignController {
   }
 
   // --- Step 3: Update Campaign Details ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Patch(':id/step-3')
   updateStep3(
@@ -81,7 +82,7 @@ export class CampaignController {
   }
 
   // --- Step 4: Update Budget & Milestones ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Patch(':id/step-4')
   updateStep4(
@@ -93,7 +94,7 @@ export class CampaignController {
   }
 
   // --- Step 5: Update Assets & Final Setup ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Patch(':id/step-5')
   updateStep5(
@@ -105,7 +106,7 @@ export class CampaignController {
   }
 
   // --- Place Campaign (Finalize) ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Post(':id/place')
   placeCampaign(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
@@ -113,7 +114,7 @@ export class CampaignController {
   }
 
   // --- Get My Campaigns (Client) ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Get('my-campaigns')
   getClientCampaigns(@Request() req, @Query() query: SearchCampaignDto) {
@@ -121,7 +122,7 @@ export class CampaignController {
   }
 
   // --- Get Single Campaign (Client) ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Get(':id')
   getCampaign(@Param('id', ParseUUIDPipe) id: string) {
@@ -129,7 +130,7 @@ export class CampaignController {
   }
 
   // --- Delete Campaign (Draft only) ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Delete(':id')
   deleteCampaign(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
@@ -137,7 +138,7 @@ export class CampaignController {
   }
 
   // --- Delete Asset ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Delete('asset/:assetId')
   deleteAsset(@Param('assetId', ParseUUIDPipe) assetId: string, @Request() req) {
@@ -145,7 +146,7 @@ export class CampaignController {
   }
 
   // --- Budget Preview ---
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt-brandguru'))
   @Get('budget/preview')
   getBudgetPreview(@Query('baseBudget') baseBudget: number) {
     return this.campaignService.getBudgetPreview(Number(baseBudget));
@@ -155,24 +156,24 @@ export class CampaignController {
   // NEGOTIATION ROUTES (Client)
   // ============================================
 
-  // --- Client: Send Negotiation/Counter-offer ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  // --- Client: Send Counter-offer ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
-  @Post('negotiation/respond')
-  clientNegotiation(@Request() req, @Body() dto: CreateNegotiationDto) {
-    return this.campaignService.createNegotiation(req.user.sub, 'client', dto);
+  @Post('negotiation/counter-offer')
+  clientCounterOffer(@Request() req, @Body() dto: CounterOfferDto) {
+    return this.campaignService.sendCounterOffer(req.user.sub, dto);
   }
 
-  // --- Client: Accept Terms ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  // --- Client: Accept Quote ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Post('negotiation/accept')
   clientAccept(@Request() req, @Body() dto: AcceptNegotiationDto) {
-    return this.campaignService.acceptNegotiation(req.user.sub, 'client', dto);
+    return this.campaignService.acceptQuote(req.user.sub, 'client', dto);
   }
 
   // --- Client: Reject/Cancel ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Post('negotiation/reject')
   clientReject(@Request() req, @Body() dto: RejectCampaignDto) {
@@ -180,7 +181,7 @@ export class CampaignController {
   }
 
   // --- Get Negotiation History ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Get(':id/negotiations')
   clientGetNegotiations(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
@@ -192,7 +193,7 @@ export class CampaignController {
   // ============================================
 
   // --- Admin: Get All Campaigns ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get('admin/all')
   adminGetAllCampaigns(@Query() query: SearchCampaignDto) {
@@ -200,7 +201,7 @@ export class CampaignController {
   }
 
   // --- Admin: Get Single Campaign ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get('admin/:id')
   adminGetCampaign(@Param('id', ParseUUIDPipe) id: string) {
@@ -208,7 +209,7 @@ export class CampaignController {
   }
 
   // --- Admin: Update Campaign Status ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.ADMIN)
   @Patch('admin/:id/status')
   adminUpdateStatus(
@@ -218,24 +219,24 @@ export class CampaignController {
     return this.campaignService.updateCampaignStatus(id, dto);
   }
 
-  // --- Admin: Send Negotiation/Request ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  // --- Admin: Send Quote ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.ADMIN)
-  @Post('admin/negotiation/request')
-  adminNegotiation(@Request() req, @Body() dto: CreateNegotiationDto) {
-    return this.campaignService.createNegotiation(req.user.sub, 'admin', dto);
+  @Post('admin/negotiation/send-quote')
+  adminSendQuote(@Request() req, @Body() dto: SendQuoteDto) {
+    return this.campaignService.sendQuote(req.user.sub, dto);
   }
 
-  // --- Admin: Accept Campaign ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  // --- Admin: Accept Client's Counter-offer ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.ADMIN)
   @Post('admin/negotiation/accept')
   adminAccept(@Request() req, @Body() dto: AcceptNegotiationDto) {
-    return this.campaignService.acceptNegotiation(req.user.sub, 'admin', dto);
+    return this.campaignService.acceptQuote(req.user.sub, 'admin', dto);
   }
 
   // --- Admin: Reject Campaign ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.ADMIN)
   @Post('admin/negotiation/reject')
   adminReject(@Request() req, @Body() dto: RejectCampaignDto) {
@@ -243,7 +244,7 @@ export class CampaignController {
   }
 
   // --- Admin: Get Negotiation History ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get('admin/:id/negotiations')
   adminGetNegotiations(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
@@ -251,7 +252,7 @@ export class CampaignController {
   }
 
   // --- Mark Negotiation as Read ---
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt-brandguru'))
   @Patch('negotiation/:negotiationId/read')
   markAsRead(@Param('negotiationId', ParseUUIDPipe) negotiationId: string) {
     return this.campaignService.markNegotiationRead(negotiationId);
@@ -262,7 +263,7 @@ export class CampaignController {
   // ============================================
 
   // --- Admin: Assign Campaign to Influencers ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.ADMIN)
   @Post('admin/assign')
   assignCampaign(@Request() req, @Body() dto: AssignCampaignDto) {
@@ -270,7 +271,7 @@ export class CampaignController {
   }
 
   // --- Admin: Get Campaign Assignments ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get('admin/:id/assignments')
   getCampaignAssignments(@Param('id', ParseUUIDPipe) id: string) {
@@ -278,7 +279,7 @@ export class CampaignController {
   }
 
   // --- Admin: Get All Assignments ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get('admin/assignments/all')
   getAllAssignments(@Query() query: SearchAssignmentDto) {
@@ -286,7 +287,7 @@ export class CampaignController {
   }
 
   // --- Admin: Update Assignment ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.ADMIN)
   @Patch('admin/assignment/:assignmentId')
   updateAssignment(
@@ -297,7 +298,7 @@ export class CampaignController {
   }
 
   // --- Admin: Cancel Assignment ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.ADMIN)
   @Delete('admin/assignment/:assignmentId')
   cancelAssignment(@Param('assignmentId', ParseUUIDPipe) assignmentId: string) {
@@ -309,7 +310,7 @@ export class CampaignController {
   // ============================================
 
   // --- Influencer: Get My Assignments ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.INFLUENCER)
   @Get('influencer/assignments')
   getInfluencerAssignments(@Request() req, @Query() query: SearchAssignmentDto) {
@@ -317,7 +318,7 @@ export class CampaignController {
   }
 
   // --- Influencer: Get Assignment Details ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.INFLUENCER)
   @Get('influencer/assignment/:assignmentId')
   getAssignmentDetails(
@@ -328,7 +329,7 @@ export class CampaignController {
   }
 
   // --- Influencer: Respond to Assignment (Accept/Reject) ---
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.INFLUENCER)
   @Post('influencer/assignment/:assignmentId/respond')
   respondToAssignment(

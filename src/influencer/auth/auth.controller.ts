@@ -1,6 +1,6 @@
 import { Body, Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SignupDto, VerifyOtpDto, ResendOtpDto } from './dto/auth.dto';
+import { SignupDto, VerifyOtpDto, ResendOtpDto, CreateAdminDto } from './dto/auth.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
 
@@ -41,5 +41,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
+  }
+
+  @Post('create-admin')
+  @HttpCode(HttpStatus.CREATED)
+  async createAdmin(@Body() dto: CreateAdminDto) {
+    return this.authService.createAdmin(dto);
   }
 }

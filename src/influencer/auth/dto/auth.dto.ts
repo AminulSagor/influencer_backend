@@ -51,3 +51,27 @@ export class ResendOtpDto {
   })
   phone: string;
 }
+
+// --- Create Admin DTO ---
+export class CreateAdminDto {
+  @IsNotEmpty()
+  @IsString()
+  firstName: string;
+
+  @IsNotEmpty()
+  @IsString()
+  lastName: string;
+
+  @IsNotEmpty()
+  @Matches(/^\+?[0-9]{11,14}$/, {
+    message: 'Enter a valid BD phone number e.g. +8801XXXXXXXXX',
+  })
+  phone: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsNotEmpty()
+  @MinLength(8, { message: 'Password must be at least 8 characters' })
+  password: string;
+}

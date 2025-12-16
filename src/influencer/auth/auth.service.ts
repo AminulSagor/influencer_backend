@@ -14,7 +14,7 @@ import { UserEntity, UserRole } from '../user/entities/user.entity';
 import { InfluencerProfileEntity } from '../influencer/entities/influencer-profile.entity';
 import { SmsService } from 'src/common/services/sms.service';
 import { InfluencerService } from '../influencer/influencer.service';
-import { SignupDto, VerifyOtpDto, ResendOtpDto } from './dto/auth.dto';
+import { SignupDto, VerifyOtpDto, ResendOtpDto, CreateAdminDto } from './dto/auth.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
 
@@ -343,6 +343,60 @@ export class AuthService {
     return {
       accessToken: await this.jwtService.signAsync(payload),
       message: 'Successful',
+    };
+  }
+
+  // --- 7. CREATE ADMIN (If not exists) ---
+  async createAdmin(dto: CreateAdminDto) {
+    // Normalize input
+    const email = dto.email.toLowerCase().trim();
+    const phone = dto.phone.trim();
+
+    // Check for existing user with optimized query
+    const existingUser = await this.userRepo
+      .createQueryBuilder('user')
+      .select(['user.id', 'user.role'])
+      .where('user.email = :email OR user.phone = :phone', { email, phone })
+      .getOne();
+
+    if (existingUser) {
+      const message = existingUser.role === UserRole.ADMIN
+        ? 'Admin user already exists with this email or phone'
+        : 'A user already exists with this email or phone';
+      throw new ConflictException(message);
+    }
+
+    // Hash password with cost factor 10
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    // Create admin using query builder for atomic operation
+    const result = await this.userRepo
+      .createQueryBuilder()
+      .insert()
+      .into(UserEntity)
+      .values({
+        email,
+        phone,
+        password: hashedPassword,
+        role: UserRole.ADMIN,
+        isVerified: true,
+        isPhoneVerified: true,
+        isEmailVerified: true,
+      })
+      .returning(['id', 'email', 'phone', 'role', 'createdAt'])
+      .execute();
+
+    const savedAdmin = result.generatedMaps[0];
+
+    return {
+      message: 'Admin user created successfully',
+      admin: {
+        id: savedAdmin.id,
+        email: savedAdmin.email,
+        phone: savedAdmin.phone,
+        role: savedAdmin.role,
+        createdAt: savedAdmin.createdAt,
+      },
     };
   }
 }
