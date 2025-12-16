@@ -183,7 +183,7 @@ export class B2cService {
       'b2c.interests', // mapped as hobbies
       'b2c.company', // mapped as organizations
       'b2c.maritalStatus',
-      'b2c.householdIncome',
+      'b2c.totalIncome',
       'b2c.salary',
     ]);
 
@@ -255,13 +255,13 @@ export class B2cService {
     }
 
     if (filters.totalIncome) {
-      qb.andWhere('b2c.householdIncome ILIKE :income', {
+      qb.andWhere("b2c.totalIncome ->> 'totalAmount' ILIKE :income", {
         income: `%${filters.totalIncome}%`,
       });
     }
 
     if (filters.salary) {
-      qb.andWhere('b2c.salary ILIKE :salary', {
+      qb.andWhere("b2c.salary ->> 'salaryAmount' ILIKE :salary", {
         salary: `%${filters.salary}%`,
       });
     }
@@ -286,7 +286,7 @@ export class B2cService {
         interests: item.interests || [], // Ensure interests is always an array
         company: item.company || '', // Ensure organizations is always included
         maritalStatus: item.maritalStatus,
-        income: item.householdIncome,
+        income: item.totalIncome,
         salary: item.salary,
       })),
       meta: {
