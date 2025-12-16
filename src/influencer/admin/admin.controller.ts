@@ -17,6 +17,7 @@ import {
   UpdateClientNidStatusDto,
   UpdateClientTradeLicenseStatusDto,
   UpdateClientSocialStatusDto,
+  GetCampaignsQueryDto,
 } from './dto/admin.dto';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { AuthGuard } from '@nestjs/passport';
@@ -191,5 +192,34 @@ export class AdminController {
     @Body() dto: UpdateClientSocialStatusDto,
   ) {
     return this.adminService.updateClientSocialStatus(userId, dto);
+  }
+
+  // =============================================
+  // CAMPAIGN MANAGEMENT
+  // =============================================
+
+  /**
+   * Get all campaigns with filters and pagination
+   * Query params: page, limit, status, clientId, search, startDateFrom, startDateTo
+   */
+  @Get('campaigns')
+  async getAllCampaigns(@Query() query: GetCampaignsQueryDto) {
+    return this.adminService.getAllCampaigns(query);
+  }
+
+  /**
+   * Get campaign statistics for dashboard
+   */
+  @Get('campaigns/stats')
+  async getCampaignStats() {
+    return this.adminService.getCampaignStats();
+  }
+
+  /**
+   * Get single campaign details by ID
+   */
+  @Get('campaigns/:campaignId')
+  async getCampaignById(@Param('campaignId') campaignId: string) {
+    return this.adminService.getCampaignById(campaignId);
   }
 }

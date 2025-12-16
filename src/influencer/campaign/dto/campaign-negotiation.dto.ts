@@ -1,33 +1,34 @@
 import {
   IsString,
-  IsEnum,
   IsOptional,
   IsUUID,
   IsNumber,
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { NegotiationAction } from '../entities/campaign-negotiation.entity';
 
 // ============================================
-// Create Negotiation Entry DTO (Admin sends quote)
+// Admin: Send Quote DTO
 // ============================================
-export class CreateNegotiationDto {
+export class SendQuoteDto {
   @IsUUID()
   campaignId: string;
 
-  @IsEnum(NegotiationAction)
-  action: NegotiationAction;
-
-  @IsString()
-  @IsOptional()
-  message?: string;
-
-  // The quoted price for the campaign
   @IsNumber()
   @Min(0)
-  @IsOptional()
-  proposedBaseBudget?: number;
+  proposedBaseBudget: number;
+}
+
+// ============================================
+// Client: Counter Offer DTO
+// ============================================
+export class CounterOfferDto {
+  @IsUUID()
+  campaignId: string;
+
+  @IsNumber()
+  @Min(0)
+  proposedBaseBudget: number;
 }
 
 // ============================================
@@ -36,10 +37,6 @@ export class CreateNegotiationDto {
 export class AcceptNegotiationDto {
   @IsUUID()
   campaignId: string;
-
-  @IsString()
-  @IsOptional()
-  message?: string;
 }
 
 // ============================================

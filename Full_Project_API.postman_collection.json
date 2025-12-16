@@ -1876,7 +1876,7 @@
                                         ],
                                         "body": {
                                             "mode": "raw",
-                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"action\": \"counter_offer\",\n    \"proposedBaseBudget\": 45000,\n    \"message\": \"I would like to propose a lower budget\"\n}",
+                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"proposedBaseBudget\": 45000\n}",
                                             "options": {
                                                 "raw": {
                                                     "language": "json"
@@ -1884,17 +1884,17 @@
                                             }
                                         },
                                         "url": {
-                                            "raw": "{{baseUrl}}/campaign/negotiation/respond",
+                                            "raw": "{{baseUrl}}/campaign/negotiation/counter-offer",
                                             "host": [
                                                 "{{baseUrl}}"
                                             ],
                                             "path": [
                                                 "campaign",
                                                 "negotiation",
-                                                "respond"
+                                                "counter-offer"
                                             ]
                                         },
-                                        "description": "Send a counter-offer with a different price.\n\nDTO: CreateNegotiationDto\n- campaignId: UUID (required)\n- action: enum (required) - 'counter_offer' | 'message'\n- proposedBaseBudget: number (optional)\n- message: string (optional)\n\nNote: Must be client's turn to respond.\n\nRequires: JWT Token + Client Role"
+                                        "description": "Send a counter-offer with a different price.\n\nDTO: CounterOfferDto\n- campaignId: UUID (required)\n- proposedBaseBudget: number (required)\n\nNote: Must be client's turn to respond.\n\nRequires: JWT Token + Client Role"
                                     },
                                     "response": []
                                 },
@@ -1911,7 +1911,7 @@
                                         ],
                                         "body": {
                                             "mode": "raw",
-                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"message\": \"I accept the quoted price\"\n}",
+                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\"\n}",
                                             "options": {
                                                 "raw": {
                                                     "language": "json"
@@ -1929,12 +1929,12 @@
                                                 "accept"
                                             ]
                                         },
-                                        "description": "Accept the quoted price. Campaign becomes active.\n\nDTO: AcceptNegotiationDto\n- campaignId: UUID (required)\n- message: string (optional)\n\nEffect:\n- The quoted price is applied to the campaign\n- Campaign status stays 'active'\n- Quote is finalized\n\nRequires: JWT Token + Client Role"
+                                        "description": "Accept the quoted price.\n\nDTO: AcceptNegotiationDto\n- campaignId: UUID (required)\n\nEffect:\n- The quoted price is applied to the campaign\n- Quote is finalized\n\nRequires: JWT Token + Client Role"
                                     },
                                     "response": []
                                 },
                                 {
-                                    "name": "Reject / Cancel Campaign",
+                                    "name": "Reject Campaign",
                                     "request": {
                                         "method": "POST",
                                         "header": [
@@ -1946,7 +1946,7 @@
                                         ],
                                         "body": {
                                             "mode": "raw",
-                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"reason\": \"Unable to meet the proposed budget\"\n}",
+                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"reason\": \"Budget too high\"\n}",
                                             "options": {
                                                 "raw": {
                                                     "language": "json"
@@ -1964,7 +1964,7 @@
                                                 "reject"
                                             ]
                                         },
-                                        "description": "Cancel the campaign.\n\nDTO: RejectCampaignDto\n- campaignId: UUID (required)\n- reason: string (required)\n\nEffect:\n- Campaign status changes to 'cancelled'\n\nRequires: JWT Token + Client Role"
+                                        "description": "Reject/Cancel the campaign.\n\nDTO: RejectCampaignDto\n- campaignId: UUID (required)\n- reason: string (required)\n\nEffect:\n- Campaign status changes to 'cancelled'\n\nRequires: JWT Token + Client Role"
                                     },
                                     "response": []
                                 },
@@ -1996,40 +1996,7 @@
                                                 }
                                             ]
                                         },
-                                        "description": "Get full negotiation history for a campaign.\n\nPath Params:\n- id: UUID (required) - Campaign ID\n\nResponse includes:\n- Campaign basic info (id, name, status, negotiationTurn)\n- All negotiation entries in chronological order\n\nRequires: JWT Token + Client Role"
-                                    },
-                                    "response": []
-                                },
-                                {
-                                    "name": "Mark Negotiation as Read",
-                                    "request": {
-                                        "method": "PATCH",
-                                        "header": [
-                                            {
-                                                "key": "Authorization",
-                                                "value": "Bearer {{accessToken}}",
-                                                "type": "text"
-                                            }
-                                        ],
-                                        "url": {
-                                            "raw": "{{baseUrl}}/campaign/negotiation/:negotiationId/read",
-                                            "host": [
-                                                "{{baseUrl}}"
-                                            ],
-                                            "path": [
-                                                "campaign",
-                                                "negotiation",
-                                                ":negotiationId",
-                                                "read"
-                                            ],
-                                            "variable": [
-                                                {
-                                                    "key": "negotiationId",
-                                                    "value": "negotiation-uuid-here"
-                                                }
-                                            ]
-                                        },
-                                        "description": "Mark a negotiation entry as read.\n\nPath Params:\n- negotiationId: UUID (required)\n\nRequires: JWT Token"
+                                        "description": "Get full negotiation history for a campaign.\n\nPath Params:\n- id: UUID (required) - Campaign ID\n\nRequires: JWT Token + Client Role"
                                     },
                                     "response": []
                                 }
@@ -2196,7 +2163,7 @@
                                         ],
                                         "body": {
                                             "mode": "raw",
-                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"action\": \"request\",\n    \"proposedBaseBudget\": 60000,\n    \"message\": \"Based on your requirements, this is our quote for the campaign\"\n}",
+                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"proposedBaseBudget\": 60000\n}",
                                             "options": {
                                                 "raw": {
                                                     "language": "json"
@@ -2204,7 +2171,7 @@
                                             }
                                         },
                                         "url": {
-                                            "raw": "{{baseUrl}}/campaign/admin/negotiation/request",
+                                            "raw": "{{baseUrl}}/campaign/admin/negotiation/send-quote",
                                             "host": [
                                                 "{{baseUrl}}"
                                             ],
@@ -2212,15 +2179,15 @@
                                                 "campaign",
                                                 "admin",
                                                 "negotiation",
-                                                "request"
+                                                "send-quote"
                                             ]
                                         },
-                                        "description": "Send a price quote to client (Admin only).\n\nDTO: CreateNegotiationDto\n- campaignId: UUID (required)\n- action: enum (required) - 'request' | 'counter_offer' | 'message'\n- proposedBaseBudget: number (required for quote)\n- message: string (optional)\n\nEffect:\n- Campaign status changes to 'active'\n- Turn switches to 'client'\n\nRequires: JWT Token + Admin Role"
+                                        "description": "Send a price quote to client (Admin only).\n\nDTO: SendQuoteDto\n- campaignId: UUID (required)\n- proposedBaseBudget: number (required)\n\nEffect:\n- Campaign status changes to 'active'\n- Turn switches to 'client'\n\nRequires: JWT Token + Admin Role"
                                     },
                                     "response": []
                                 },
                                 {
-                                    "name": "Accept Campaign",
+                                    "name": "Accept Client Counter-Offer",
                                     "request": {
                                         "method": "POST",
                                         "header": [
@@ -2232,7 +2199,7 @@
                                         ],
                                         "body": {
                                             "mode": "raw",
-                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"message\": \"Campaign approved as submitted\"\n}",
+                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\"\n}",
                                             "options": {
                                                 "raw": {
                                                     "language": "json"
@@ -2251,7 +2218,7 @@
                                                 "accept"
                                             ]
                                         },
-                                        "description": "Confirm and activate the campaign (Admin).\n\nDTO: AcceptNegotiationDto\n- campaignId: UUID (required)\n- message: string (optional)\n\nEffect:\n- Campaign status changes to 'active'\n- Quote is finalized\n\nRequires: JWT Token + Admin Role"
+                                        "description": "Accept the client's counter-offer.\n\nDTO: AcceptNegotiationDto\n- campaignId: UUID (required)\n\nEffect:\n- Quote is finalized at client's price\n\nRequires: JWT Token + Admin Role"
                                     },
                                     "response": []
                                 },
@@ -2268,7 +2235,7 @@
                                         ],
                                         "body": {
                                             "mode": "raw",
-                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"reason\": \"Campaign does not meet our quality standards\"\n}",
+                                            "raw": "{\n    \"campaignId\": \"campaign-uuid-here\",\n    \"reason\": \"Campaign does not meet requirements\"\n}",
                                             "options": {
                                                 "raw": {
                                                     "language": "json"
@@ -2287,7 +2254,7 @@
                                                 "reject"
                                             ]
                                         },
-                                        "description": "Cancel the campaign (Admin).\n\nDTO: RejectCampaignDto\n- campaignId: UUID (required)\n- reason: string (required)\n\nEffect:\n- Campaign status changes to 'cancelled'\n\nRequires: JWT Token + Admin Role"
+                                        "description": "Reject/Cancel the campaign.\n\nDTO: RejectCampaignDto\n- campaignId: UUID (required)\n- reason: string (required)\n\nEffect:\n- Campaign status changes to 'cancelled'\n\nRequires: JWT Token + Admin Role"
                                     },
                                     "response": []
                                 },

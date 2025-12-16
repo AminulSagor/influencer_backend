@@ -34,7 +34,8 @@ import {
   SearchCampaignDto,
 } from './dto/update-campaign.dto';
 import {
-  CreateNegotiationDto,
+  SendQuoteDto,
+  CounterOfferDto,
   AcceptNegotiationDto,
   RejectCampaignDto,
 } from './dto/campaign-negotiation.dto';
@@ -629,13 +630,9 @@ export class CampaignService {
   }
 
   // ============================================
-  // NEGOTIATION: Create Entry
+  // ADMIN: Send Quote
   // ============================================
-  async createNegotiation(
-    userId: string,
-    role: 'client' | 'admin',
-    dto: CreateNegotiationDto,
-  ) {
+  async sendQuote(userId: string, dto: SendQuoteDto) {
     const campaign = await this.campaignRepo.findOne({
       where: { id: dto.campaignId },
     });
@@ -644,66 +641,101 @@ export class CampaignService {
       throw new NotFoundException('Campaign not found');
     }
 
-    // Validate access for client
-    if (role === 'client') {
-      const client = await this.getClientProfile(userId);
-      if (campaign.clientId !== client.id) {
-        throw new ForbiddenException('Access denied');
-      }
+    // Check if it's admin's turn (or first quote)
+    if (campaign.negotiationTurn && campaign.negotiationTurn !== 'admin') {
+      throw new BadRequestException(`Waiting for client's response`);
     }
 
-    // Check turn
-    if (campaign.negotiationTurn && campaign.negotiationTurn !== role) {
-      throw new BadRequestException(`It's not your turn to respond`);
-    }
-
-    // Calculate proposed budget if provided
-    let proposedBudget: ReturnType<typeof this.calculateBudget> | null = null;
-    if (dto.proposedBaseBudget) {
-      proposedBudget = this.calculateBudget(dto.proposedBaseBudget);
-    }
+    // Calculate budget with VAT
+    const proposedBudget = this.calculateBudget(dto.proposedBaseBudget);
 
     const negotiation = this.negotiationRepo.create({
       campaignId: dto.campaignId,
-      sender: role === 'client' ? NegotiationSender.CLIENT : NegotiationSender.ADMIN,
-      action: dto.action,
-      message: dto.message,
-      proposedBaseBudget: proposedBudget?.baseBudget,
-      proposedVatAmount: proposedBudget?.vatAmount,
-      proposedTotalBudget: proposedBudget?.totalBudget,
+      sender: NegotiationSender.ADMIN,
+      action: NegotiationAction.REQUEST,
+      proposedBaseBudget: proposedBudget.baseBudget,
+      proposedVatAmount: proposedBudget.vatAmount,
+      proposedTotalBudget: proposedBudget.totalBudget,
       senderId: userId,
     });
 
     await this.negotiationRepo.save(negotiation);
 
-    // Update campaign
-    if (
-      [NegotiationAction.REQUEST, NegotiationAction.COUNTER_OFFER].includes(
-        dto.action as NegotiationAction,
-      )
-    ) {
-      campaign.status = CampaignStatus.ACTIVE;
-      campaign.negotiationTurn = role === 'client' ? 'admin' : 'client';
-      await this.campaignRepo.save(campaign);
-    }
+    // Update campaign status and turn
+    campaign.status = CampaignStatus.ACTIVE;
+    campaign.negotiationTurn = 'client';
+    await this.campaignRepo.save(campaign);
 
     return {
       success: true,
-      message: 'Response sent',
+      message: 'Quote sent to client',
       data: {
-        negotiationId: negotiation.id,
         campaignId: campaign.id,
-        status: campaign.status,
-        yourTurn: false,
-        waitingFor: campaign.negotiationTurn,
+        quotedAmount: proposedBudget.baseBudget,
+        totalWithVat: proposedBudget.totalBudget,
+        waitingFor: 'client',
       },
     };
   }
 
   // ============================================
-  // NEGOTIATION: Accept
+  // CLIENT: Send Counter-Offer
   // ============================================
-  async acceptNegotiation(
+  async sendCounterOffer(userId: string, dto: CounterOfferDto) {
+    const campaign = await this.campaignRepo.findOne({
+      where: { id: dto.campaignId },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Campaign not found');
+    }
+
+    // Validate client access
+    const client = await this.getClientProfile(userId);
+    if (campaign.clientId !== client.id) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    // Check if it's client's turn
+    if (campaign.negotiationTurn !== 'client') {
+      throw new BadRequestException(`Waiting for admin's quote`);
+    }
+
+    // Calculate budget with VAT
+    const proposedBudget = this.calculateBudget(dto.proposedBaseBudget);
+
+    const negotiation = this.negotiationRepo.create({
+      campaignId: dto.campaignId,
+      sender: NegotiationSender.CLIENT,
+      action: NegotiationAction.COUNTER_OFFER,
+      proposedBaseBudget: proposedBudget.baseBudget,
+      proposedVatAmount: proposedBudget.vatAmount,
+      proposedTotalBudget: proposedBudget.totalBudget,
+      senderId: userId,
+    });
+
+    await this.negotiationRepo.save(negotiation);
+
+    // Switch turn to admin
+    campaign.negotiationTurn = 'admin';
+    await this.campaignRepo.save(campaign);
+
+    return {
+      success: true,
+      message: 'Counter-offer sent',
+      data: {
+        campaignId: campaign.id,
+        offeredAmount: proposedBudget.baseBudget,
+        totalWithVat: proposedBudget.totalBudget,
+        waitingFor: 'admin',
+      },
+    };
+  }
+
+  // ============================================
+  // Accept Quote (Client or Admin)
+  // ============================================
+  async acceptQuote(
     userId: string,
     role: 'client' | 'admin',
     dto: AcceptNegotiationDto,
@@ -743,7 +775,6 @@ export class CampaignService {
         sender:
           role === 'client' ? NegotiationSender.CLIENT : NegotiationSender.ADMIN,
         action: NegotiationAction.ACCEPT,
-        message: dto.message || 'Quote accepted',
         senderId: userId,
       }),
     );
@@ -758,16 +789,14 @@ export class CampaignService {
       data: {
         campaignId: campaign.id,
         status: campaign.status,
-        finalBudget: {
-          baseBudget: campaign.baseBudget,
-          totalBudget: campaign.totalBudget,
-        },
+        agreedBudget: campaign.baseBudget,
+        totalWithVat: campaign.totalBudget,
       },
     };
   }
 
   // ============================================
-  // NEGOTIATION: Reject
+  // Reject Campaign (Client or Admin)
   // ============================================
   async rejectCampaign(
     userId: string,
