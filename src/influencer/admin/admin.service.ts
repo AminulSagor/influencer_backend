@@ -1,10 +1,17 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
+import {
+  Repository,
+  Like,
+  Between,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+} from 'typeorm';
 import {
   ApprovalStatus,
   UpdateItemStatusDto,
@@ -16,6 +23,9 @@ import {
   UpdateClientSocialStatusDto,
   GetCampaignsQueryDto,
   AdminCampaignListItem,
+  UpdateFeesDto,
+  AddMasterDataDto,
+  ChangePasswordDto,
 } from './dto/admin.dto';
 import { InfluencerProfileEntity } from '../influencer/entities/influencer-profile.entity';
 import { ClientProfileEntity } from '../client/entities/client-profile.entity';
@@ -23,13 +33,24 @@ import { NotificationService } from '../notification/notification.service';
 import { UserEntity, UserRole } from '../user/entities/user.entity';
 import { CampaignEntity } from '../campaign/entities/campaign.entity';
 import { CampaignAssignmentEntity } from '../campaign/entities/campaign-assignment.entity';
+import { SystemSettingEntity } from './entities/system-setting.entity';
+import {
+  MasterDataEntity,
+  MasterDataType,
+} from './entities/master-data.entity';
+import { LoginLogEntity } from './entities/login-log.entity';
+import * as bcrypt from 'bcrypt';
+import * as geoip from 'geoip-lite';
+import { UAParser } from 'ua-parser-js';
+import * as requestIp from 'request-ip';
+import { Request } from 'express';
 
 @Injectable()
 export class AdminService {
   constructor(
     @InjectRepository(InfluencerProfileEntity)
     private readonly profileRepo: Repository<InfluencerProfileEntity>,
-    @InjectRepository(InfluencerProfileEntity)
+    @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
     @InjectRepository(ClientProfileEntity)
     private readonly clientProfileRepo: Repository<ClientProfileEntity>,
@@ -37,6 +58,12 @@ export class AdminService {
     private readonly campaignRepo: Repository<CampaignEntity>,
     @InjectRepository(CampaignAssignmentEntity)
     private readonly campaignAssignmentRepo: Repository<CampaignAssignmentEntity>,
+    @InjectRepository(SystemSettingEntity)
+    private readonly settingsRepo: Repository<SystemSettingEntity>,
+    @InjectRepository(MasterDataEntity)
+    private readonly masterDataRepo: Repository<MasterDataEntity>,
+    @InjectRepository(LoginLogEntity)
+    private readonly loginLogRepo: Repository<LoginLogEntity>,
     private readonly notificationService: NotificationService,
   ) {}
 
@@ -588,11 +615,24 @@ export class AdminService {
         'campaign.updatedAt',
       ])
       .leftJoin('campaign.client', 'client')
-      .addSelect(['client.id', 'client.brandName', 'client.firstName', 'client.lastName'])
+      .addSelect([
+        'client.id',
+        'client.brandName',
+        'client.firstName',
+        'client.lastName',
+      ])
       .leftJoin('campaign.assignments', 'assignments')
-      .addSelect(['assignments.id', 'assignments.influencerId', 'assignments.status'])
+      .addSelect([
+        'assignments.id',
+        'assignments.influencerId',
+        'assignments.status',
+      ])
       .leftJoin('assignments.influencer', 'influencer')
-      .addSelect(['influencer.id', 'influencer.firstName', 'influencer.lastName']);
+      .addSelect([
+        'influencer.id',
+        'influencer.firstName',
+        'influencer.lastName',
+      ]);
 
     // Apply filters using parameter binding for security
     if (status) {
@@ -610,11 +650,15 @@ export class AdminService {
     }
 
     if (startDateFrom) {
-      queryBuilder.andWhere('campaign.startingDate >= :startDateFrom', { startDateFrom });
+      queryBuilder.andWhere('campaign.startingDate >= :startDateFrom', {
+        startDateFrom,
+      });
     }
 
     if (startDateTo) {
-      queryBuilder.andWhere('campaign.startingDate <= :startDateTo', { startDateTo });
+      queryBuilder.andWhere('campaign.startingDate <= :startDateTo', {
+        startDateTo,
+      });
     }
 
     // Order and pagination
@@ -647,17 +691,24 @@ export class AdminService {
   /**
    * Helper: Transform campaign entity to list item response
    */
-  private transformCampaignToListItem(campaign: CampaignEntity): AdminCampaignListItem {
+  private transformCampaignToListItem(
+    campaign: CampaignEntity,
+  ): AdminCampaignListItem {
     // Calculate end date
-    const endDate = campaign.startingDate && campaign.duration
-      ? new Date(new Date(campaign.startingDate).getTime() + campaign.duration * 24 * 60 * 60 * 1000)
-      : null;
+    const endDate =
+      campaign.startingDate && campaign.duration
+        ? new Date(
+            new Date(campaign.startingDate).getTime() +
+              campaign.duration * 24 * 60 * 60 * 1000,
+          )
+        : null;
 
     // Map assigned influencers
     const influencers = (campaign.assignments || []).map((a) => ({
       id: a.influencer?.id || a.influencerId,
       name: a.influencer
-        ? `${a.influencer.firstName || ''} ${a.influencer.lastName || ''}`.trim() || 'Unknown'
+        ? `${a.influencer.firstName || ''} ${a.influencer.lastName || ''}`.trim() ||
+          'Unknown'
         : 'Unknown',
       status: a.status,
     }));
@@ -671,7 +722,8 @@ export class AdminService {
         id: campaign.client?.id || campaign.clientId,
         brandName: campaign.client?.brandName || 'N/A',
         fullName: campaign.client
-          ? `${campaign.client.firstName || ''} ${campaign.client.lastName || ''}`.trim() || 'N/A'
+          ? `${campaign.client.firstName || ''} ${campaign.client.lastName || ''}`.trim() ||
+            'N/A'
           : 'N/A',
       },
       timeline: {
@@ -699,7 +751,8 @@ export class AdminService {
    */
   async getCampaignById(campaignId: string) {
     // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(campaignId)) {
       throw new NotFoundException('Invalid campaign ID format');
     }
@@ -712,8 +765,14 @@ export class AdminService {
       .leftJoinAndSelect('campaign.milestones', 'milestones')
       .leftJoinAndSelect('campaign.assets', 'assets')
       .leftJoinAndSelect('campaign.negotiations', 'negotiations')
-      .leftJoinAndSelect('campaign.preferredInfluencers', 'preferredInfluencers')
-      .leftJoinAndSelect('campaign.notPreferableInfluencers', 'notPreferableInfluencers')
+      .leftJoinAndSelect(
+        'campaign.preferredInfluencers',
+        'preferredInfluencers',
+      )
+      .leftJoinAndSelect(
+        'campaign.notPreferableInfluencers',
+        'notPreferableInfluencers',
+      )
       .where('campaign.id = :campaignId', { campaignId })
       .getOne();
 
@@ -722,15 +781,20 @@ export class AdminService {
     }
 
     // Calculate end date efficiently
-    const endDate = campaign.startingDate && campaign.duration
-      ? new Date(new Date(campaign.startingDate).getTime() + campaign.duration * 24 * 60 * 60 * 1000)
-      : null;
+    const endDate =
+      campaign.startingDate && campaign.duration
+        ? new Date(
+            new Date(campaign.startingDate).getTime() +
+              campaign.duration * 24 * 60 * 60 * 1000,
+          )
+        : null;
 
     // Map assigned influencers with full details
     const assignedInfluencers = (campaign.assignments || []).map((a) => ({
       id: a.influencer?.id || a.influencerId,
       name: a.influencer
-        ? `${a.influencer.firstName || ''} ${a.influencer.lastName || ''}`.trim() || 'Unknown'
+        ? `${a.influencer.firstName || ''} ${a.influencer.lastName || ''}`.trim() ||
+          'Unknown'
         : 'Unknown',
       status: a.status,
       offeredAmount: a.offeredAmount ? +a.offeredAmount : null,
@@ -772,7 +836,9 @@ export class AdminService {
         clientBudget: campaign.baseBudget ? Number(campaign.baseBudget) : null,
         vatAmount: campaign.vatAmount ? Number(campaign.vatAmount) : null,
         totalBudget: campaign.totalBudget ? Number(campaign.totalBudget) : null,
-        netPayableAmount: campaign.netPayableAmount ? Number(campaign.netPayableAmount) : null,
+        netPayableAmount: campaign.netPayableAmount
+          ? Number(campaign.netPayableAmount)
+          : null,
       },
       // Assigned Personals
       assignedPersonals: {
@@ -787,15 +853,19 @@ export class AdminService {
       negotiations: campaign.negotiations || [],
       negotiationTurn: campaign.negotiationTurn,
       // Preferred Influencers
-      preferredInfluencers: (campaign.preferredInfluencers || []).map((inf) => ({
-        id: inf.id,
-        name: `${inf.firstName || ''} ${inf.lastName || ''}`.trim(),
-      })),
+      preferredInfluencers: (campaign.preferredInfluencers || []).map(
+        (inf) => ({
+          id: inf.id,
+          name: `${inf.firstName || ''} ${inf.lastName || ''}`.trim(),
+        }),
+      ),
       // Not Preferable Influencers
-      notPreferableInfluencers: (campaign.notPreferableInfluencers || []).map((inf) => ({
-        id: inf.id,
-        name: `${inf.firstName || ''} ${inf.lastName || ''}`.trim(),
-      })),
+      notPreferableInfluencers: (campaign.notPreferableInfluencers || []).map(
+        (inf) => ({
+          id: inf.id,
+          name: `${inf.firstName || ''} ${inf.lastName || ''}`.trim(),
+        }),
+      ),
       // Status & Meta
       status: campaign.status,
       currentStep: campaign.currentStep,
@@ -851,6 +921,149 @@ export class AdminService {
       byStatus,
       withAssignments,
       withoutAssignments,
+    };
+  }
+
+  // ==========================================
+  // GENERAL SETTINGS (Fees)
+  // ==========================================
+
+  async getSystemSettings() {
+    // Get the first row, or create default if not exists
+    let settings = await this.settingsRepo.findOne({ where: {} });
+    if (!settings) {
+      settings = this.settingsRepo.create({ platformFee: 0, vatTax: 0 });
+      await this.settingsRepo.save(settings);
+    }
+    return { platformFee: settings.platformFee, vatTax: settings.vatTax };
+  }
+
+  async updateSystemFees(dto: UpdateFeesDto) {
+    let settings = await this.settingsRepo.findOne({ where: {} });
+    if (!settings) settings = this.settingsRepo.create();
+
+    if (dto.platformFee !== undefined) settings.platformFee = dto.platformFee;
+    if (dto.vatTax !== undefined) settings.vatTax = dto.vatTax;
+
+    await this.settingsRepo.save(settings);
+    return { success: true, message: 'Fees updated successfully' };
+  }
+
+  // ==========================================
+  // MASTER DATA (Niches, Skills, Products)
+  // ==========================================
+
+  async getMasterDataList(type: MasterDataType) {
+    // Minimal response: just id and name
+    const list = await this.masterDataRepo.find({
+      where: { type },
+      select: ['id', 'name'],
+      order: { name: 'ASC' },
+    });
+    return list;
+  }
+
+  async addMasterData(dto: AddMasterDataDto) {
+    // Check duplicate
+    const exists = await this.masterDataRepo.findOne({
+      where: { type: dto.type, name: dto.name },
+    });
+    if (exists)
+      throw new BadRequestException(
+        `${dto.name} already exists in ${dto.type} list`,
+      );
+
+    const item = this.masterDataRepo.create(dto);
+    const saved = await this.masterDataRepo.save(item);
+
+    return { success: true, id: saved.id, message: 'Item added' };
+  }
+
+  async deleteMasterData(id: string) {
+    const result = await this.masterDataRepo.delete(id);
+    if (result.affected === 0) throw new NotFoundException('Item not found');
+    return { success: true, message: 'Item deleted' };
+  }
+
+  // ==========================================
+  // SECURITY & LOGS
+  // ==========================================
+
+  // Helper to extract log info
+  private getLogDetails(req: Request) {
+    // 1. Get IP
+    const clientIp = requestIp.getClientIp(req) || '127.0.0.1';
+
+    // 2. Parse User Agent (Device/Browser)
+    const ua = UAParser(req.headers['user-agent']);
+    const browser =
+      `${ua.browser.name || 'Unknown'} ${ua.browser.version || ''}`.trim();
+    const device = `${ua.os.name || 'Unknown'} ${ua.os.version || ''} - ${ua.device.type || 'Desktop'}`;
+
+    // 3. Get Location from IP
+    const geo = geoip.lookup(clientIp);
+    const location = geo ? `${geo.city}, ${geo.country}` : 'Unknown Location';
+
+    return { clientIp, browser, device, location };
+  }
+
+  async changeAdminPassword(
+    userId: string,
+    dto: ChangePasswordDto,
+    req: Request,
+  ) {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      select: ['id', 'password', 'email', 'role'],
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    // 1. Verify Old Password
+    const isMatch = await bcrypt.compare(dto.oldPassword, user.password);
+    if (!isMatch) throw new UnauthorizedException('Incorrect old password');
+
+    // 2. Hash New Password
+    const salt = await bcrypt.genSalt();
+    user.password = await bcrypt.hash(dto.newPassword, salt);
+    await this.userRepo.save(user);
+
+    // Get Real Data
+    const { clientIp, browser, device, location } = this.getLogDetails(req);
+
+    // 3. Log the event with REAL data
+    await this.loginLogRepo.save({
+      user,
+      status: 'password_changed',
+      device: device, // e.g. "Windows 10 - Desktop"
+      browser: browser, // e.g. "Chrome 120.0"
+      location: location, // e.g. "Dhaka, BD"
+      ip: clientIp,
+    });
+
+    return { success: true, message: 'Password updated successfully' };
+  }
+
+  async getLoginLogs(userId: string, page = 1, limit = 10) {
+    // Fetch logs for the specific admin
+    const [logs, total] = await this.loginLogRepo.findAndCount({
+      where: { user: { id: userId } },
+      order: { timestamp: 'DESC' },
+      take: limit,
+      skip: (page - 1) * limit,
+      select: [
+        'id',
+        'device',
+        'browser',
+        'location',
+        'ip',
+        'status',
+        'timestamp',
+      ],
+    });
+
+    return {
+      data: logs,
+      meta: { total, page, limit },
     };
   }
 }

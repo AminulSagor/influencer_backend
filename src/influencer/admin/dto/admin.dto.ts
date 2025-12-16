@@ -9,9 +9,11 @@ import {
   Min,
   Max,
   IsUUID,
+  MinLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CampaignStatus } from 'src/influencer/campaign/entities/campaign.entity';
+import { MasterDataType } from '../entities/master-data.entity';
 
 // --- Auth DTO ---
 export class AdminLoginDto {
@@ -185,4 +187,40 @@ export interface AdminCampaignListItem {
   status: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// --- General Settings ---
+export class UpdateFeesDto {
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  platformFee?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  vatTax?: number;
+}
+
+// --- Master Data (Lists) ---
+export class AddMasterDataDto {
+  @IsNotEmpty()
+  @IsEnum(MasterDataType)
+  type: MasterDataType;
+
+  @IsNotEmpty()
+  @IsString()
+  name: string;
+}
+
+// --- Security ---
+export class ChangePasswordDto {
+  @IsNotEmpty()
+  @IsString()
+  oldPassword: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(8)
+  newPassword: string;
 }

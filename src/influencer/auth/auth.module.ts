@@ -11,11 +11,16 @@ import { InfluencerProfileEntity } from '../influencer/entities/influencer-profi
 import { InfluencerModule } from '../influencer/influencer.module';
 import { CommonModule } from 'src/common/common.module';
 import { JwtStrategy } from './jwt.strategy';
+import { LoginLogEntity } from '../admin/entities/login-log.entity';
 
 @Module({
   imports: [
     // Register Entities for this module
-    TypeOrmModule.forFeature([UserEntity, InfluencerProfileEntity]),
+    TypeOrmModule.forFeature([
+      UserEntity,
+      InfluencerProfileEntity,
+      LoginLogEntity,
+    ]),
     InfluencerModule,
     CommonModule,
     PassportModule,
