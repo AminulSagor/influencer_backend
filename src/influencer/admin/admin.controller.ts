@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -8,7 +9,9 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import {
   UpdateItemStatusDto,
@@ -18,12 +21,15 @@ import {
   UpdateClientTradeLicenseStatusDto,
   UpdateClientSocialStatusDto,
   GetCampaignsQueryDto,
+  UpdateFeesDto,
+  ChangePasswordDto,
 } from './dto/admin.dto';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminService } from './admin.service';
 import { UserRole } from '../user/entities/user.entity';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { MasterDataType } from './entities/master-data.entity';
 
 @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard) // 1. Apply Guards
 @Roles(UserRole.ADMIN)
@@ -221,5 +227,94 @@ export class AdminController {
   @Get('campaigns/:campaignId')
   async getCampaignById(@Param('campaignId') campaignId: string) {
     return this.adminService.getCampaignById(campaignId);
+  }
+
+  // =============================================
+  // SETTINGS: General (Fees)
+  // =============================================
+
+  @Get('settings/general')
+  async getGeneralSettings() {
+    return this.adminService.getSystemSettings();
+  }
+
+  @Patch('settings/general')
+  async updateGeneralSettings(@Body() dto: UpdateFeesDto) {
+    return this.adminService.updateSystemFees(dto);
+  }
+
+  // =============================================
+  // SETTINGS: Lists (Niche, Skill, Product)
+  // =============================================
+
+  // --- Niches ---
+  @Get('settings/niches')
+  async getNiches() {
+    return this.adminService.getMasterDataList(MasterDataType.NICHE);
+  }
+
+  @Post('settings/niches')
+  async addNiche(@Body('name') name: string) {
+    return this.adminService.addMasterData({
+      type: MasterDataType.NICHE,
+      name,
+    });
+  }
+
+  // --- Skills ---
+  @Get('settings/skills')
+  async getSkills() {
+    return this.adminService.getMasterDataList(MasterDataType.SKILL);
+  }
+
+  @Post('settings/skills')
+  async addSkill(@Body('name') name: string) {
+    return this.adminService.addMasterData({
+      type: MasterDataType.SKILL,
+      name,
+    });
+  }
+
+  // --- Product Types ---
+  @Get('settings/product-types')
+  async getProductTypes() {
+    return this.adminService.getMasterDataList(MasterDataType.PRODUCT_TYPE);
+  }
+
+  @Post('settings/product-types')
+  async addProductType(@Body('name') name: string) {
+    return this.adminService.addMasterData({
+      type: MasterDataType.PRODUCT_TYPE,
+      name,
+    });
+  }
+
+  // --- Generic Delete (for any list item) ---
+  @Delete('settings/list-item/:id')
+  async deleteListItem(@Param('id') id: string) {
+    return this.adminService.deleteMasterData(id);
+  }
+
+  // =============================================
+  // SETTINGS: Security & Activity
+  // =============================================
+
+  @Patch('settings/security/password')
+  async changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
+    // Pass 'req' as the 3rd argument
+    return this.adminService.changeAdminPassword(req.user.userId, dto, req);
+  }
+
+  @Get('settings/security/activity-log')
+  async getActivityLog(
+    @Req() req,
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+  ) {
+    return this.adminService.getLoginLogs(
+      req.user.userId,
+      Number(page) || 1,
+      Number(limit) || 10,
+    );
   }
 }

@@ -1,6 +1,18 @@
-import { Body, Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  HttpCode,
+  HttpStatus,
+  Request,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { SignupDto, VerifyOtpDto, ResendOtpDto, CreateAdminDto } from './dto/auth.dto';
+import {
+  SignupDto,
+  VerifyOtpDto,
+  ResendOtpDto,
+  CreateAdminDto,
+} from './dto/auth.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
 
@@ -15,8 +27,8 @@ export class AuthController {
 
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
-  async verifyOtp(@Body() dto: VerifyOtpDto) {
-    return this.authService.verifyOtp(dto);
+  async verifyOtp(@Body() dto: VerifyOtpDto, @Request() req) {
+    return this.authService.verifyOtp(dto, req);
   }
 
   @Post('resend-otp')
@@ -27,8 +39,8 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  async login(@Body() dto: LoginDto, @Request() req) {
+    return this.authService.login(dto, req);
   }
 
   @Post('forgot-password')
