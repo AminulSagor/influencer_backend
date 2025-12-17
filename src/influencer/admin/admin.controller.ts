@@ -23,6 +23,9 @@ import {
   GetCampaignsQueryDto,
   UpdateFeesDto,
   ChangePasswordDto,
+  UpdateAgencyTinStatusDto,
+  UpdateAgencyTradeLicenseStatusDto,
+  UpdateAgencyNidStatusDto,
 } from './dto/admin.dto';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { AuthGuard } from '@nestjs/passport';
@@ -30,19 +33,13 @@ import { AdminService } from './admin.service';
 import { UserRole } from '../user/entities/user.entity';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { MasterDataType } from './entities/master-data.entity';
+import { GetInfluencersDto } from './dto/admin-browsing.dto';
 
 @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard) // 1. Apply Guards
 @Roles(UserRole.ADMIN)
 @Controller('influencer/admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
-
-  // // --- ADMIN AUTH ---
-  // @Post('auth/login')
-  // @HttpCode(HttpStatus.OK)
-  // async login(@Body() dto: AdminLoginDto) {
-  //   return this.adminService.login(dto);
-  // }
 
   // =============================================
   // INFLUENCER VERIFICATION
@@ -316,5 +313,104 @@ export class AdminController {
       Number(page) || 1,
       Number(limit) || 10,
     );
+  }
+
+  // =============================================
+  // BROWSE USERS (Influencers)
+  // =============================================
+
+  // 1. Get List/Grid View Data
+  @Get('browsing/influencers')
+  async getInfluencersList(@Query() query: GetInfluencersDto) {
+    return this.adminService.getAllInfluencers(query);
+  }
+
+  // 2. Get Single Influencer Details (Profile View)
+  @Get('browsing/influencer/:userId')
+  async getInfluencerDetails(@Param('userId') userId: string) {
+    return this.adminService.getInfluencerFullDetails(userId);
+  }
+
+  // 3. Get Influencer Campaigns (Campaigns Tab)
+  @Get('browsing/influencer/:userId/campaigns')
+  async getInfluencerCampaigns(
+    @Param('userId') userId: string,
+    @Query('status') status: string,
+  ) {
+    return this.adminService.getInfluencerCampaigns(userId, status);
+  }
+
+  // 4. Block/Unblock Influencer (Danger Zone)
+  @Patch('browsing/influencer/:userId/block')
+  async blockInfluencer(@Param('userId') userId: string) {
+    return this.adminService.toggleBlockStatus(userId);
+  }
+
+  // =============================================
+  // 🏢 AGENCY VERIFICATION ENDPOINTS
+  // =============================================
+
+  @Get('verification/agencies')
+  async getAgencies(
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+  ) {
+    return this.adminService.getAgencyProfiles(
+      Number(page) || 1,
+      Number(limit) || 10,
+    );
+  }
+
+  @Get('verification/agency/:userId')
+  async getAgencyProfile(@Param('userId') userId: string) {
+    return this.adminService.getAgencyProfileDetails(userId);
+  }
+
+  @Patch('verification/agency/:userId/nid')
+  async updateAgencyNid(
+    @Param('userId') userId: string,
+    @Body() dto: UpdateAgencyNidStatusDto,
+  ) {
+    return this.adminService.updateAgencyNid(userId, dto);
+  }
+
+  @Patch('verification/agency/:userId/trade-license')
+  async updateAgencyTradeLicense(
+    @Param('userId') userId: string,
+    @Body() dto: UpdateAgencyTradeLicenseStatusDto,
+  ) {
+    return this.adminService.updateAgencyTradeLicense(userId, dto);
+  }
+
+  @Patch('verification/agency/:userId/tin')
+  async updateAgencyTin(
+    @Param('userId') userId: string,
+    @Body() dto: UpdateAgencyTinStatusDto,
+  ) {
+    return this.adminService.updateAgencyTin(userId, dto);
+  }
+
+  @Patch('verification/agency/:userId/social')
+  async updateAgencySocial(
+    @Param('userId') userId: string,
+    @Body() dto: UpdateItemStatusDto,
+  ) {
+    return this.adminService.updateAgencySocial(userId, dto);
+  }
+
+  @Patch('verification/agency/:userId/payout/bank')
+  async updateAgencyBank(
+    @Param('userId') userId: string,
+    @Body() dto: UpdatePayoutStatusDto,
+  ) {
+    return this.adminService.updateAgencyPayout(userId, dto, 'bank');
+  }
+
+  @Patch('verification/agency/:userId/payout/mobile')
+  async updateAgencyMobile(
+    @Param('userId') userId: string,
+    @Body() dto: UpdatePayoutStatusDto,
+  ) {
+    return this.adminService.updateAgencyPayout(userId, dto, 'mobile');
   }
 }

@@ -26,6 +26,9 @@ import {
   UpdateFeesDto,
   AddMasterDataDto,
   ChangePasswordDto,
+  UpdateAgencyTinStatusDto,
+  UpdateAgencyTradeLicenseStatusDto,
+  UpdateAgencyNidStatusDto,
 } from './dto/admin.dto';
 import { InfluencerProfileEntity } from '../influencer/entities/influencer-profile.entity';
 import { ClientProfileEntity } from '../client/entities/client-profile.entity';
@@ -44,6 +47,8 @@ import * as geoip from 'geoip-lite';
 import { UAParser } from 'ua-parser-js';
 import * as requestIp from 'request-ip';
 import { Request } from 'express';
+import { GetInfluencersDto, UserStatusFilter } from './dto/admin-browsing.dto';
+import { AgencyProfileEntity } from '../agency/entities/agency-profile.entity';
 
 @Injectable()
 export class AdminService {
@@ -64,6 +69,8 @@ export class AdminService {
     private readonly masterDataRepo: Repository<MasterDataEntity>,
     @InjectRepository(LoginLogEntity)
     private readonly loginLogRepo: Repository<LoginLogEntity>,
+    @InjectRepository(AgencyProfileEntity)
+    private readonly agencyProfileRepo: Repository<AgencyProfileEntity>,
     private readonly notificationService: NotificationService,
   ) {}
 
@@ -1065,5 +1072,444 @@ export class AdminService {
       data: logs,
       meta: { total, page, limit },
     };
+  }
+
+  // =============================================
+  // BROWSE INFLUENCERS (List/Grid View)
+  // =============================================
+  async getAllInfluencers(dto: GetInfluencersDto) {
+    const { page, limit, search, status } = dto;
+    const query = this.profileRepo
+      .createQueryBuilder('profile')
+      .leftJoinAndSelect('profile.user', 'user')
+      .orderBy('profile.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    // 1. Filter by Search (Name)
+    if (search) {
+      query.andWhere(
+        '(LOWER(profile.firstName) LIKE :search OR LOWER(profile.lastName) LIKE :search)',
+        { search: `%${search.toLowerCase()}%` },
+      );
+    }
+
+    // 2. Filter by Status
+    if (status === UserStatusFilter.BLOCKED) {
+      query.andWhere('user.isBlocked = :isBlocked', { isBlocked: true });
+    } else if (status === UserStatusFilter.ACTIVE) {
+      query.andWhere('user.isBlocked = :isBlocked', { isBlocked: false });
+    }
+
+    const [profiles, total] = await query.getManyAndCount();
+
+    const profileIds = profiles.map((p) => p.id);
+    let statsMap = {};
+
+    if (profileIds.length > 0) {
+      const statsRaw = await this.campaignAssignmentRepo
+        .createQueryBuilder('assign')
+        .select('assign.influencerId', 'influencerId')
+        .addSelect(
+          `COUNT(CASE WHEN assign.status IN ('active', 'pending_invitation', 'needs_quote') THEN 1 END)`,
+          'activeJob',
+        )
+        .addSelect(
+          `COUNT(CASE WHEN assign.status = 'completed' THEN 1 END)`,
+          'jobDone',
+        )
+        .addSelect(
+          `SUM(CASE WHEN assign.status IN ('completed', 'paid') THEN assign.offeredAmount ELSE 0 END)`,
+          'revenue',
+        )
+        .where('assign.influencerId IN (:...ids)', { ids: profileIds })
+        .groupBy('assign.influencerId')
+        .getRawMany();
+
+      // Convert array to map for O(1) lookup
+      statsMap = statsRaw.reduce((acc, curr) => {
+        acc[curr.influencerId] = {
+          activeJob: Number(curr.activeJob),
+          jobDone: Number(curr.jobDone),
+          revenue: Number(curr.revenue),
+        };
+        return acc;
+      }, {});
+    }
+
+    // 3. Map to Response
+    const data = profiles.map((p) => {
+      // Logic to derive platforms from socialLinks
+      const platforms =
+        p.socialLinks?.map((link) => {
+          if (link.url.includes('instagram')) return 'Instagram';
+          if (link.url.includes('youtube')) return 'YouTube';
+          if (link.url.includes('tiktok')) return 'TikTok';
+          return 'Web';
+        }) || [];
+
+      const stats = statsMap[p.id] || { activeJob: 0, jobDone: 0, revenue: 0 };
+
+      return {
+        userId: p.userId,
+        name: `${p.firstName} ${p.lastName}`,
+        avatar: p.profileImg || null,
+        niches: p.niches?.map((n) => n.niche) || [],
+        rating: 0, // NOTE: Rating entity not found in codebase. Defaulting to 0.
+        platforms: [...new Set(platforms)],
+        stats: {
+          activeJob: stats.activeJob,
+          jobDone: stats.jobDone,
+          revenue: stats.revenue,
+        },
+        status: p.user.isBlocked ? 'Blocked' : 'Approved',
+        isVerified: p.user.isVerified,
+      };
+    });
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  // Get SINGLE INFLUENCER DETAILS
+  async getInfluencerFullDetails(userId: string) {
+    const profile = await this.profileRepo.findOne({
+      where: { userId },
+      relations: ['user'],
+    });
+
+    if (!profile) throw new NotFoundException('Influencer not found');
+
+    // --- REAL DATA: Fetch Aggregated Stats ---
+    const stats = await this.campaignAssignmentRepo
+      .createQueryBuilder('assignment')
+      .select([
+        `COUNT(CASE WHEN assignment.status = 'completed' THEN 1 END) as "totalJobDone"`,
+        `COUNT(CASE WHEN assignment.status IN ('active', 'pending_invitation', 'needs_quote') THEN 1 END) as "activeJob"`,
+        `SUM(CASE WHEN assignment.status IN ('completed', 'paid') THEN assignment.offeredAmount ELSE 0 END) as "totalRevenue"`,
+      ])
+      .where('assignment.influencerId = :influencerId', {
+        influencerId: profile.id,
+      })
+      .getRawOne();
+
+    // Calculate Completion Score
+    let completionScore = 20; // Base score
+    if (profile.niches?.length) completionScore += 10;
+    if (profile.skills?.length) completionScore += 10;
+    if (profile.socialLinks?.length) completionScore += 10;
+    if (profile.nidVerification?.nidStatus === 'approved')
+      completionScore += 20;
+    if (profile.payouts?.bank?.length || profile.payouts?.mobileBanking?.length)
+      completionScore += 10;
+    if (profile.profileImg) completionScore += 10;
+    if (profile.bio) completionScore += 10;
+
+    return {
+      header: {
+        userId: profile.userId,
+        name: `${profile.firstName} ${profile.lastName}`,
+        handle: `@${profile.firstName.toLowerCase().replace(/\s/g, '')}`,
+        avatar: profile.profileImg,
+        isVerified: profile.user.isVerified,
+        socials: profile.socialLinks,
+      },
+      stats: {
+        totalRevenue: stats.totalRevenue ? Number(stats.totalRevenue) : 0,
+        totalJobDone: Number(stats.totalJobDone),
+        activeJob: Number(stats.activeJob),
+      },
+      profileCompletion: Math.min(completionScore, 100),
+      bio: profile.bio,
+      niches: profile.niches,
+      skills: profile.skills,
+      payoutSettings: profile.payouts,
+      personalDetails: {
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        email: profile.user.email,
+        phone: profile.user.phone,
+      },
+      nidInfo: profile.nidVerification,
+      deliveryLocations: profile.addresses,
+      isBlocked: profile.user.isBlocked || false,
+    };
+  }
+
+  // INFLUENCER CAMPAIGNS (Tab View)
+  async getInfluencerCampaigns(userId: string, statusFilter?: string) {
+    // 1. Get Profile ID
+    const profile = await this.profileRepo.findOne({
+      where: { userId },
+      select: ['id'],
+    });
+    if (!profile) throw new NotFoundException('Influencer not found');
+
+    // 2. Build Query
+    const queryBuilder = this.campaignAssignmentRepo
+      .createQueryBuilder('assign')
+      .leftJoinAndSelect('assign.campaign', 'campaign')
+      .leftJoinAndSelect('campaign.client', 'client') // Client details
+      .where('assign.influencerId = :influencerId', {
+        influencerId: profile.id,
+      })
+      .select([
+        'assign.id',
+        'assign.status',
+        'assign.offeredAmount',
+        'campaign.id',
+        'campaign.campaignName',
+        'campaign.campaignType',
+        'campaign.startingDate',
+        'campaign.duration',
+        'campaign.baseBudget',
+        'client.brandName',
+        'client.profileImage',
+      ])
+      .orderBy('campaign.createdAt', 'DESC');
+
+    // 3. Apply Status Filter
+    if (statusFilter && statusFilter !== 'All') {
+      // Map UI status to DB status if needed, or pass directly
+      queryBuilder.andWhere('assign.status = :status', {
+        status: statusFilter.toLowerCase(),
+      });
+    }
+
+    const assignments = await queryBuilder.getMany();
+
+    // 4. Map to UI format
+    return assignments.map((a) => {
+      const campaign = a.campaign;
+      const endDate =
+        campaign.startingDate && campaign.duration
+          ? new Date(
+              new Date(campaign.startingDate).getTime() +
+                campaign.duration * 86400000,
+            )
+          : null;
+
+      return {
+        id: campaign.id,
+        name: campaign.campaignName,
+        type: campaign.campaignType,
+        client: {
+          name: campaign.client?.brandName || 'Unknown',
+          avatar: campaign.client?.profileImg || null,
+        },
+        timeline: {
+          start: campaign.startingDate,
+          end: endDate,
+        },
+        financials: {
+          budget: Number(campaign.baseBudget),
+          finalQuote: a.offeredAmount ? Number(a.offeredAmount) : 0,
+        },
+        status: a.status, // e.g. 'active', 'completed'
+      };
+    });
+  }
+
+  // BLOCK / UNBLOCK (Danger Zone)
+  async toggleBlockStatus(userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    // Toggle status
+    user.isBlocked = !user.isBlocked;
+    // Assuming you have 'isBlocked' column in UserEntity.
+    // If not, add: @Column({ default: false }) isBlocked: boolean;
+
+    await this.userRepo.save(user);
+
+    return {
+      success: true,
+      message: user.isBlocked
+        ? 'User has been blocked'
+        : 'User has been unblocked',
+      isBlocked: user.isBlocked,
+    };
+  }
+
+  // =============================================
+  // 🏢 AGENCY VERIFICATION LOGIC
+  // =============================================
+
+  // Helper: Check if Agency is fully verified
+  private async checkAndToggleAgencyVerification(profile: AgencyProfileEntity) {
+    const isListApproved = (list: any[]) =>
+      Array.isArray(list) &&
+      list.length > 0 &&
+      list.every((i) => i.status === ApprovalStatus.APPROVED);
+
+    // 1. Check Docs
+    const nidOk =
+      profile.nidVerification?.nidStatus === ApprovalStatus.APPROVED;
+    const tradeLicenseOk =
+      profile.tradeLicenseStatus === ApprovalStatus.APPROVED;
+    const tinOk = profile.tinStatus === ApprovalStatus.APPROVED;
+    const socialOk = isListApproved(profile.socialLinks);
+
+    // 2. Check Payment (At least one)
+    const bankOk = profile.payouts?.bank?.some(
+      (b) => b.accStatus === ApprovalStatus.APPROVED,
+    );
+    const mobileOk = profile.payouts?.mobileBanking?.some(
+      (m) => m.accStatus === ApprovalStatus.APPROVED,
+    );
+    const paymentOk = bankOk || mobileOk;
+
+    // 3. Final Decision
+    const isFullyVerified =
+      nidOk && tradeLicenseOk && tinOk && socialOk && paymentOk;
+
+    if (profile.user.isVerified !== isFullyVerified) {
+      await this.userRepo.update(profile.user.id, {
+        isVerified: isFullyVerified,
+      });
+
+      if (isFullyVerified) {
+        await this.notificationService.createNotification(
+          profile.user.id,
+          UserRole.AGENCY,
+          'Agency Verified',
+          'Your agency profile has been fully verified.',
+          'system',
+        );
+      }
+    }
+  }
+
+  // 1. List Agencies for Verification
+  async getAgencyProfiles(page = 1, limit = 10) {
+    const [data, total] = await this.agencyProfileRepo.findAndCount({
+      take: limit,
+      skip: (page - 1) * limit,
+      relations: ['user'],
+      order: { updatedAt: 'DESC' },
+    });
+
+    return { data, meta: { total, page, limit } };
+  }
+
+  // 2. Get Single Agency Details
+  async getAgencyProfileDetails(userId: string) {
+    const profile = await this.agencyProfileRepo.findOne({
+      where: { userId },
+      relations: ['user'],
+    });
+    if (!profile) throw new NotFoundException('Agency profile not found');
+    return profile;
+  }
+
+  // 3. Approve/Reject NID
+  async updateAgencyNid(userId: string, dto: UpdateAgencyNidStatusDto) {
+    const profile = await this.getAgencyProfileDetails(userId);
+
+    if (!profile.nidVerification) {
+      profile.nidVerification = { nidStatus: 'pending', nidRejectReason: '' };
+    }
+
+    profile.nidVerification.nidStatus = dto.nidStatus;
+    profile.nidVerification.nidRejectReason =
+      dto.nidStatus === ApprovalStatus.REJECTED
+        ? dto.rejectReason || 'No reason'
+        : '';
+
+    await this.agencyProfileRepo.save(profile);
+    await this.notifyUser(userId, 'NID', dto.nidStatus, dto.rejectReason);
+    await this.checkAndToggleAgencyVerification(profile);
+
+    return { success: true };
+  }
+
+  // 4. Approve/Reject Trade License
+  async updateAgencyTradeLicense(
+    userId: string,
+    dto: UpdateAgencyTradeLicenseStatusDto,
+  ) {
+    const profile = await this.getAgencyProfileDetails(userId);
+
+    profile.tradeLicenseStatus = dto.tradeLicenseStatus;
+    // Note: You might want to add a reason field to entity if needed, currently just status
+
+    await this.agencyProfileRepo.save(profile);
+    await this.notifyUser(
+      userId,
+      'Trade License',
+      dto.tradeLicenseStatus,
+      dto.rejectReason,
+    );
+    await this.checkAndToggleAgencyVerification(profile);
+
+    return { success: true };
+  }
+
+  // 5. Approve/Reject TIN
+  async updateAgencyTin(userId: string, dto: UpdateAgencyTinStatusDto) {
+    const profile = await this.getAgencyProfileDetails(userId);
+
+    profile.tinStatus = dto.tinStatus;
+
+    await this.agencyProfileRepo.save(profile);
+    await this.notifyUser(
+      userId,
+      'TIN Certificate',
+      dto.tinStatus,
+      dto.rejectReason,
+    );
+    await this.checkAndToggleAgencyVerification(profile);
+
+    return { success: true };
+  }
+
+  // 6. Approve/Reject Social Links
+  async updateAgencySocial(userId: string, dto: UpdateItemStatusDto) {
+    const profile = await this.getAgencyProfileDetails(userId);
+
+    if (profile.socialLinks) {
+      profile.socialLinks = profile.socialLinks.map((s) =>
+        s.url === dto.identifier ? { ...s, status: dto.status } : s,
+      );
+    }
+
+    await this.agencyProfileRepo.save(profile);
+    await this.checkAndToggleAgencyVerification(profile);
+    return { success: true };
+  }
+
+  // 7. Approve/Reject Payout (Bank/Mobile)
+  async updateAgencyPayout(
+    userId: string,
+    dto: UpdatePayoutStatusDto,
+    type: 'bank' | 'mobile',
+  ) {
+    const profile = await this.getAgencyProfileDetails(userId);
+
+    if (type === 'bank' && profile.payouts?.bank) {
+      profile.payouts.bank = profile.payouts.bank.map((acc) =>
+        acc.bankAccNo === dto.accountNo
+          ? { ...acc, accStatus: dto.status }
+          : acc,
+      );
+    } else if (type === 'mobile' && profile.payouts?.mobileBanking) {
+      profile.payouts.mobileBanking = profile.payouts.mobileBanking.map(
+        (acc) =>
+          acc.accountNo === dto.accountNo
+            ? { ...acc, accStatus: dto.status }
+            : acc,
+      );
+    }
+
+    await this.agencyProfileRepo.save(profile);
+    await this.checkAndToggleAgencyVerification(profile);
+    return { success: true };
   }
 }

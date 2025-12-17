@@ -24,6 +24,9 @@ export class ClientProfileEntity {
   @Column()
   lastName: string;
 
+  @Column({ nullable: true })
+  profileImg: string; // S3 URL
+
   // Email and Phone are on the User entity, but we store them here for convenience
   @Column({ nullable: true })
   email: string;

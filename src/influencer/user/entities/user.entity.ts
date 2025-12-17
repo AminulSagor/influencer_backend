@@ -8,6 +8,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { AgencyProfileEntity } from 'src/influencer/agency/entities/agency-profile.entity';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -42,6 +43,9 @@ export class UserEntity {
   @Column({ default: false })
   isEmailVerified: boolean;
 
+  @Column({ default: false })
+  isBlocked: boolean;
+
   // --- FIX: Added explicit 'type' ---
   @Column({ type: 'varchar', nullable: true, select: false })
   otpCode: string | null;
@@ -61,6 +65,9 @@ export class UserEntity {
 
   @OneToOne(() => ClientProfileEntity, (profile) => profile.user)
   clientProfile: ClientProfileEntity;
+
+  @OneToOne(() => AgencyProfileEntity, (profile) => profile.user)
+  agencyProfile: AgencyProfileEntity;
 
   @CreateDateColumn()
   createdAt: Date;
