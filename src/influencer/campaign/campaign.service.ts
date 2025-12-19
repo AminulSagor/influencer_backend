@@ -3,9 +3,10 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In } from 'typeorm';
+import { Repository, DataSource, In, MoreThanOrEqual } from 'typeorm';
 
 import { CampaignEntity, CampaignStatus } from './entities/campaign.entity';
 import { CampaignMilestoneEntity } from './entities/campaign-milestone.entity';
@@ -17,7 +18,7 @@ import {
 } from './entities/campaign-negotiation.entity';
 import {
   CampaignAssignmentEntity,
-  AssignmentStatus,
+  JobStatus,
 } from './entities/campaign-assignment.entity';
 import { ClientProfileEntity } from '../client/entities/client-profile.entity';
 import { InfluencerProfileEntity } from '../influencer/entities/influencer-profile.entity';
@@ -42,7 +43,8 @@ import {
 import {
   AssignCampaignDto,
   UpdateAssignmentDto,
-  RespondAssignmentDto,
+  AcceptJobDto,
+  DeclineJobDto,
   SearchAssignmentDto,
 } from './dto/campaign-assignment.dto';
 
@@ -104,6 +106,7 @@ export class CampaignService {
   ) {
     const campaign = await this.campaignRepo.findOne({
       where: { id: campaignId },
+      relations: ['preferredInfluencers', 'notPreferableInfluencers'],
     });
 
     if (!campaign) {
@@ -132,7 +135,7 @@ export class CampaignService {
       campaignName: dto.campaignName,
       campaignType: dto.campaignType,
       clientId: client.id,
-      status: CampaignStatus.NEEDS_QUOTE,
+      status: CampaignStatus.RECEIVED,
       currentStep: 1,
     });
 
@@ -177,17 +180,37 @@ export class CampaignService {
     campaign.campaignNiche = dto.campaignNiche;
     campaign.currentStep = Math.max(campaign.currentStep, 2);
 
-    // Handle influencer relationships
-    if (dto.preferredInfluencerIds?.length) {
-      campaign.preferredInfluencers = await this.influencerRepo.find({
+    // Handle influencer relationships - always update (including clearing if empty)
+    if (dto.preferredInfluencerIds && dto.preferredInfluencerIds.length > 0) {
+      const foundInfluencers = await this.influencerRepo.find({
         where: { id: In(dto.preferredInfluencerIds) },
       });
+      
+      if (foundInfluencers.length === 0) {
+        throw new BadRequestException(
+          `No valid influencers found for preferred IDs: ${dto.preferredInfluencerIds.join(', ')}`,
+        );
+      }
+      
+      campaign.preferredInfluencers = foundInfluencers;
+    } else {
+      campaign.preferredInfluencers = [];
     }
 
-    if (dto.notPreferableInfluencerIds?.length) {
-      campaign.notPreferableInfluencers = await this.influencerRepo.find({
+    if (dto.notPreferableInfluencerIds && dto.notPreferableInfluencerIds.length > 0) {
+      const foundInfluencers = await this.influencerRepo.find({
         where: { id: In(dto.notPreferableInfluencerIds) },
       });
+      
+      if (foundInfluencers.length === 0) {
+        throw new BadRequestException(
+          `No valid influencers found for not-preferable IDs: ${dto.notPreferableInfluencerIds.join(', ')}`,
+        );
+      }
+      
+      campaign.notPreferableInfluencers = foundInfluencers;
+    } else {
+      campaign.notPreferableInfluencers = [];
     }
 
     await this.campaignRepo.save(campaign);
@@ -331,7 +354,7 @@ export class CampaignService {
     // Validate completeness
     this.validateCampaignForPlacement(campaign);
 
-    campaign.status = CampaignStatus.NEEDS_QUOTE;
+    campaign.status = CampaignStatus.RECEIVED;
     campaign.isPlaced = true;
     campaign.placedAt = new Date();
     await this.campaignRepo.save(campaign);
@@ -497,8 +520,8 @@ export class CampaignService {
   async deleteCampaign(campaignId: string, userId: string) {
     const campaign = await this.verifyCampaignOwnership(campaignId, userId);
 
-    if (campaign.status !== CampaignStatus.NEEDS_QUOTE) {
-      throw new BadRequestException('Only campaigns awaiting quote can be deleted');
+    if (campaign.status !== CampaignStatus.RECEIVED) {
+      throw new BadRequestException('Only campaigns in received status can be deleted');
     }
 
     await this.campaignRepo.remove(campaign);
@@ -643,7 +666,7 @@ export class CampaignService {
 
     // Check if it's admin's turn (or first quote)
     if (campaign.negotiationTurn && campaign.negotiationTurn !== 'admin') {
-      throw new BadRequestException(`Waiting for client's response`);
+      throw new ConflictException('Cannot send quote - waiting for client to respond first');
     }
 
     // Calculate budget with VAT
@@ -661,8 +684,8 @@ export class CampaignService {
 
     await this.negotiationRepo.save(negotiation);
 
-    // Update campaign status and turn
-    campaign.status = CampaignStatus.ACTIVE;
+    // Update campaign status to QUOTED and turn
+    campaign.status = CampaignStatus.QUOTED;
     campaign.negotiationTurn = 'client';
     await this.campaignRepo.save(campaign);
 
@@ -698,7 +721,7 @@ export class CampaignService {
 
     // Check if it's client's turn
     if (campaign.negotiationTurn !== 'client') {
-      throw new BadRequestException(`Waiting for admin's quote`);
+      throw new ConflictException('Cannot send counter-offer - waiting for admin to send quote first');
     }
 
     // Calculate budget with VAT
@@ -779,13 +802,14 @@ export class CampaignService {
       }),
     );
 
-    campaign.status = CampaignStatus.ACTIVE;
+    // Campaign is now PAID (ready for influencer assignment)
+    campaign.status = CampaignStatus.PAID;
     campaign.negotiationTurn = null;
     await this.campaignRepo.save(campaign);
 
     return {
       success: true,
-      message: 'Quote accepted',
+      message: 'Quote accepted - Campaign is now paid',
       data: {
         campaignId: campaign.id,
         status: campaign.status,
@@ -897,6 +921,34 @@ export class CampaignService {
   }
 
   // ============================================
+  // Admin: Reset Negotiation (to resend quote)
+  // ============================================
+  async resetNegotiation(campaignId: string) {
+    const campaign = await this.campaignRepo.findOne({
+      where: { id: campaignId },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Campaign not found');
+    }
+
+    // Reset turn to allow admin to send new quote
+    campaign.negotiationTurn = null;
+    campaign.status = CampaignStatus.RECEIVED;
+    await this.campaignRepo.save(campaign);
+
+    return {
+      success: true,
+      message: 'Negotiation reset - Admin can now send a new quote',
+      data: {
+        campaignId: campaign.id,
+        status: campaign.status,
+        negotiationTurn: campaign.negotiationTurn,
+      },
+    };
+  }
+
+  // ============================================
   // PATCH: Mark Negotiation as Read
   // ============================================
   async markNegotiationRead(negotiationId: string) {
@@ -916,7 +968,7 @@ export class CampaignService {
   }
 
   // ============================================
-  // CAMPAIGN ASSIGNMENT METHODS
+  // CAMPAIGN ASSIGNMENT METHODS (SIMPLIFIED)
   // ============================================
 
   // --- Helper: Calculate Assignment Budget ---
@@ -930,9 +982,12 @@ export class CampaignService {
     };
   }
 
-  // --- Admin: Assign Campaign to Influencers ---
+  // ============================================
+  // Admin: Assign Campaign to Multiple Influencers
+  // Auto-calculates budget split based on number of influencers
+  // ============================================
   async assignCampaignToInfluencers(adminId: string, dto: AssignCampaignDto) {
-    // Verify campaign exists and is active
+    // Check campaign exists
     const campaign = await this.campaignRepo.findOne({
       where: { id: dto.campaignId },
     });
@@ -941,83 +996,127 @@ export class CampaignService {
       throw new NotFoundException('Campaign not found');
     }
 
-    if (campaign.status !== CampaignStatus.ACTIVE) {
-      throw new BadRequestException(
-        'Campaign must be active before assigning to influencers',
-      );
+    // Ensure we have influencer IDs
+    if (!dto.influencerIds || dto.influencerIds.length === 0) {
+      throw new BadRequestException('At least one influencer ID is required');
     }
 
-    // Validate all influencer IDs exist
-    const influencerIds = dto.assignments.map((a) => a.influencerId);
+    // Check all influencers exist
     const influencers = await this.influencerRepo.find({
-      where: { id: In(influencerIds) },
+      where: { id: In(dto.influencerIds) },
     });
 
-    if (influencers.length !== influencerIds.length) {
-      throw new BadRequestException('One or more influencer IDs are invalid');
+    if (influencers.length !== dto.influencerIds.length) {
+      throw new NotFoundException('One or more influencers not found');
     }
 
-    // Check for duplicate assignments
+    // Check for already assigned influencers (not declined) - CHECK BEFORE CAMPAIGN STATUS
     const existingAssignments = await this.assignmentRepo.find({
       where: {
         campaignId: dto.campaignId,
-        influencerId: In(influencerIds),
-        status: In([AssignmentStatus.PENDING, AssignmentStatus.ACCEPTED, AssignmentStatus.IN_PROGRESS]),
+        influencerId: In(dto.influencerIds),
+        status: In([JobStatus.NEW_OFFER, JobStatus.PENDING, JobStatus.ACTIVE]),
       },
     });
 
-    if (existingAssignments.length > 0) {
-      const duplicateIds = existingAssignments.map((a) => a.influencerId);
-      throw new BadRequestException(
-        `Influencers already assigned: ${duplicateIds.join(', ')}`,
+    const alreadyAssignedIds = existingAssignments.map((a) => a.influencerId);
+    if (alreadyAssignedIds.length > 0) {
+      throw new ConflictException(
+        `Influencers with IDs ${alreadyAssignedIds.join(', ')} already have active assignments for this campaign`,
       );
     }
 
-    // Create assignments
-    const assignments: CampaignAssignmentEntity[] = [];
+    // Campaign must be in PAID status to assign influencers - CHECK AFTER DUPLICATE CHECK
+    if (campaign.status !== CampaignStatus.PAID) {
+      throw new BadRequestException('Campaign must be paid before assigning influencers');
+    }
 
-    for (const assignment of dto.assignments) {
-      const budgetCalc = this.calculateAssignmentBudget(assignment.offeredAmount);
-
-      const newAssignment = this.assignmentRepo.create({
+    // Create assignments for all influencers
+    const assignments = dto.influencerIds.map((influencerId) =>
+      this.assignmentRepo.create({
         campaignId: dto.campaignId,
-        influencerId: assignment.influencerId,
+        influencerId,
         assignedBy: adminId,
-        offeredAmount: budgetCalc.offeredAmount,
-        vatAmount: budgetCalc.vatAmount,
-        totalAmount: budgetCalc.totalAmount,
-        offerMessage: assignment.offerMessage || dto.globalOfferMessage,
-        offerTerms: assignment.offerTerms,
-        assignedMilestones: assignment.assignedMilestones,
-        offerExpiresAt: assignment.offerExpiresAt,
-        status: AssignmentStatus.PENDING,
-        totalMilestones: assignment.assignedMilestones?.length || 0,
-      });
+        status: JobStatus.NEW_OFFER,
+      }),
+    );
 
-      assignments.push(newAssignment);
-    }
+    await this.assignmentRepo.save(assignments);
 
-    const savedAssignments = await this.assignmentRepo.save(assignments);
+    // Recalculate budget split for ALL assignments of this campaign
+    await this.recalculateCampaignBudgetSplit(dto.campaignId);
 
-    // Update campaign status to pending_invitation when assignments created
-    if (campaign.status === CampaignStatus.ACTIVE) {
-      campaign.status = CampaignStatus.PENDING_INVITATION;
-      await this.campaignRepo.save(campaign);
-    }
+    // Update campaign status to promoting
+    campaign.status = CampaignStatus.PROMOTING;
+    await this.campaignRepo.save(campaign);
+
+    // Fetch updated assignments with calculated amounts
+    const updatedAssignments = await this.assignmentRepo.find({
+      where: { campaignId: dto.campaignId, influencerId: In(dto.influencerIds) },
+    });
 
     return {
       success: true,
-      message: `Campaign assigned to ${savedAssignments.length} influencer(s)`,
-      data: savedAssignments.map((a) => ({
-        id: a.id,
-        influencerId: a.influencerId,
-        totalAmount: a.totalAmount,
-        status: a.status,
+      message: `Campaign assigned to ${updatedAssignments.length} influencer(s)`,
+      data: updatedAssignments.map((assignment) => ({
+        assignmentId: assignment.id,
+        campaignId: assignment.campaignId,
+        influencerId: assignment.influencerId,
+        percentage: assignment.percentage,
+        offeredAmount: assignment.offeredAmount,
+        totalAmount: assignment.totalAmount,
+        status: assignment.status,
       })),
     };
   }
 
-  // --- Admin: Get Campaign Assignments ---
+  // ============================================
+  // Helper: Recalculate budget split for all influencers
+  // ============================================
+  private async recalculateCampaignBudgetSplit(campaignId: string) {
+    // Get campaign with budget
+    const campaign = await this.campaignRepo.findOne({
+      where: { id: campaignId },
+    });
+
+    if (!campaign || !campaign.baseBudget) {
+      return;
+    }
+
+    // Get all active assignments (not declined/completed)
+    const assignments = await this.assignmentRepo.find({
+      where: {
+        campaignId,
+        status: In([JobStatus.NEW_OFFER, JobStatus.PENDING, JobStatus.ACTIVE]),
+      },
+    });
+
+    if (assignments.length === 0) {
+      return;
+    }
+
+    // Calculate equal percentage for each influencer
+    const percentage = Math.round((100 / assignments.length) * 100) / 100; // e.g., 33.33
+
+    // Calculate amount per influencer
+    const amountPerInfluencer = Math.round((campaign.baseBudget / assignments.length) * 100) / 100;
+    const vatAmount = Math.round(amountPerInfluencer * VAT_RATE * 100) / 100;
+    const totalAmount = Math.round((amountPerInfluencer + vatAmount) * 100) / 100;
+
+    // Update all assignments
+    for (const assignment of assignments) {
+      assignment.percentage = percentage;
+      assignment.offeredAmount = amountPerInfluencer;
+      assignment.vatAmount = vatAmount;
+      assignment.totalAmount = totalAmount;
+    }
+
+    await this.assignmentRepo.save(assignments);
+  }
+
+  // ============================================
+  // Admin: Get Campaign Assignments
+  // ============================================
   async getCampaignAssignments(campaignId: string) {
     const campaign = await this.campaignRepo.findOne({
       where: { id: campaignId },
@@ -1040,14 +1139,48 @@ export class CampaignService {
         influencerId: a.influencer.id,
         influencerName: `${a.influencer.firstName} ${a.influencer.lastName}`,
         profileImage: a.influencer.profileImage,
+        offeredAmount: a.offeredAmount,
         totalAmount: a.totalAmount,
         status: a.status,
-        respondedAt: a.respondedAt,
+        acceptedAt: a.acceptedAt,
+        startedAt: a.startedAt,
+        completedAt: a.completedAt,
+        createdAt: a.createdAt,
+        // Delivery address (only if job accepted)
+        address: a.status !== JobStatus.NEW_OFFER ? {
+          addressName: a.influencerAddressName,
+          street: a.influencerStreet,
+          thana: a.influencerThana,
+          zilla: a.influencerZilla,
+          fullAddress: a.influencerFullAddress,
+        } : null,
       })),
     };
   }
 
-  // --- Admin: Update Assignment ---
+  // --- Get Campaign Assignments (Client - verify ownership) ---
+  async getCampaignAssignmentsForClient(campaignId: string, clientUserId: string) {
+    const campaign = await this.campaignRepo.findOne({
+      where: { id: campaignId },
+      relations: ['client'],
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Campaign not found');
+    }
+
+    // Verify client owns this campaign
+    if (campaign.client.userId !== clientUserId) {
+      throw new ForbiddenException('You do not have access to this campaign');
+    }
+
+    // Return same response as getCampaignAssignments
+    return this.getCampaignAssignments(campaignId);
+  }
+
+  // ============================================
+  // Admin: Update Assignment (only for new_offer)
+  // ============================================
   async updateAssignment(assignmentId: string, dto: UpdateAssignmentDto) {
     const assignment = await this.assignmentRepo.findOne({
       where: { id: assignmentId },
@@ -1057,34 +1190,37 @@ export class CampaignService {
       throw new NotFoundException('Assignment not found');
     }
 
-    if (assignment.status !== AssignmentStatus.PENDING) {
-      throw new BadRequestException('Can only update pending assignments');
+    if (assignment.status !== JobStatus.NEW_OFFER) {
+      throw new BadRequestException('Can only update assignments with "new_offer" status');
     }
 
     if (dto.offeredAmount !== undefined) {
-      const budgetCalc = this.calculateAssignmentBudget(dto.offeredAmount);
-      assignment.offeredAmount = budgetCalc.offeredAmount;
-      assignment.vatAmount = budgetCalc.vatAmount;
-      assignment.totalAmount = budgetCalc.totalAmount;
+      const budget = this.calculateAssignmentBudget(dto.offeredAmount);
+      assignment.offeredAmount = budget.offeredAmount;
+      assignment.vatAmount = budget.vatAmount;
+      assignment.totalAmount = budget.totalAmount;
     }
 
-    if (dto.offerMessage !== undefined) assignment.offerMessage = dto.offerMessage;
-    if (dto.offerTerms !== undefined) assignment.offerTerms = dto.offerTerms;
-    if (dto.assignedMilestones !== undefined) {
-      assignment.assignedMilestones = dto.assignedMilestones;
-      assignment.totalMilestones = dto.assignedMilestones.length;
+    if (dto.message !== undefined) {
+      assignment.message = dto.message;
     }
-    if (dto.offerExpiresAt !== undefined) assignment.offerExpiresAt = dto.offerExpiresAt;
 
     await this.assignmentRepo.save(assignment);
 
     return {
       success: true,
       message: 'Assignment updated',
+      data: {
+        id: assignment.id,
+        offeredAmount: assignment.offeredAmount,
+        totalAmount: assignment.totalAmount,
+      },
     };
   }
 
-  // --- Admin: Cancel Assignment ---
+  // ============================================
+  // Admin: Cancel Assignment
+  // ============================================
   async cancelAssignment(assignmentId: string) {
     const assignment = await this.assignmentRepo.findOne({
       where: { id: assignmentId },
@@ -1094,12 +1230,18 @@ export class CampaignService {
       throw new NotFoundException('Assignment not found');
     }
 
-    if (![AssignmentStatus.PENDING, AssignmentStatus.ACCEPTED].includes(assignment.status as AssignmentStatus)) {
-      throw new BadRequestException('Cannot cancel this assignment');
+    // Can only cancel if not completed
+    if (assignment.status === JobStatus.COMPLETED) {
+      throw new BadRequestException('Cannot cancel a completed assignment');
     }
 
-    assignment.status = AssignmentStatus.CANCELLED;
-    await this.assignmentRepo.save(assignment);
+    const campaignId = assignment.campaignId;
+
+    // Delete the assignment
+    await this.assignmentRepo.remove(assignment);
+
+    // Recalculate budget split for remaining influencers
+    await this.recalculateCampaignBudgetSplit(campaignId);
 
     return {
       success: true,
@@ -1107,8 +1249,12 @@ export class CampaignService {
     };
   }
 
-  // --- Influencer: Get My Assignments ---
-  async getInfluencerAssignments(userId: string, query: SearchAssignmentDto) {
+  // ============================================
+  // INFLUENCER: Job Management (Simple 5-Stage Flow)
+  // ============================================
+
+  // --- Get Influencer's Available Addresses ---
+  async getInfluencerAddresses(userId: string) {
     const influencer = await this.influencerRepo.findOne({
       where: { userId },
     });
@@ -1117,37 +1263,130 @@ export class CampaignService {
       throw new NotFoundException('Influencer profile not found');
     }
 
-    const queryBuilder = this.assignmentRepo
-      .createQueryBuilder('assignment')
-      .leftJoinAndSelect('assignment.campaign', 'campaign')
-      .leftJoinAndSelect('campaign.client', 'client')
-      .where('assignment.influencerId = :influencerId', { influencerId: influencer.id });
+    const addresses = influencer.addresses || [];
 
+    return {
+      success: true,
+      data: addresses.map((addr, index) => ({
+        index,
+        addressName: addr.addressName,
+        thana: addr.thana,
+        zilla: addr.zilla,
+        fullAddress: addr.fullAddress,
+        isDefault: index === 0, // First address is default
+      })),
+      defaultAddressIndex: addresses.length > 0 ? 0 : null,
+    };
+  }
+
+  // --- Get Influencer Dashboard Summary ---
+  async getInfluencerDashboardSummary(userId: string) {
+    const influencer = await this.influencerRepo.findOne({
+      where: { userId },
+    });
+
+    if (!influencer) {
+      throw new NotFoundException('Influencer profile not found');
+    }
+
+    // Get all assignments for this influencer
+    const assignments = await this.assignmentRepo.find({
+      where: { influencerId: influencer.id },
+    });
+
+    // Calculate metrics
+    let lifetimeEarnings = 0;
+    let pendingEarnings = 0;
+    let activeJobs = 0;
+    let NewOffers = 0;
+
+    assignments.forEach((assignment) => {
+      // Count new offers
+      if (assignment.status === JobStatus.NEW_OFFER) {
+        NewOffers++;
+      } else if (assignment.status === JobStatus.PENDING) {
+        // Add to pending earnings
+        if (assignment.totalAmount) {
+          pendingEarnings += Number(assignment.totalAmount);
+        }
+      } else if (assignment.status === JobStatus.ACTIVE) {
+        activeJobs++;
+        // Add to pending earnings
+        if (assignment.totalAmount) {
+          pendingEarnings += Number(assignment.totalAmount);
+        }
+      } else if (assignment.status === JobStatus.COMPLETED) {
+        // Add to lifetime earnings
+        if (assignment.totalAmount) {
+          lifetimeEarnings += Number(assignment.totalAmount);
+        }
+      }
+    });
+
+    return {
+      success: true,
+      data: {
+        lifetimeEarnings,
+        pendingEarnings,
+        activeJobs,
+        NewOffers,
+      },
+    };
+  }
+
+  // --- Get My Jobs (with status filter for sections) ---
+  async getInfluencerJobs(userId: string, query: SearchAssignmentDto) {
+    const influencer = await this.influencerRepo.findOne({
+      where: { userId },
+    });
+
+    if (!influencer) {
+      throw new NotFoundException('Influencer profile not found');
+    }
+
+    const qb = this.assignmentRepo
+      .createQueryBuilder('job')
+      .leftJoinAndSelect('job.campaign', 'campaign')
+      .leftJoinAndSelect('campaign.client', 'client')
+      .where('job.influencerId = :influencerId', { influencerId: influencer.id });
+
+    // Filter by status (maps to UI sections)
     if (query.status) {
-      queryBuilder.andWhere('assignment.status = :status', { status: query.status });
+      qb.andWhere('job.status = :status', { status: query.status });
     }
 
     if (query.campaignId) {
-      queryBuilder.andWhere('assignment.campaignId = :campaignId', { campaignId: query.campaignId });
+      qb.andWhere('job.campaignId = :campaignId', { campaignId: query.campaignId });
     }
 
     const page = query.page || 1;
     const limit = query.limit || 10;
-    const skip = (page - 1) * limit;
 
-    queryBuilder.orderBy('assignment.createdAt', 'DESC').skip(skip).take(limit);
-
-    const [assignments, total] = await queryBuilder.getManyAndCount();
+    const [jobs, total] = await qb
+      .orderBy('job.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
 
     return {
       success: true,
-      data: assignments.map((a) => ({
-        id: a.id,
-        campaignId: a.campaign.id,
-        campaignName: a.campaign.campaignName,
-        totalAmount: a.totalAmount,
-        status: a.status,
-        offerExpiresAt: a.offerExpiresAt,
+      data: jobs.map((job) => ({
+        id: job.id,
+        campaignId: job.campaign.id,
+        campaignName: job.campaign.campaignName,
+        brandName: job.campaign.client?.brandName,
+        offeredAmount: job.offeredAmount,
+        totalAmount: job.totalAmount,
+        status: job.status,
+        message: job.message,
+        address: job.status !== JobStatus.NEW_OFFER ? {
+          addressName: job.influencerAddressName,
+          street: job.influencerStreet,
+          thana: job.influencerThana,
+          zilla: job.influencerZilla,
+          fullAddress: job.influencerFullAddress,
+        } : null,
+        createdAt: job.createdAt,
       })),
       pagination: {
         total,
@@ -1158,8 +1397,8 @@ export class CampaignService {
     };
   }
 
-  // --- Influencer: Get Assignment Details ---
-  async getAssignmentDetails(assignmentId: string, userId: string) {
+  // --- Get Job Counts by Status (for UI badges) ---
+  async getInfluencerJobCounts(userId: string) {
     const influencer = await this.influencerRepo.findOne({
       where: { userId },
     });
@@ -1168,40 +1407,129 @@ export class CampaignService {
       throw new NotFoundException('Influencer profile not found');
     }
 
-    const assignment = await this.assignmentRepo.findOne({
+    const counts = await this.assignmentRepo
+      .createQueryBuilder('job')
+      .select('job.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .where('job.influencerId = :influencerId', { influencerId: influencer.id })
+      .groupBy('job.status')
+      .getRawMany();
+
+    // Convert to object
+    const result = {
+      new_offer: 0,
+      pending: 0,
+      active: 0,
+      completed: 0,
+      declined: 0,
+    };
+
+    counts.forEach((c) => {
+      result[c.status] = parseInt(c.count, 10);
+    });
+
+    return {
+      success: true,
+      data: result,
+    };
+  }
+
+  // --- Get Single Job Details ---
+  async getJobDetails(assignmentId: string, userId: string) {
+    const influencer = await this.influencerRepo.findOne({
+      where: { userId },
+    });
+
+    if (!influencer) {
+      throw new NotFoundException('Influencer profile not found');
+    }
+
+    const job = await this.assignmentRepo.findOne({
       where: { id: assignmentId, influencerId: influencer.id },
       relations: ['campaign', 'campaign.client', 'campaign.assets'],
     });
 
-    if (!assignment) {
-      throw new NotFoundException('Assignment not found');
+    if (!job) {
+      throw new NotFoundException('Job not found');
     }
 
     return {
       success: true,
       data: {
-        id: assignment.id,
-        campaignName: assignment.campaign.campaignName,
-        campaignGoals: assignment.campaign.campaignGoals,
-        productServiceDetails: assignment.campaign.productServiceDetails,
-        startingDate: assignment.campaign.startingDate,
-        duration: assignment.campaign.duration,
-        totalAmount: assignment.totalAmount,
-        offerMessage: assignment.offerMessage,
-        offerTerms: assignment.offerTerms,
-        assignedMilestones: assignment.assignedMilestones,
-        status: assignment.status,
-        offerExpiresAt: assignment.offerExpiresAt,
+        id: job.id,
+        campaignName: job.campaign.campaignName,
+        brandName: job.campaign.client?.brandName,
+        campaignGoals: job.campaign.campaignGoals,
+        productServiceDetails: job.campaign.productServiceDetails,
+        startingDate: job.campaign.startingDate,
+        duration: job.campaign.duration,
+        offeredAmount: job.offeredAmount,
+        totalAmount: job.totalAmount,
+        message: job.message,
+        status: job.status,
+        acceptedAt: job.acceptedAt,
+        startedAt: job.startedAt,
+        completedAt: job.completedAt,
+        address: job.status !== JobStatus.NEW_OFFER ? {
+          addressName: job.influencerAddressName,
+          street: job.influencerStreet,
+          thana: job.influencerThana,
+          zilla: job.influencerZilla,
+          fullAddress: job.influencerFullAddress,
+        } : null,
+        assets: job.campaign.assets,
       },
     };
   }
 
-  // --- Influencer: Respond to Assignment ---
-  async respondToAssignment(
-    assignmentId: string,
-    userId: string,
-    dto: RespondAssignmentDto,
+  // ============================================
+  // Influencer Actions
+  // ============================================
+
+  // --- Helper: Resolve Influencer Address ---
+  private async resolveInfluencerAddress(
+    influencer: InfluencerProfileEntity,
+    addressId?: number,
   ) {
+    // Get all addresses
+    const addresses = influencer.addresses || [];
+
+    if (addresses.length === 0) {
+      throw new BadRequestException(
+        'No addresses found in profile. Please add at least one address before accepting jobs.',
+      );
+    }
+
+    // If addressId provided, validate and use it
+    if (addressId !== undefined && addressId !== null) {
+      if (addressId < 0 || addressId >= addresses.length) {
+        throw new BadRequestException(
+          `Invalid address ID. You have ${addresses.length} address(es) (0-${addresses.length - 1})`,
+        );
+      }
+      const selectedAddress = addresses[addressId];
+      return {
+        influencerAddressName: selectedAddress.addressName,
+        influencerStreet: selectedAddress.fullAddress, // fullAddress contains the complete address
+        influencerThana: selectedAddress.thana,
+        influencerZilla: selectedAddress.zilla,
+        influencerFullAddress: selectedAddress.fullAddress,
+      };
+    }
+
+    // Otherwise, use default address (first one)
+    const defaultAddress = addresses[0];
+    return {
+      influencerAddressName: defaultAddress.addressName,
+      influencerStreet: defaultAddress.fullAddress,
+      influencerThana: defaultAddress.thana,
+      influencerZilla: defaultAddress.zilla,
+      influencerFullAddress: defaultAddress.fullAddress,
+    };
+  }
+
+  // --- Accept Job (new_offer → pending) ---
+  async acceptJob(assignmentId: string, userId: string, dto?: AcceptJobDto) {
     const influencer = await this.influencerRepo.findOne({
       where: { userId },
     });
@@ -1210,76 +1538,181 @@ export class CampaignService {
       throw new NotFoundException('Influencer profile not found');
     }
 
-    const assignment = await this.assignmentRepo.findOne({
+    const job = await this.assignmentRepo.findOne({
       where: { id: assignmentId, influencerId: influencer.id },
     });
 
-    if (!assignment) {
-      throw new NotFoundException('Assignment not found');
+    if (!job) {
+      throw new NotFoundException('Job not found');
     }
 
-    if (assignment.status !== AssignmentStatus.PENDING) {
-      throw new BadRequestException('This assignment has already been responded to');
+    if (job.status !== JobStatus.NEW_OFFER) {
+      throw new BadRequestException('Can only accept jobs with "new_offer" status');
     }
 
-    // Check if offer has expired
-    if (assignment.offerExpiresAt && new Date() > new Date(assignment.offerExpiresAt)) {
-      assignment.status = AssignmentStatus.EXPIRED;
-      await this.assignmentRepo.save(assignment);
-      throw new BadRequestException('This offer has expired');
-    }
+    // Resolve and save address
+    const address = await this.resolveInfluencerAddress(influencer, dto?.addressId);
 
-    assignment.status = dto.response;
-    assignment.respondedAt = new Date();
-    if (dto.responseMessage) {
-      assignment.responseMessage = dto.responseMessage;
-    }
+    job.status = JobStatus.PENDING;
+    job.acceptedAt = new Date();
+    job.influencerAddressName = address.influencerAddressName;
+    job.influencerStreet = address.influencerStreet;
+    job.influencerThana = address.influencerThana;
+    job.influencerZilla = address.influencerZilla;
+    job.influencerFullAddress = address.influencerFullAddress;
 
-    if (dto.response === AssignmentStatus.REJECTED && dto.rejectionReason) {
-      assignment.rejectionReason = dto.rejectionReason;
-    }
-
-    if (dto.response === AssignmentStatus.ACCEPTED) {
-      assignment.status = AssignmentStatus.IN_PROGRESS;
-      assignment.startedAt = new Date();
-    }
-
-    await this.assignmentRepo.save(assignment);
+    await this.assignmentRepo.save(job);
 
     return {
       success: true,
-      message: dto.response === AssignmentStatus.ACCEPTED
-        ? 'Offer accepted successfully'
-        : 'Offer declined',
+      message: 'Job accepted! It is now in your pending jobs.',
+      data: {
+        assignmentId: job.id,
+        address: {
+          addressName: job.influencerAddressName,
+          street: job.influencerStreet,
+          thana: job.influencerThana,
+          zilla: job.influencerZilla,
+          fullAddress: job.influencerFullAddress,
+        },
+      },
     };
   }
 
-  // --- Admin: Get All Assignments (with filters) ---
+  // --- Decline Job (new_offer → declined) ---
+  async declineJob(assignmentId: string, userId: string, dto?: DeclineJobDto) {
+    const influencer = await this.influencerRepo.findOne({
+      where: { userId },
+    });
+
+    if (!influencer) {
+      throw new NotFoundException('Influencer profile not found');
+    }
+
+    const job = await this.assignmentRepo.findOne({
+      where: { id: assignmentId, influencerId: influencer.id },
+    });
+
+    if (!job) {
+      throw new NotFoundException('Job not found');
+    }
+
+    if (job.status !== JobStatus.NEW_OFFER) {
+      throw new BadRequestException('Can only decline jobs with "new_offer" status');
+    }
+
+    job.status = JobStatus.DECLINED;
+    job.declinedAt = new Date();
+    if (dto?.reason) {
+      job.declineReason = dto.reason;
+    }
+
+    await this.assignmentRepo.save(job);
+
+    // Recalculate budget split for remaining influencers
+    await this.recalculateCampaignBudgetSplit(job.campaignId);
+
+    return {
+      success: true,
+      message: 'Job declined.',
+    };
+  }
+
+  // --- Start Job (pending → active) ---
+  async startJob(assignmentId: string, userId: string) {
+    const influencer = await this.influencerRepo.findOne({
+      where: { userId },
+    });
+
+    if (!influencer) {
+      throw new NotFoundException('Influencer profile not found');
+    }
+
+    const job = await this.assignmentRepo.findOne({
+      where: { id: assignmentId, influencerId: influencer.id },
+    });
+
+    if (!job) {
+      throw new NotFoundException('Job not found');
+    }
+
+    if (job.status !== JobStatus.PENDING) {
+      throw new BadRequestException('Can only start jobs with "pending" status');
+    }
+
+    job.status = JobStatus.ACTIVE;
+    job.startedAt = new Date();
+
+    await this.assignmentRepo.save(job);
+
+    return {
+      success: true,
+      message: 'Job started! It is now in your active jobs.',
+    };
+  }
+
+  // --- Complete Job (active → completed) ---
+  async completeJob(assignmentId: string, userId: string) {
+    const influencer = await this.influencerRepo.findOne({
+      where: { userId },
+    });
+
+    if (!influencer) {
+      throw new NotFoundException('Influencer profile not found');
+    }
+
+    const job = await this.assignmentRepo.findOne({
+      where: { id: assignmentId, influencerId: influencer.id },
+    });
+
+    if (!job) {
+      throw new NotFoundException('Job not found');
+    }
+
+    if (job.status !== JobStatus.ACTIVE) {
+      throw new BadRequestException('Can only complete jobs with "active" status');
+    }
+
+    job.status = JobStatus.COMPLETED;
+    job.completedAt = new Date();
+
+    await this.assignmentRepo.save(job);
+
+    return {
+      success: true,
+      message: 'Congratulations! Job completed successfully.',
+    };
+  }
+
+  // ============================================
+  // Admin: Get All Assignments
+  // ============================================
   async getAllAssignments(query: SearchAssignmentDto) {
-    const queryBuilder = this.assignmentRepo
+    const qb = this.assignmentRepo
       .createQueryBuilder('assignment')
       .leftJoinAndSelect('assignment.campaign', 'campaign')
       .leftJoinAndSelect('assignment.influencer', 'influencer');
 
     if (query.status) {
-      queryBuilder.andWhere('assignment.status = :status', { status: query.status });
+      qb.andWhere('assignment.status = :status', { status: query.status });
     }
 
     if (query.campaignId) {
-      queryBuilder.andWhere('assignment.campaignId = :campaignId', { campaignId: query.campaignId });
+      qb.andWhere('assignment.campaignId = :campaignId', { campaignId: query.campaignId });
     }
 
     if (query.influencerId) {
-      queryBuilder.andWhere('assignment.influencerId = :influencerId', { influencerId: query.influencerId });
+      qb.andWhere('assignment.influencerId = :influencerId', { influencerId: query.influencerId });
     }
 
     const page = query.page || 1;
     const limit = query.limit || 10;
-    const skip = (page - 1) * limit;
 
-    queryBuilder.orderBy('assignment.createdAt', 'DESC').skip(skip).take(limit);
-
-    const [assignments, total] = await queryBuilder.getManyAndCount();
+    const [assignments, total] = await qb
+      .orderBy('assignment.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
 
     return {
       success: true,
@@ -1287,9 +1720,10 @@ export class CampaignService {
         id: a.id,
         campaignName: a.campaign.campaignName,
         influencerName: `${a.influencer.firstName} ${a.influencer.lastName}`,
+        offeredAmount: a.offeredAmount,
         totalAmount: a.totalAmount,
         status: a.status,
-        respondedAt: a.respondedAt,
+        createdAt: a.createdAt,
       })),
       pagination: {
         total,
@@ -1299,4 +1733,92 @@ export class CampaignService {
       },
     };
   }
+
+  // --- Get Influencer Earnings Overview with Date Range ---
+  async getEarningsOverview(userId: string, range: string = '7d') {
+    const influencer = await this.influencerRepo.findOne({
+      where: { userId },
+    });
+
+    if (!influencer) {
+      throw new NotFoundException('Influencer profile not found');
+    }
+
+    // Calculate date range
+    const now = new Date();
+    let startDate = new Date();
+
+    switch (range) {
+      case '7d':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(now.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(now.getDate() - 90);
+        break;
+      case '1y':
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+      case 'all':
+        startDate = new Date('2000-01-01');
+        break;
+      default:
+        startDate.setDate(now.getDate() - 7);
+    }
+
+    // Get completed assignments within date range
+    const assignments = await this.assignmentRepo.find({
+      where: {
+        influencerId: influencer.id,
+        status: JobStatus.COMPLETED,
+        completedAt: MoreThanOrEqual(startDate),
+      },
+      relations: ['campaign'],
+    });
+
+    // Calculate totals
+    let totalEarnings = 0;
+    const dailyBreakdown: { [key: string]: { amount: number; count: number } } = {};
+
+    assignments.forEach((assignment) => {
+      if (assignment.totalAmount) {
+        const amount = Number(assignment.totalAmount);
+        totalEarnings += amount;
+
+        // Group by date
+        const date = assignment.completedAt
+          ? assignment.completedAt.toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0];
+
+        if (!dailyBreakdown[date]) {
+          dailyBreakdown[date] = { amount: 0, count: 0 };
+        }
+        dailyBreakdown[date].amount += amount;
+        dailyBreakdown[date].count++;
+      }
+    });
+
+    // Format breakdown
+    const breakdown = Object.entries(dailyBreakdown)
+      .map(([date, data]) => ({
+        date,
+        amount: data.amount,
+        jobCount: data.count,
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    return {
+      success: true,
+      data: {
+        totalEarnings,
+        completedJobs: assignments.length,
+        currency: 'BDT',
+        timeRange: range,
+        breakdown,
+      },
+    };
+  }
 }
+

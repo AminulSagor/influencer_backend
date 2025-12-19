@@ -2,23 +2,13 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ConflictException,
-  InternalServerErrorException,
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
+import { Repository } from 'typeorm';
 
 import { ClientProfileEntity } from './entities/client-profile.entity';
 import { UserEntity, UserRole } from '../user/entities/user.entity';
-import { SmsService } from 'src/common/services/sms.service';
-import {
-  CreateClientDto,
-  VerifyClientOtpDto,
-  ResendClientOtpDto,
-} from './dto/create-client.dto';
 import {
   UpdateClientDto,
   UpdateClientAddressDto,
@@ -35,151 +25,18 @@ export class ClientService {
     private readonly clientProfileRepo: Repository<ClientProfileEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
-    private readonly dataSource: DataSource,
-    private readonly jwtService: JwtService,
-    private readonly smsService: SmsService,
   ) {}
 
-  // --- 1. SIGNUP / CREATE CLIENT (Transactional) ---
-  async signup(
-    dto: CreateClientDto,
-  ): Promise<{ message: string; phone: string }> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      // A. Generate OTP
-      const otp = Math.floor(1000 + Math.random() * 9000).toString();
-      const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
-
-      const salt = await bcrypt.genSalt();
-
-      // B. Create User
-      const user = new UserEntity();
-      user.email = dto.email;
-      user.phone = dto.phone;
-      user.password = await bcrypt.hash(dto.password, salt);
-      user.role = UserRole.CLIENT;
-      user.otpCode = await bcrypt.hash(otp, 10);
-      user.otpExpires = otpExpires;
-      user.isPhoneVerified = false;
-
-      const savedUser = await queryRunner.manager.save(UserEntity, user);
-
-      // C. Create Client Profile
-      const profile = new ClientProfileEntity();
-      profile.userId = savedUser.id;
-      profile.brandName = dto.brandName;
-      profile.firstName = dto.firstName;
-      profile.lastName = dto.lastName;
-      profile.email = dto.email;
-      profile.phone = dto.phone;
-      profile.verificationSteps = {
-        profileDetails: 'verified', // Initial details are filled
-        phoneVerification: 'pending',
-        addressDetails: 'unverified',
-        socialLinks: 'unverified',
-        nidVerification: 'unverified',
-        tradeLicense: 'unverified',
-      };
-
-      await queryRunner.manager.save(ClientProfileEntity, profile);
-
-      // D. Send SMS OTP
-      await this.smsService.sendOtp(dto.phone, otp);
-
-      await queryRunner.commitTransaction();
-
-      return {
-        message:
-          'Client registration successful. Verification code sent to your phone.',
-        phone: dto.phone,
-      };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      if (error.code === '23505') {
-        throw new ConflictException('Email or Phone already exists');
-      }
-      throw new InternalServerErrorException('Registration failed');
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  // --- 2. VERIFY OTP ---
-  async verifyOtp(dto: VerifyClientOtpDto) {
-    const user = await this.userRepo.findOne({
-      where: { phone: dto.phone, role: UserRole.CLIENT },
-      select: [
-        'id',
-        'email',
-        'role',
-        'otpCode',
-        'otpExpires',
-        'isPhoneVerified',
-      ],
-    });
-
-    if (!user) throw new NotFoundException('Client not found');
-
-    if (user.isPhoneVerified) {
-      return this.generateToken(user);
-    }
-
-    if (!user.otpExpires || new Date() > user.otpExpires) {
-      throw new BadRequestException('OTP has expired. Please request a new one.');
-    }
-
-    const isMatch = await bcrypt.compare(dto.otp, user.otpCode!);
-    if (!isMatch) throw new BadRequestException('Invalid verification code');
-
-    // Update user verification status
-    user.isPhoneVerified = true;
-    user.otpCode = null;
-    user.otpExpires = null;
-    await this.userRepo.save(user);
-
-    // Update client profile verification step
+  // --- 1. GET PROFILE ---
+  async getProfile(userId: string) {
     const profile = await this.clientProfileRepo.findOne({
-      where: { userId: user.id },
+      where: { userId },
     });
 
-    if (profile) {
-      profile.verificationSteps.phoneVerification = 'verified';
-      await this.clientProfileRepo.save(profile);
-    }
+    if (!profile) throw new NotFoundException('Client profile not found');
 
-    return this.generateToken(user);
+    return profile;
   }
-
-  // --- 3. RESEND OTP ---
-  async resendOtp(dto: ResendClientOtpDto): Promise<{ message: string }> {
-    const user = await this.userRepo.findOne({
-      where: { phone: dto.phone, role: UserRole.CLIENT },
-    });
-
-    if (!user) throw new NotFoundException('Client not found');
-
-    if (user.isPhoneVerified) {
-      throw new BadRequestException('Phone is already verified');
-    }
-
-    // Generate new OTP
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
-
-    user.otpCode = await bcrypt.hash(otp, 10);
-    user.otpExpires = otpExpires;
-    await this.userRepo.save(user);
-
-    // Send SMS
-    await this.smsService.sendOtp(dto.phone, otp);
-
-    return { message: 'New verification code sent to your phone' };
-  }
-
-  // --- 4. UPDATE ADDRESS (After Phone Verification) ---
   async updateAddress(userId: string, dto: UpdateClientAddressDto) {
     const profile = await this.getProfileWithVerificationCheck(userId);
 
@@ -302,25 +159,6 @@ export class ClientService {
     };
   }
 
-  // --- 9. GET PROFILE ---
-  async getProfile(userId: string) {
-    const profile = await this.clientProfileRepo.findOne({
-      where: { userId },
-      relations: ['user'],
-    });
-
-    if (!profile) throw new NotFoundException('Client profile not found');
-
-    // Remove sensitive user data
-    if (profile.user) {
-      delete (profile.user as any).password;
-      delete (profile.user as any).otpCode;
-      delete (profile.user as any).otpExpires;
-    }
-
-    return profile;
-  }
-
   // --- 10. UPDATE PROFILE (General) ---
   async updateProfile(userId: string, dto: UpdateClientDto) {
     const profile = await this.clientProfileRepo.findOne({
@@ -398,25 +236,6 @@ export class ClientService {
     }
 
     return { message: 'Client deleted successfully' };
-  }
-
-  // --- HELPER: Generate JWT Token ---
-  private generateToken(user: UserEntity) {
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-    };
-
-    return {
-      accessToken: this.jwtService.sign(payload),
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        isPhoneVerified: user.isPhoneVerified,
-      },
-    };
   }
 
   // --- HELPER: Get profile with phone verification check ---

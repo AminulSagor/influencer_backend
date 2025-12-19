@@ -2,103 +2,39 @@ import {
   IsString,
   IsOptional,
   IsUUID,
-  IsArray,
   IsNumber,
-  IsDate,
   IsEnum,
-  ValidateNested,
   Min,
-  ArrayMinSize,
+  IsArray,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Platform } from '../entities/campaign.entity';
-import { AssignmentStatus } from '../entities/campaign-assignment.entity';
+import { JobStatus } from '../entities/campaign-assignment.entity';
 
 // ============================================
-// Assigned Milestone DTO
+// SIMPLE ASSIGNMENT WORKFLOW
 // ============================================
-export class AssignedMilestoneDto {
-  @IsString()
-  contentTitle: string;
-
-  @IsEnum(Platform)
-  platform: Platform;
-
-  @IsString()
-  contentQuantity: string;
-
-  @IsNumber()
-  @Min(1)
-  deliveryDays: number;
-
-  @IsNumber()
-  @IsOptional()
-  expectedReach?: number;
-
-  @IsNumber()
-  @IsOptional()
-  expectedViews?: number;
-
-  @IsNumber()
-  @IsOptional()
-  expectedLikes?: number;
-
-  @IsNumber()
-  @IsOptional()
-  expectedComments?: number;
-}
+// Admin assigns → Influencer sees in "New Offers"
+// Influencer accepts → Goes to "Pending" (accepted but not started)
+// Influencer starts → Goes to "Active" (work in progress)
+// Influencer completes → Goes to "Completed"
+// Influencer declines → Goes to "Declined"
+// ============================================
 
 // ============================================
-// Single Influencer Assignment
-// ============================================
-export class InfluencerAssignmentDto {
-  @IsUUID()
-  influencerId: string;
-
-  @IsNumber()
-  @Min(0)
-  offeredAmount: number;
-
-  @IsString()
-  @IsOptional()
-  offerMessage?: string;
-
-  @IsString()
-  @IsOptional()
-  offerTerms?: string;
-
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => AssignedMilestoneDto)
-  @IsOptional()
-  assignedMilestones?: AssignedMilestoneDto[];
-
-  @IsDate()
-  @Type(() => Date)
-  @IsOptional()
-  offerExpiresAt?: Date;
-}
-
-// ============================================
-// Assign Campaign to Influencers (Admin)
+// Admin: Assign Campaign to Influencer(s)
 // ============================================
 export class AssignCampaignDto {
   @IsUUID()
   campaignId: string;
 
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => InfluencerAssignmentDto)
-  @ArrayMinSize(1)
-  assignments: InfluencerAssignmentDto[];
-
-  @IsString()
-  @IsOptional()
-  globalOfferMessage?: string; // Default message for all influencers
+  @IsUUID('all', { each: true })
+  @Type(() => String)
+  influencerIds: string[];
 }
 
 // ============================================
-// Update Assignment (Admin)
+// Admin: Update Assignment (set payment, message)
 // ============================================
 export class UpdateAssignmentDto {
   @IsNumber()
@@ -108,53 +44,34 @@ export class UpdateAssignmentDto {
 
   @IsString()
   @IsOptional()
-  offerMessage?: string;
-
-  @IsString()
-  @IsOptional()
-  offerTerms?: string;
-
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => AssignedMilestoneDto)
-  @IsOptional()
-  assignedMilestones?: AssignedMilestoneDto[];
-
-  @IsDate()
-  @Type(() => Date)
-  @IsOptional()
-  offerExpiresAt?: Date;
-
-  @IsEnum(AssignmentStatus)
-  @IsOptional()
-  status?: AssignmentStatus;
+  message?: string;
 }
 
 // ============================================
-// Influencer Response to Assignment
+// Influencer: Accept Job
 // ============================================
-export class RespondAssignmentDto {
-  @IsEnum(AssignmentStatus, {
-    message: 'Response must be either "accepted" or "rejected"',
-  })
-  response: AssignmentStatus.ACCEPTED | AssignmentStatus.REJECTED;
+export class AcceptJobDto {
+  @IsNumber()
+  @IsOptional()
+  addressId?: number; // Index of address from influencer's address list (0-based)
+}
 
+// ============================================
+// Influencer: Decline Job
+// ============================================
+export class DeclineJobDto {
   @IsString()
   @IsOptional()
-  responseMessage?: string;
-
-  @IsString()
-  @IsOptional()
-  rejectionReason?: string; // Required if rejected
+  reason?: string; // Optional reason for declining
 }
 
 // ============================================
 // Search/Filter Assignments
 // ============================================
 export class SearchAssignmentDto {
-  @IsEnum(AssignmentStatus)
+  @IsEnum(JobStatus)
   @IsOptional()
-  status?: AssignmentStatus;
+  status?: JobStatus;
 
   @IsUUID()
   @IsOptional()
@@ -174,3 +91,6 @@ export class SearchAssignmentDto {
   @IsOptional()
   limit?: number = 10;
 }
+
+// Re-export JobStatus for convenience
+export { JobStatus } from '../entities/campaign-assignment.entity';

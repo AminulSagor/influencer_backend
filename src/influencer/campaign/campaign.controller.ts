@@ -34,7 +34,8 @@ import {
 import {
   AssignCampaignDto,
   UpdateAssignmentDto,
-  RespondAssignmentDto,
+  AcceptJobDto,
+  DeclineJobDto,
   SearchAssignmentDto,
 } from './dto/campaign-assignment.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
@@ -188,6 +189,14 @@ export class CampaignController {
     return this.campaignService.getNegotiationHistory(id, req.user.sub, 'client');
   }
 
+  // --- Get Campaign Assignments (Client - View Own Campaign Assignments) ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Get(':id/assignments')
+  clientGetCampaignAssignments(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    return this.campaignService.getCampaignAssignmentsForClient(id, req.user.sub);
+  }
+
   // ============================================
   // ADMIN ROUTES
   // ============================================
@@ -251,6 +260,14 @@ export class CampaignController {
     return this.campaignService.getNegotiationHistory(id, req.user.sub, 'admin');
   }
 
+  // --- Admin: Reset Negotiation (to resend quote) ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/:id/reset-negotiation')
+  resetNegotiation(@Param('id', ParseUUIDPipe) id: string) {
+    return this.campaignService.resetNegotiation(id);
+  }
+
   // --- Mark Negotiation as Read ---
   @UseGuards(AuthGuard('jwt-brandguru'))
   @Patch('negotiation/:negotiationId/read')
@@ -262,12 +279,12 @@ export class CampaignController {
   // ADMIN: CAMPAIGN ASSIGNMENT ROUTES
   // ============================================
 
-  // --- Admin: Assign Campaign to Influencers ---
+  // --- Admin: Assign Campaign to Influencer ---
   @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.ADMIN)
   @Post('admin/assign')
   assignCampaign(@Request() req, @Body() dto: AssignCampaignDto) {
-    return this.campaignService.assignCampaignToInfluencers(req.user.sub, dto);
+    return this.campaignService.assignCampaignToInfluencers(req.user.userId, dto);
   }
 
   // --- Admin: Get Campaign Assignments ---
@@ -306,37 +323,105 @@ export class CampaignController {
   }
 
   // ============================================
-  // INFLUENCER: ASSIGNMENT ROUTES
+  // INFLUENCER: JOB ROUTES (Simple 5-Stage Flow)
+  // ============================================
+  // Sections: New Offers → Pending → Active → Completed / Declined
   // ============================================
 
-  // --- Influencer: Get My Assignments ---
+  // --- Get Influencer Dashboard Summary ---
   @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.INFLUENCER)
-  @Get('influencer/assignments')
-  getInfluencerAssignments(@Request() req, @Query() query: SearchAssignmentDto) {
-    return this.campaignService.getInfluencerAssignments(req.user.sub, query);
+  @Get('influencer/dashboard/summary')
+  getInfluencerDashboardSummary(@Request() req) {
+    return this.campaignService.getInfluencerDashboardSummary(req.user.userId);
   }
 
-  // --- Influencer: Get Assignment Details ---
+  // --- Get Influencer Earnings Overview ---
   @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.INFLUENCER)
-  @Get('influencer/assignment/:assignmentId')
-  getAssignmentDetails(
-    @Param('assignmentId', ParseUUIDPipe) assignmentId: string,
-    @Request() req,
-  ) {
-    return this.campaignService.getAssignmentDetails(assignmentId, req.user.sub);
+  @Get('influencer/dashboard/earnings-overview')
+  getEarningsOverview(@Request() req, @Query('range') range: string = '7d') {
+    return this.campaignService.getEarningsOverview(req.user.userId, range);
   }
 
-  // --- Influencer: Respond to Assignment (Accept/Reject) ---
+  // --- Get Influencer's Available Addresses ---
   @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.INFLUENCER)
-  @Post('influencer/assignment/:assignmentId/respond')
-  respondToAssignment(
-    @Param('assignmentId', ParseUUIDPipe) assignmentId: string,
+  @Get('influencer/addresses')
+  getInfluencerAddresses(@Request() req) {
+    return this.campaignService.getInfluencerAddresses(req.user.sub);
+  }
+
+  // --- Get My Jobs (filter by status for sections) ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.INFLUENCER)
+  @Get('influencer/jobs')
+  getInfluencerJobs(@Request() req, @Query() query: SearchAssignmentDto) {
+    return this.campaignService.getInfluencerJobs(req.user.sub, query);
+  }
+
+  // --- Get Job Counts (for UI badges) ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.INFLUENCER)
+  @Get('influencer/jobs/counts')
+  getInfluencerJobCounts(@Request() req) {
+    return this.campaignService.getInfluencerJobCounts(req.user.sub);
+  }
+
+  // --- Get Single Job Details ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.INFLUENCER)
+  @Get('influencer/job/:jobId')
+  getJobDetails(
+    @Param('jobId', ParseUUIDPipe) jobId: string,
     @Request() req,
-    @Body() dto: RespondAssignmentDto,
   ) {
-    return this.campaignService.respondToAssignment(assignmentId, req.user.sub, dto);
+    return this.campaignService.getJobDetails(jobId, req.user.sub);
+  }
+
+  // --- Accept Job (new_offer → pending) ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.INFLUENCER)
+  @Post('influencer/job/:jobId/accept')
+  acceptJob(
+    @Param('jobId', ParseUUIDPipe) jobId: string,
+    @Request() req,
+    @Body() dto: AcceptJobDto,
+  ) {
+    return this.campaignService.acceptJob(jobId, req.user.sub, dto);
+  }
+
+  // --- Decline Job (new_offer → declined) ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.INFLUENCER)
+  @Post('influencer/job/:jobId/decline')
+  declineJob(
+    @Param('jobId', ParseUUIDPipe) jobId: string,
+    @Request() req,
+    @Body() dto: DeclineJobDto,
+  ) {
+    return this.campaignService.declineJob(jobId, req.user.sub, dto);
+  }
+
+  // --- Start Job (pending → active) ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.INFLUENCER)
+  @Post('influencer/job/:jobId/start')
+  startJob(
+    @Param('jobId', ParseUUIDPipe) jobId: string,
+    @Request() req,
+  ) {
+    return this.campaignService.startJob(jobId, req.user.sub);
+  }
+
+  // --- Complete Job (active → completed) ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.INFLUENCER)
+  @Post('influencer/job/:jobId/complete')
+  completeJob(
+    @Param('jobId', ParseUUIDPipe) jobId: string,
+    @Request() req,
+  ) {
+    return this.campaignService.completeJob(jobId, req.user.sub);
   }
 }

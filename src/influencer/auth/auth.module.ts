@@ -8,6 +8,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UserEntity } from '../user/entities/user.entity';
 import { InfluencerProfileEntity } from '../influencer/entities/influencer-profile.entity';
+import { ClientProfileEntity } from '../client/entities/client-profile.entity';
 import { InfluencerModule } from '../influencer/influencer.module';
 import { CommonModule } from 'src/common/common.module';
 import { JwtStrategy } from './jwt.strategy';
@@ -22,6 +23,7 @@ import { AgencyProfileEntity } from '../agency/entities/agency-profile.entity';
       InfluencerProfileEntity,
       LoginLogEntity,
       AgencyProfileEntity,
+  ClientProfileEntity
     ]),
     InfluencerModule,
     CommonModule,
