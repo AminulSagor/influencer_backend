@@ -29,6 +29,9 @@ export class NotificationEntity {
   @Column({ default: 'system' })
   type: string; // 'system' | 'verification' | 'payment'
 
+  @Column({ type: 'jsonb', nullable: true })
+  metadata: any;
+
   @CreateDateColumn()
   createdAt: Date;
 }

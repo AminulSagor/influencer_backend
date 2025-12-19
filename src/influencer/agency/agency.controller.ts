@@ -17,16 +17,26 @@ import {
   UpdateAgencyBasicDto,
   UpdateAgencyAddressDto,
   UpdateAgencySocialsDto,
-  UpdateAgencyVerificationDto,
   AddAgencyPayoutDto,
   DeleteAgencyItemDto,
+  UpdateAgencyNidDto,
+  UpdateAgencyTradeLicenseDto,
+  UpdateAgencyTinDto,
+  UpdateAgencyBinDto,
+  AgencyNichesDto,
 } from './dto/update-agency.dto';
+import { AgencyOnboardingDto } from './dto/create-agency.dto';
 
 @Controller('agency/profile')
 @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
 @Roles(UserRole.AGENCY)
 export class AgencyController {
   constructor(private readonly agencyService: AgencyService) {}
+
+  @Patch('onboarding')
+  async updateOnboarding(@Request() req, @Body() dto: AgencyOnboardingDto) {
+    return this.agencyService.updateOnboarding(req.user.userId, dto);
+  }
 
   // 1. Get Full Profile
   @Get()
@@ -53,12 +63,33 @@ export class AgencyController {
   }
 
   // 5. Update Verification Docs (NID, Trade License, TIN)
-  @Patch('verification')
-  async updateVerification(
+
+  @Patch('verification/nid')
+  async updateNid(@Request() req, @Body() dto: UpdateAgencyNidDto) {
+    return this.agencyService.updateNid(req.user.userId, dto);
+  }
+
+  @Patch('verification/trade-license')
+  async updateTradeLicense(
     @Request() req,
-    @Body() dto: UpdateAgencyVerificationDto,
+    @Body() dto: UpdateAgencyTradeLicenseDto,
   ) {
-    return this.agencyService.updateVerification(req.user.userId, dto);
+    return this.agencyService.updateTradeLicense(req.user.userId, dto);
+  }
+
+  @Patch('verification/tin')
+  async updateTin(@Request() req, @Body() dto: UpdateAgencyTinDto) {
+    return this.agencyService.updateTin(req.user.userId, dto);
+  }
+
+  @Patch('verification/bin')
+  async updateBin(@Request() req, @Body() dto: UpdateAgencyBinDto) {
+    return this.agencyService.updateBin(req.user.userId, dto);
+  }
+
+  @Patch('niches')
+  async updateNiches(@Request() req, @Body() dto: AgencyNichesDto) {
+    return this.agencyService.addNiches(req.user.userId, dto.niches);
   }
 
   // 6. Add Payout Method

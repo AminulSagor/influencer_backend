@@ -58,6 +58,10 @@ export class UserEntity {
 
   @Column({ type: 'timestamp', nullable: true, select: false })
   resetPasswordExpires: Date | null;
+
+  @Column({ nullable: true })
+  fcmToken: string;
+
   // ----------------------------------
 
   @OneToOne(() => InfluencerProfileEntity, (profile) => profile.user)

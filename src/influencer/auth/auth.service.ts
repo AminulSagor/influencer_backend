@@ -92,11 +92,18 @@ export class AuthService {
         if (!dto.agencyName) {
           throw new BadRequestException('Agency Name (agencyName) is required');
         }
-        if (!dto.firstName || !dto.lastName)
-          throw new BadRequestException('Name required for Influencers');
+        if (!dto.firstName || !dto.lastName) {
+          throw new BadRequestException(
+            'First and Last Name are required for Agency',
+          );
+        }
+
         const profile = new AgencyProfileEntity();
         profile.userId = savedUser.id;
-        profile.agencyName = dto.agencyName; // Map DTO companyName to agencyName
+        profile.agencyName = dto.agencyName;
+
+        profile.firstName = dto.firstName;
+        profile.lastName = dto.lastName;
 
         await queryRunner.manager.save(AgencyProfileEntity, profile);
       }

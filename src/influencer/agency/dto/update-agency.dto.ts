@@ -11,12 +11,18 @@ import {
 // --- 1. Basic Info DTO ---
 export class UpdateAgencyBasicDto {
   @IsOptional() @IsString() agencyName?: string;
-  @IsOptional() @IsString() ownerFirstName?: string;
-  @IsOptional() @IsString() ownerLastName?: string;
+  @IsOptional() @IsString() firstName?: string;
+  @IsOptional() @IsString() lastName?: string;
   @IsOptional() @IsString() secondaryPhone?: string;
   @IsOptional() @IsString() agencyBio?: string;
   @IsOptional() @IsString() website?: string;
   @IsOptional() @IsString() logo?: string;
+}
+
+export class AgencyNichesDto {
+  @IsArray()
+  @IsString({ each: true })
+  niches: string[]; // User sends ["Fashion", "Tech"]
 }
 
 // --- 2. Address DTO ---
@@ -48,22 +54,24 @@ export class UpdateAgencySocialsDto {
 }
 
 // --- 4. Verification DTO (NID, Trade License, TIN, BIN) ---
-export class UpdateAgencyVerificationDto {
-  // NID
-  @IsOptional() @IsString() nidNumber?: string;
-  @IsOptional() @IsString() nidFrontImg?: string;
-  @IsOptional() @IsString() nidBackImg?: string;
+export class UpdateAgencyNidDto {
+  @IsNotEmpty() @IsString() nidNumber: string;
+  @IsNotEmpty() @IsString() nidFrontImg: string;
+  @IsNotEmpty() @IsString() nidBackImg: string;
+}
 
-  // Trade License
-  @IsOptional() @IsString() tradeLicenseNumber?: string;
-  @IsOptional() @IsString() tradeLicenseImage?: string;
+export class UpdateAgencyTradeLicenseDto {
+  @IsNotEmpty() @IsString() tradeLicenseNumber: string;
+  @IsNotEmpty() @IsString() tradeLicenseImage: string;
+}
 
-  // TIN
-  @IsOptional() @IsString() tinNumber?: string;
-  @IsOptional() @IsString() tinImage?: string;
+export class UpdateAgencyTinDto {
+  @IsNotEmpty() @IsString() tinNumber: string;
+  @IsNotEmpty() @IsString() tinImage: string;
+}
 
-  // BIN
-  @IsOptional() @IsString() binNumber?: string;
+export class UpdateAgencyBinDto {
+  @IsNotEmpty() @IsString() binNumber: string;
 }
 
 // --- 5. Payout DTOs (Bank & Mobile) ---

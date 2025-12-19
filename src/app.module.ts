@@ -12,6 +12,7 @@ import { CommonModule } from './common/common.module';
 import { ClientModule } from './influencer/client/client.module';
 import { CampaignModule } from './influencer/campaign/campaign.module';
 import { NotificationModule } from './influencer/notification/notification.module';
+import { AgencyModule } from './influencer/agency/agency.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { NotificationModule } from './influencer/notification/notification.modul
     AdminModule,
     ClientModule,
     CampaignModule,
+    AgencyModule,
   ],
 })
 export class AppModule {}

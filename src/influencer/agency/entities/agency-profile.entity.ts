@@ -18,12 +18,12 @@ export class AgencyProfileEntity {
   agencyName: string;
 
   @Column()
-  ownerFirstName: string;
+  firstName: string;
 
   @Column()
-  ownerLastName: string;
+  lastName: string;
 
-  @Column()
+  @Column({ nullable: true })
   secondaryPhone: string;
 
   @Column({ nullable: true })
@@ -42,6 +42,9 @@ export class AgencyProfileEntity {
     city: string;
     country: string;
   };
+
+  @Column('jsonb', { nullable: true })
+  niches: { niche: string; status: string }[];
 
   // Social Links
   @Column('jsonb', { nullable: true })
@@ -79,6 +82,9 @@ export class AgencyProfileEntity {
 
   @Column({ nullable: true })
   binNumber: string;
+
+  @Column({ nullable: true })
+  binStatus: string;
 
   // --- Payments (Array of payouts) ---
   // Stores multiple payouts like Bank, Bkash, Nagad

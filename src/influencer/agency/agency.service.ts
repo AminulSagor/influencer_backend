@@ -8,12 +8,16 @@ import { Repository } from 'typeorm';
 import { AgencyProfileEntity } from './entities/agency-profile.entity';
 import {
   UpdateAgencyBasicDto,
-  UpdateAgencyVerificationDto,
   UpdateAgencyAddressDto,
   UpdateAgencySocialsDto,
   AddAgencyPayoutDto,
   DeleteAgencyItemDto,
+  UpdateAgencyBinDto,
+  UpdateAgencyTinDto,
+  UpdateAgencyTradeLicenseDto,
+  UpdateAgencyNidDto,
 } from './dto/update-agency.dto';
+import { AgencyOnboardingDto } from './dto/create-agency.dto';
 
 @Injectable()
 export class AgencyService {
@@ -21,6 +25,40 @@ export class AgencyService {
     @InjectRepository(AgencyProfileEntity)
     private readonly agencyRepo: Repository<AgencyProfileEntity>,
   ) {}
+
+  async updateOnboarding(userId: string, dto: AgencyOnboardingDto) {
+    const profile = await this.getProfile(userId);
+
+    // 1. Update Address (if provided)
+    if (dto.addressLine || dto.city || dto.country) {
+      profile.address = {
+        addressLine: dto.addressLine || profile.address?.addressLine || '',
+        city: dto.city || profile.address?.city || '',
+        country: dto.country || profile.address?.country || '',
+      };
+    }
+
+    // 2. Update Socials (if provided)
+    if (dto.socialLinks) {
+      profile.socialLinks = dto.socialLinks.map((link) => ({
+        ...link,
+        status: 'pending',
+      }));
+    }
+    if (dto.website) profile.website = dto.website;
+
+    // 3. Update NID (if provided)
+    if (dto.nidNumber) profile.nidNumber = dto.nidNumber;
+    if (dto.nidFrontImg) profile.nidFrontImg = dto.nidFrontImg;
+    if (dto.nidBackImg) profile.nidBackImg = dto.nidBackImg;
+
+    // Trigger verification status pending if NID docs changed
+    if (dto.nidFrontImg || dto.nidNumber) {
+      profile.nidVerification = { nidStatus: 'pending', nidRejectReason: '' };
+    }
+
+    return this.agencyRepo.save(profile);
+  }
 
   // --- GET PROFILE ---
   async getProfile(userId: string): Promise<AgencyProfileEntity> {
@@ -37,8 +75,8 @@ export class AgencyService {
     const profile = await this.getProfile(userId);
 
     if (dto.agencyName) profile.agencyName = dto.agencyName;
-    if (dto.ownerFirstName) profile.ownerFirstName = dto.ownerFirstName;
-    if (dto.ownerLastName) profile.ownerLastName = dto.ownerLastName;
+    if (dto.firstName) profile.firstName = dto.firstName;
+    if (dto.lastName) profile.lastName = dto.lastName;
     if (dto.secondaryPhone) profile.secondaryPhone = dto.secondaryPhone;
     if (dto.agencyBio) profile.agencyBio = dto.agencyBio;
     if (dto.website) profile.website = dto.website;
@@ -74,38 +112,51 @@ export class AgencyService {
   }
 
   // --- UPDATE VERIFICATION DOCS (NID, TIN, Trade License) ---
-  async updateVerification(
+  // --- Verification Updates ---
+  async updateNid(userId: string, dto: UpdateAgencyNidDto) {
+    const profile = await this.getProfile(userId);
+    profile.nidNumber = dto.nidNumber;
+    profile.nidFrontImg = dto.nidFrontImg;
+    profile.nidBackImg = dto.nidBackImg;
+    profile.nidVerification = { nidStatus: 'pending', nidRejectReason: '' };
+    return this.agencyRepo.save(profile);
+  }
+
+  async updateTradeLicense(userId: string, dto: UpdateAgencyTradeLicenseDto) {
+    const profile = await this.getProfile(userId);
+    profile.tradeLicenseNumber = dto.tradeLicenseNumber;
+    profile.tradeLicenseImage = dto.tradeLicenseImage;
+    profile.tradeLicenseStatus = 'pending';
+    return this.agencyRepo.save(profile);
+  }
+
+  async updateTin(userId: string, dto: UpdateAgencyTinDto) {
+    const profile = await this.getProfile(userId);
+    profile.tinNumber = dto.tinNumber;
+    profile.tinImage = dto.tinImage;
+    profile.tinStatus = 'pending';
+    return this.agencyRepo.save(profile);
+  }
+
+  async updateBin(userId: string, dto: UpdateAgencyBinDto) {
+    const profile = await this.getProfile(userId);
+    profile.binNumber = dto.binNumber;
+    profile.binStatus = 'pending';
+    return this.agencyRepo.save(profile);
+  }
+
+  async addNiches(
     userId: string,
-    dto: UpdateAgencyVerificationDto,
+    niches: string[],
   ): Promise<AgencyProfileEntity> {
     const profile = await this.getProfile(userId);
 
-    // NID
-    if (dto.nidNumber) profile.nidNumber = dto.nidNumber;
-    if (dto.nidFrontImg) profile.nidFrontImg = dto.nidFrontImg;
-    if (dto.nidBackImg) profile.nidBackImg = dto.nidBackImg;
-    if (dto.nidNumber || dto.nidFrontImg) {
-      profile.nidVerification = { nidStatus: 'pending', nidRejectReason: '' };
-    }
+    // Transform string array to Object with Status
+    const newNiches = niches.map((n) => ({ niche: n, status: 'unverified' }));
 
-    // Trade License
-    if (dto.tradeLicenseNumber)
-      profile.tradeLicenseNumber = dto.tradeLicenseNumber;
-    if (dto.tradeLicenseImage)
-      profile.tradeLicenseImage = dto.tradeLicenseImage;
-    if (dto.tradeLicenseNumber || dto.tradeLicenseImage) {
-      profile.tradeLicenseStatus = 'pending';
-    }
-
-    // TIN
-    if (dto.tinNumber) profile.tinNumber = dto.tinNumber;
-    if (dto.tinImage) profile.tinImage = dto.tinImage;
-    if (dto.tinNumber || dto.tinImage) {
-      profile.tinStatus = 'pending';
-    }
-
-    // BIN
-    if (dto.binNumber) profile.binNumber = dto.binNumber;
+    // Replace or Append? Usually replace for tags, or append if distinct.
+    // Here we strictly replace the list based on the UI allowing "Save Changes"
+    profile.niches = newNiches;
 
     return this.agencyRepo.save(profile);
   }

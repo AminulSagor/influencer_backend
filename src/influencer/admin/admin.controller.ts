@@ -366,6 +366,14 @@ export class AdminController {
     return this.adminService.getAgencyProfileDetails(userId);
   }
 
+  @Patch('verification/agency/:userId/niche')
+  async updateAgencyNiche(
+    @Param('userId') userId: string,
+    @Body() dto: UpdateItemStatusDto,
+  ) {
+    return this.adminService.updateAgencyNicheStatus(userId, dto);
+  }
+
   @Patch('verification/agency/:userId/nid')
   async updateAgencyNid(
     @Param('userId') userId: string,

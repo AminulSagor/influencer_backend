@@ -74,6 +74,15 @@ export class AdminService {
     private readonly notificationService: NotificationService,
   ) {}
 
+  private async getRawProfile(userId: string) {
+    const profile = await this.profileRepo.findOne({
+      where: { userId },
+      relations: ['user'],
+    });
+    if (!profile) throw new NotFoundException('Profile not found');
+    return profile;
+  }
+
   private async checkAndToggleUserVerification(
     profile: InfluencerProfileEntity,
   ) {
@@ -190,7 +199,6 @@ export class AdminService {
       return {
         userId: p.userId,
         fullName: `${p.firstName} ${p.lastName}`,
-        email: p.user.email,
         isVerified: p.user.isVerified,
         pendingItemsCount: pendingCount, // <--- The Count you wanted
         niches: p.niches?.map((n) => n.niche) || [], // Just names
@@ -250,8 +258,10 @@ export class AdminService {
     return response;
   }
 
+  // --- FIX: Use getRawProfile() for updates to ensure we have the Entity ---
+
   async updateNicheStatus(userId: string, dto: UpdateItemStatusDto) {
-    const profile = await this.getProfileDetails(userId);
+    const profile = await this.getRawProfile(userId); // <--- FIXED
 
     if (profile.niches) {
       profile.niches = profile.niches.map((n) =>
@@ -275,14 +285,13 @@ export class AdminService {
       dto.status,
       dto.rejectReason,
     );
-    await this.checkAndToggleUserVerification(profile); // Check Progress
+    await this.checkAndToggleUserVerification(profile);
 
     return { success: true, message: `Niche ${dto.status}` };
   }
 
-  // 4. Approve/Reject Skill
   async updateSkillStatus(userId: string, dto: UpdateItemStatusDto) {
-    const profile = await this.getProfileDetails(userId);
+    const profile = await this.getRawProfile(userId); // <--- FIXED
 
     if (profile.skills) {
       profile.skills = profile.skills.map((s) =>
@@ -312,7 +321,7 @@ export class AdminService {
   }
 
   async updateSocialStatus(userId: string, dto: UpdateItemStatusDto) {
-    const profile = await this.getProfileDetails(userId);
+    const profile = await this.getRawProfile(userId); // <--- FIXED
 
     if (profile.socialLinks) {
       profile.socialLinks = profile.socialLinks.map((s) =>
@@ -336,9 +345,8 @@ export class AdminService {
     return { success: true, message: `Social Link ${dto.status}` };
   }
 
-  // 6. Approve/Reject Payout (Bank)
   async updateBankStatus(userId: string, dto: UpdatePayoutStatusDto) {
-    const profile = await this.getProfileDetails(userId);
+    const profile = await this.getRawProfile(userId); // <--- FIXED
 
     if (profile.payouts?.bank) {
       profile.payouts.bank = profile.payouts.bank.map((acc) =>
@@ -363,7 +371,7 @@ export class AdminService {
   }
 
   async updateMobileStatus(userId: string, dto: UpdatePayoutStatusDto) {
-    const profile = await this.getProfileDetails(userId);
+    const profile = await this.getRawProfile(userId); // <--- FIXED
 
     if (profile.payouts?.mobileBanking) {
       profile.payouts.mobileBanking = profile.payouts.mobileBanking.map(
@@ -394,7 +402,7 @@ export class AdminService {
   }
 
   async updateNidStatus(userId: string, dto: UpdateNidStatusDto) {
-    const profile = await this.getRawProfile(userId);
+    const profile = await this.getRawProfile(userId); // Already Correct
 
     if (!profile.nidVerification)
       profile.nidVerification = { nidStatus: 'pending', nidRejectReason: '' };
@@ -415,16 +423,6 @@ export class AdminService {
     await this.checkAndToggleUserVerification(profile);
 
     return { success: true, message: `NID ${dto.nidStatus}` };
-  }
-
-  // Internal Helper to get full profile for updates
-  private async getRawProfile(userId: string) {
-    const profile = await this.profileRepo.findOne({
-      where: { userId },
-      relations: ['user'],
-    });
-    if (!profile) throw new NotFoundException('Profile not found');
-    return profile;
   }
 
   // FORCE APPROVE USER (Manual Override)
@@ -1342,7 +1340,40 @@ export class AdminService {
   // 🏢 AGENCY VERIFICATION LOGIC
   // =============================================
 
-  // Helper: Check if Agency is fully verified
+  // Helper: Count Agency Pending Items
+  private countAgencyPendingItems(profile: AgencyProfileEntity): number {
+    let count = 0;
+    if (profile.nidVerification?.nidStatus === ApprovalStatus.PENDING) count++;
+    if (profile.tradeLicenseStatus === ApprovalStatus.PENDING) count++;
+    if (profile.tinStatus === ApprovalStatus.PENDING) count++;
+    if (profile.binStatus === ApprovalStatus.PENDING) count++;
+    if (profile.niches)
+      count += profile.niches.filter(
+        (n) => n.status === ApprovalStatus.PENDING,
+      ).length;
+
+    if (profile.socialLinks) {
+      count += profile.socialLinks.filter(
+        (s) => s.status === ApprovalStatus.PENDING,
+      ).length;
+    }
+
+    if (profile.payouts?.bank) {
+      count += profile.payouts.bank.filter(
+        (b) => b.accStatus === ApprovalStatus.PENDING,
+      ).length;
+    }
+
+    if (profile.payouts?.mobileBanking) {
+      count += profile.payouts.mobileBanking.filter(
+        (m) => m.accStatus === ApprovalStatus.PENDING,
+      ).length;
+    }
+
+    return count;
+  }
+
+  // Helper: Check and Toggle Verification Status
   private async checkAndToggleAgencyVerification(profile: AgencyProfileEntity) {
     const isListApproved = (list: any[]) =>
       Array.isArray(list) &&
@@ -1366,7 +1397,7 @@ export class AdminService {
     );
     const paymentOk = bankOk || mobileOk;
 
-    // 3. Final Decision
+    // 3. Final Decision (All Docs + At least 1 Payment + Socials)
     const isFullyVerified =
       nidOk && tradeLicenseOk && tinOk && socialOk && paymentOk;
 
@@ -1389,17 +1420,29 @@ export class AdminService {
 
   // 1. List Agencies for Verification
   async getAgencyProfiles(page = 1, limit = 10) {
-    const [data, total] = await this.agencyProfileRepo.findAndCount({
+    const [agencies, total] = await this.agencyProfileRepo.findAndCount({
       take: limit,
       skip: (page - 1) * limit,
       relations: ['user'],
       order: { updatedAt: 'DESC' },
     });
 
+    // Map to minimal response
+    const data = agencies.map((p) => {
+      const pendingCount = this.countAgencyPendingItems(p);
+      return {
+        userId: p.userId,
+        agencyName: p.agencyName, // Agency Name is main identifier
+        niches: p.niches?.map((n) => n.niche) || [],
+        isVerified: p.user.isVerified,
+        pendingItemsCount: pendingCount,
+      };
+    });
+
     return { data, meta: { total, page, limit } };
   }
 
-  // 2. Get Single Agency Details
+  // 2. Get Single Agency Details (Full Entity for Admin View)
   async getAgencyProfileDetails(userId: string) {
     const profile = await this.agencyProfileRepo.findOne({
       where: { userId },
@@ -1407,6 +1450,49 @@ export class AdminService {
     });
     if (!profile) throw new NotFoundException('Agency profile not found');
     return profile;
+  }
+
+  async updateAgencyNicheStatus(userId: string, dto: UpdateItemStatusDto) {
+    const profile = await this.getAgencyProfileDetails(userId);
+
+    let isFound = false; // 1. Track if we found the item
+
+    if (profile.niches) {
+      profile.niches = profile.niches.map((n) => {
+        if (n.niche === dto.identifier) {
+          isFound = true; // Found it!
+          return {
+            ...n,
+            status: dto.status,
+            rejectReason:
+              dto.status === ApprovalStatus.REJECTED
+                ? dto.rejectReason
+                : undefined,
+          };
+        }
+        return n;
+      });
+    }
+
+    // 2. Throw error if not found
+    if (!isFound) {
+      throw new NotFoundException(
+        `Niche '${dto.identifier}' not found in user profile`,
+      );
+    }
+
+    // 3. Use agencyProfileRepo, NOT profileRepo
+    await this.agencyProfileRepo.save(profile);
+
+    await this.notifyUser(
+      userId,
+      `Niche (${dto.identifier})`,
+      dto.status,
+      dto.rejectReason,
+    );
+    await this.checkAndToggleAgencyVerification(profile);
+
+    return { success: true, message: `Niche ${dto.status}` };
   }
 
   // 3. Approve/Reject NID
@@ -1419,15 +1505,13 @@ export class AdminService {
 
     profile.nidVerification.nidStatus = dto.nidStatus;
     profile.nidVerification.nidRejectReason =
-      dto.nidStatus === ApprovalStatus.REJECTED
-        ? dto.rejectReason || 'No reason'
-        : '';
+      dto.nidStatus === ApprovalStatus.REJECTED ? dto.rejectReason || '' : '';
 
     await this.agencyProfileRepo.save(profile);
     await this.notifyUser(userId, 'NID', dto.nidStatus, dto.rejectReason);
     await this.checkAndToggleAgencyVerification(profile);
 
-    return { success: true };
+    return { success: true, message: `Agency NID ${dto.nidStatus}` };
   }
 
   // 4. Approve/Reject Trade License
@@ -1438,7 +1522,7 @@ export class AdminService {
     const profile = await this.getAgencyProfileDetails(userId);
 
     profile.tradeLicenseStatus = dto.tradeLicenseStatus;
-    // Note: You might want to add a reason field to entity if needed, currently just status
+    // If you add a rejectReason field to entity later, handle it here
 
     await this.agencyProfileRepo.save(profile);
     await this.notifyUser(
@@ -1449,7 +1533,10 @@ export class AdminService {
     );
     await this.checkAndToggleAgencyVerification(profile);
 
-    return { success: true };
+    return {
+      success: true,
+      message: `Trade License ${dto.tradeLicenseStatus}`,
+    };
   }
 
   // 5. Approve/Reject TIN
@@ -1467,22 +1554,40 @@ export class AdminService {
     );
     await this.checkAndToggleAgencyVerification(profile);
 
-    return { success: true };
+    return { success: true, message: `TIN Certificate ${dto.tinStatus}` };
   }
 
   // 6. Approve/Reject Social Links
   async updateAgencySocial(userId: string, dto: UpdateItemStatusDto) {
     const profile = await this.getAgencyProfileDetails(userId);
 
+    let isFound = false;
+
     if (profile.socialLinks) {
-      profile.socialLinks = profile.socialLinks.map((s) =>
-        s.url === dto.identifier ? { ...s, status: dto.status } : s,
-      );
+      profile.socialLinks = profile.socialLinks.map((s) => {
+        if (s.url === dto.identifier) {
+          isFound = true;
+          return {
+            ...s,
+            status: dto.status,
+            rejectReason:
+              dto.status === ApprovalStatus.REJECTED
+                ? dto.rejectReason
+                : undefined,
+          };
+        }
+        return s;
+      });
+    }
+
+    if (!isFound) {
+      throw new NotFoundException(`Social link '${dto.identifier}' not found`);
     }
 
     await this.agencyProfileRepo.save(profile);
     await this.checkAndToggleAgencyVerification(profile);
-    return { success: true };
+
+    return { success: true, message: `Social Link ${dto.status}` };
   }
 
   // 7. Approve/Reject Payout (Bank/Mobile)
@@ -1492,24 +1597,51 @@ export class AdminService {
     type: 'bank' | 'mobile',
   ) {
     const profile = await this.getAgencyProfileDetails(userId);
+    let isFound = false;
 
     if (type === 'bank' && profile.payouts?.bank) {
-      profile.payouts.bank = profile.payouts.bank.map((acc) =>
-        acc.bankAccNo === dto.accountNo
-          ? { ...acc, accStatus: dto.status }
-          : acc,
-      );
+      profile.payouts.bank = profile.payouts.bank.map((acc) => {
+        if (acc.bankAccNo === dto.accountNo) {
+          isFound = true;
+          return {
+            ...acc,
+            accStatus: dto.status,
+            accRejectReason:
+              dto.status === ApprovalStatus.REJECTED
+                ? dto.rejectReason
+                : undefined,
+          };
+        }
+        return acc;
+      });
     } else if (type === 'mobile' && profile.payouts?.mobileBanking) {
       profile.payouts.mobileBanking = profile.payouts.mobileBanking.map(
-        (acc) =>
-          acc.accountNo === dto.accountNo
-            ? { ...acc, accStatus: dto.status }
-            : acc,
+        (acc) => {
+          if (acc.accountNo === dto.accountNo) {
+            isFound = true;
+            return {
+              ...acc,
+              accStatus: dto.status,
+              accRejectReason:
+                dto.status === ApprovalStatus.REJECTED
+                  ? dto.rejectReason
+                  : undefined,
+            };
+          }
+          return acc;
+        },
+      );
+    }
+
+    if (!isFound) {
+      throw new NotFoundException(
+        `Payout account '${dto.accountNo}' not found`,
       );
     }
 
     await this.agencyProfileRepo.save(profile);
     await this.checkAndToggleAgencyVerification(profile);
-    return { success: true };
+
+    return { success: true, message: `Agency Payout ${dto.status}` };
   }
 }
