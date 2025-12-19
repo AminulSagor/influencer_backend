@@ -27,6 +27,7 @@ import * as geoip from 'geoip-lite';
 import { UAParser } from 'ua-parser-js';
 import * as requestIp from 'request-ip';
 import { LoginLogEntity } from '../admin/entities/login-log.entity';
+import { AgencyProfileEntity } from '../agency/entities/agency-profile.entity';
 
 @Injectable()
 export class AuthService {
@@ -35,6 +36,8 @@ export class AuthService {
     private readonly userRepo: Repository<UserEntity>,
     @InjectRepository(LoginLogEntity) // Inject Log Repo
     private readonly loginLogRepo: Repository<LoginLogEntity>,
+    @InjectRepository(AgencyProfileEntity) // Inject Agency Repo
+    private readonly agencyRepo: Repository<AgencyProfileEntity>,
     private dataSource: DataSource, // Required for Signup Transaction
     private influencerService: InfluencerService,
     private jwtService: JwtService,
@@ -85,6 +88,24 @@ export class AuthService {
 
         console.log('Saving InfluencerProfileEntity...');
         await queryRunner.manager.save(InfluencerProfileEntity, profile);
+      } else if (dto.role === UserRole.AGENCY) {
+        if (!dto.agencyName) {
+          throw new BadRequestException('Agency Name (agencyName) is required');
+        }
+        if (!dto.firstName || !dto.lastName) {
+          throw new BadRequestException(
+            'First and Last Name are required for Agency',
+          );
+        }
+
+        const profile = new AgencyProfileEntity();
+        profile.userId = savedUser.id;
+        profile.agencyName = dto.agencyName;
+
+        profile.firstName = dto.firstName;
+        profile.lastName = dto.lastName;
+
+        await queryRunner.manager.save(AgencyProfileEntity, profile);
       }
       // else if (dto.role === UserRole.BRAND) {
       //   if (!dto.companyName) throw new BadRequestException('Company Name required for Brands');
@@ -96,15 +117,6 @@ export class AuthService {
 
       //   await queryRunner.manager.save(BrandProfileEntity, profile);
 
-      // } else if (dto.role === UserRole.AGENCY) {
-      //   if (!dto.companyName) throw new BadRequestException('Agency Name required');
-
-      //   const profile = new AgencyProfileEntity();
-      //   profile.userId = savedUser.id;
-      //   profile.agencyName = dto.companyName;
-      //   profile.phone = dto.phone;
-
-      //   await queryRunner.manager.save(AgencyProfileEntity, profile);
       // }
 
       // D. Send SMS (Wrapped to identify if SMS is the cause of failure)

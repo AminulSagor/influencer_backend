@@ -8,6 +8,7 @@ import {
   Post,
   Delete,
   Param,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { InfluencerService } from './influencer.service';

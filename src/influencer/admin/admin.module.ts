@@ -13,6 +13,8 @@ import { CampaignAssignmentEntity } from '../campaign/entities/campaign-assignme
 import { SystemSettingEntity } from './entities/system-setting.entity';
 import { MasterDataEntity } from './entities/master-data.entity';
 import { LoginLogEntity } from './entities/login-log.entity';
+import { AgencyProfileEntity } from '../agency/entities/agency-profile.entity';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -25,8 +27,10 @@ import { LoginLogEntity } from './entities/login-log.entity';
       SystemSettingEntity, // Register
       MasterDataEntity, // Register
       LoginLogEntity, // Register
+      AgencyProfileEntity,
     ]), // Register Repos
     PassportModule,
+    NotificationModule,
     // JwtModule.registerAsync({
     //   imports: [ConfigModule],
     //   useFactory: async (configService: ConfigService) => ({

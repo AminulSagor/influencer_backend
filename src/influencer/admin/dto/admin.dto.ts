@@ -224,3 +224,35 @@ export class ChangePasswordDto {
   @MinLength(8)
   newPassword: string;
 }
+
+// --- Agency Verification DTOs ---
+
+export class UpdateAgencyNidStatusDto {
+  @IsNotEmpty()
+  @IsEnum(ApprovalStatus)
+  nidStatus: ApprovalStatus;
+
+  @IsOptional()
+  @IsString()
+  rejectReason?: string;
+}
+
+export class UpdateAgencyTradeLicenseStatusDto {
+  @IsNotEmpty()
+  @IsEnum(ApprovalStatus)
+  tradeLicenseStatus: ApprovalStatus;
+
+  @IsOptional()
+  @IsString()
+  rejectReason?: string;
+}
+
+export class UpdateAgencyTinStatusDto {
+  @IsNotEmpty()
+  @IsEnum(ApprovalStatus)
+  tinStatus: ApprovalStatus;
+
+  @IsOptional()
+  @IsString()
+  rejectReason?: string;
+}

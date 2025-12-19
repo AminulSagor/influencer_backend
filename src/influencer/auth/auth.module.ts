@@ -12,6 +12,7 @@ import { InfluencerModule } from '../influencer/influencer.module';
 import { CommonModule } from 'src/common/common.module';
 import { JwtStrategy } from './jwt.strategy';
 import { LoginLogEntity } from '../admin/entities/login-log.entity';
+import { AgencyProfileEntity } from '../agency/entities/agency-profile.entity';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { LoginLogEntity } from '../admin/entities/login-log.entity';
       UserEntity,
       InfluencerProfileEntity,
       LoginLogEntity,
+      AgencyProfileEntity,
     ]),
     InfluencerModule,
     CommonModule,
