@@ -734,9 +734,10 @@ export class AdminService {
         : 'Unknown',
       status: a.status,
       offeredAmount: a.offeredAmount ? +a.offeredAmount : null,
-      assignedMilestones: a.assignedMilestones,
-      respondedAt: a.respondedAt,
-      responseMessage: a.responseMessage,
+      message: a.message,
+      acceptedAt: a.acceptedAt,
+      startedAt: a.startedAt,
+      completedAt: a.completedAt,
     }));
 
     return {

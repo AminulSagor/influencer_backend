@@ -23,15 +23,22 @@ export enum CampaignType {
   INFLUENCER_PROMOTION = 'influencer_promotion',
 }
 
-// Campaign Status
+// Campaign Status - Proper Flow
 export enum CampaignStatus {
-  NEEDS_QUOTE = 'needs_quote',       // Default - waiting for admin to provide quote
-  ACTIVE = 'active',                  // Campaign is active/running
-  PENDING_INVITATION = 'pending_invitation', // Waiting for influencer responses
-  COMPLETED = 'completed',            // Campaign completed successfully
-  PAID = 'paid',                      // Payment completed
-  CANCELLED = 'cancelled',            // Campaign cancelled
+  RECEIVED = 'received',             // Client created, Admin received it
+  QUOTED = 'quoted',                 // Admin sent quote to client
+  PAID = 'paid',                     // Client paid for the campaign
+  PROMOTING = 'promoting',           // Active - Influencers working on it
+  COMPLETED = 'completed',           // Campaign completed successfully
+  CANCELLED = 'cancelled',           // Campaign cancelled
 }
+
+// Legacy alias for backward compatibility
+export const CampaignStatusLegacy = {
+  NEEDS_QUOTE: 'received',
+  ACTIVE: 'promoting',
+  PENDING_INVITATION: 'promoting',
+};
 
 // Platform Types for reference
 export enum Platform {
@@ -147,7 +154,7 @@ export class CampaignEntity {
   @Column({
     type: 'varchar',
     length: 30,
-    default: 'needs_quote',
+    default: 'received',
   })
   status: string;
 

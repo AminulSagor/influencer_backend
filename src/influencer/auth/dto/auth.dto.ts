@@ -2,6 +2,7 @@ import {
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
   MinLength,
@@ -16,6 +17,10 @@ export class SignupDto {
   @IsNotEmpty()
   @IsString()
   lastName: string;
+
+  @IsOptional()
+  @IsString()
+  brandName?: string;
 
   @IsNotEmpty()
   @Matches(/^\+?[0-9]{11,14}$/, {

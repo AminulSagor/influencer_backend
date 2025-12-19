@@ -12,6 +12,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserEntity, UserRole } from '../user/entities/user.entity';
 import { InfluencerProfileEntity } from '../influencer/entities/influencer-profile.entity';
+import { ClientProfileEntity } from '../client/entities/client-profile.entity';
 import { SmsService } from 'src/common/services/sms.service';
 import { InfluencerService } from '../influencer/influencer.service';
 import { SignupDto, VerifyOtpDto, ResendOtpDto, CreateAdminDto } from './dto/auth.dto';
@@ -23,6 +24,8 @@ export class AuthService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
+    @InjectRepository(ClientProfileEntity)
+    private readonly clientProfileRepo: Repository<ClientProfileEntity>,
     private dataSource: DataSource, // Required for Signup Transaction
     private influencerService: InfluencerService,
     private jwtService: JwtService,
@@ -73,27 +76,30 @@ export class AuthService {
 
         console.log('Saving InfluencerProfileEntity...');
         await queryRunner.manager.save(InfluencerProfileEntity, profile);
+      } else if (dto.role === UserRole.CLIENT) {
+        if (!dto.firstName || !dto.lastName)
+          throw new BadRequestException('Name required for Clients');
+
+        const clientProfile = new ClientProfileEntity();
+        clientProfile.userId = savedUser.id;
+        clientProfile.firstName = dto.firstName;
+        clientProfile.lastName = dto.lastName;
+        clientProfile.email = dto.email;
+        clientProfile.phone = dto.phone;
+        clientProfile.brandName = dto.brandName || `${dto.firstName} ${dto.lastName}`;
+        clientProfile.verificationSteps = {
+          profileDetails: 'verified',
+          phoneVerification: 'pending',
+          addressDetails: 'unverified',
+          socialLinks: 'unverified',
+          nidVerification: 'unverified',
+          tradeLicense: 'unverified',
+        };
+
+        console.log('Saving ClientProfileEntity...');
+        await queryRunner.manager.save(ClientProfileEntity, clientProfile);
       }
-      // else if (dto.role === UserRole.BRAND) {
-      //   if (!dto.companyName) throw new BadRequestException('Company Name required for Brands');
-
-      //   const profile = new BrandProfileEntity();
-      //   profile.userId = savedUser.id;
-      //   profile.brandName = dto.companyName;
-      //   profile.phone = dto.phone;
-
-      //   await queryRunner.manager.save(BrandProfileEntity, profile);
-
-      // } else if (dto.role === UserRole.AGENCY) {
-      //   if (!dto.companyName) throw new BadRequestException('Agency Name required');
-
-      //   const profile = new AgencyProfileEntity();
-      //   profile.userId = savedUser.id;
-      //   profile.agencyName = dto.companyName;
-      //   profile.phone = dto.phone;
-
-      //   await queryRunner.manager.save(AgencyProfileEntity, profile);
-      // }
+      // else if (dto.role === UserRole.ADMIN) - No profile needed for admin
 
       // D. Send SMS (Wrapped to identify if SMS is the cause of failure)
       console.log(`Attempting to send OTP: ${otp} to ${dto.phone}`);

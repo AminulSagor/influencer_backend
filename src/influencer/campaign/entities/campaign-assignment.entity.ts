@@ -10,16 +10,26 @@ import {
 import { CampaignEntity } from './campaign.entity';
 import { InfluencerProfileEntity } from 'src/influencer/influencer/entities/influencer-profile.entity';
 
-// Assignment Status
-export enum AssignmentStatus {
-  PENDING = 'pending',           // Offer sent, waiting for influencer response
-  ACCEPTED = 'accepted',         // Influencer accepted the offer
-  REJECTED = 'rejected',         // Influencer rejected the offer
-  CANCELLED = 'cancelled',       // Admin cancelled the assignment
-  IN_PROGRESS = 'in_progress',   // Work is in progress
-  COMPLETED = 'completed',       // Assignment completed
-  EXPIRED = 'expired',           // Offer expired without response
+// ============================================
+// Job Status - Simple 5-Stage Workflow
+// ============================================
+// NEW_OFFER  → Influencer receives offer (can accept or decline)
+// PENDING    → Accepted but work not started yet
+// ACTIVE     → Work in progress
+// COMPLETED  → Job finished successfully
+// DECLINED   → Influencer declined the offer
+// ============================================
+export enum JobStatus {
+  NEW_OFFER = 'new_offer',   // Campaign assigned, waiting for response
+  PENDING = 'pending',       // Accepted, but not started yet
+  ACTIVE = 'active',         // Work in progress
+  COMPLETED = 'completed',   // Job finished
+  DECLINED = 'declined',     // Influencer declined
 }
+
+// Keep old enum for backward compatibility (alias)
+export const AssignmentStatus = JobStatus;
+export type AssignmentStatus = JobStatus;
 
 @Entity('campaign_assignments')
 export class CampaignAssignmentEntity {
@@ -48,10 +58,13 @@ export class CampaignAssignmentEntity {
   assignedBy: string;
 
   // ============================================
-  // Offer Details
+  // Payment Details (Auto-calculated from campaign budget)
   // ============================================
-  @Column({ type: 'decimal', precision: 12, scale: 2 })
-  offeredAmount: number; // Amount offered to this influencer
+  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  percentage: number; // e.g., 33.33 for 33.33%
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+  offeredAmount: number; // Calculated: campaign.baseBudget * (percentage / 100)
 
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   vatAmount: number;
@@ -59,61 +72,57 @@ export class CampaignAssignmentEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   totalAmount: number;
 
+  // ============================================
+  // Job Details (Simple)
+  // ============================================
   @Column({ type: 'text', nullable: true })
-  offerMessage: string; // Custom message to influencer
+  message: string | null; // Optional message to influencer
 
   @Column({ type: 'text', nullable: true })
-  offerTerms: string; // Specific terms for this influencer
-
-  // Specific milestones/deliverables for this influencer (JSON)
-  @Column({ type: 'jsonb', nullable: true })
-  assignedMilestones: {
-    contentTitle: string;
-    platform: string;
-    contentQuantity: string;
-    deliveryDays: number;
-    expectedReach?: number;
-    expectedViews?: number;
-    expectedLikes?: number;
-    expectedComments?: number;
-  }[];
+  declineReason: string | null; // If declined, why
 
   // ============================================
-  // Status & Tracking
+  // Influencer Delivery Address (Captured on job acceptance)
+  // ============================================
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  influencerAddressName: string | null; // e.g., "Home", "Studio"
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  influencerStreet: string | null; // Street address
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  influencerThana: string | null; // Thana/Police station
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  influencerZilla: string | null; // District/City
+
+  @Column({ type: 'text', nullable: true })
+  influencerFullAddress: string | null; // Complete formatted address
+
+  // ============================================
+  // Job Status - 5 Stages
   // ============================================
   @Column({
     type: 'varchar',
-    length: 30,
-    default: AssignmentStatus.PENDING,
+    length: 20,
+    default: JobStatus.NEW_OFFER,
   })
-  status: string;
-
-  @Column({ type: 'date', nullable: true })
-  offerExpiresAt: Date; // When the offer expires
-
-  @Column({ type: 'timestamp', nullable: true })
-  respondedAt: Date; // When influencer responded
-
-  @Column({ type: 'text', nullable: true })
-  responseMessage: string; // Influencer's response message
-
-  @Column({ type: 'text', nullable: true })
-  rejectionReason: string; // If rejected, reason why
+  status: JobStatus;
 
   // ============================================
-  // Progress Tracking
+  // Timeline Tracking
   // ============================================
-  @Column({ type: 'int', default: 0 })
-  completedMilestones: number;
-
-  @Column({ type: 'int', default: 0 })
-  totalMilestones: number;
+  @Column({ type: 'timestamp', nullable: true })
+  acceptedAt: Date; // When influencer accepted
 
   @Column({ type: 'timestamp', nullable: true })
-  startedAt: Date;
+  startedAt: Date; // When work started
 
   @Column({ type: 'timestamp', nullable: true })
-  completedAt: Date;
+  completedAt: Date; // When job completed
+
+  @Column({ type: 'timestamp', nullable: true })
+  declinedAt: Date; // When declined
 
   // ============================================
   // Timestamps

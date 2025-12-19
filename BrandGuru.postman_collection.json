@@ -1,0 +1,3722 @@
+{
+	"info": {
+		"_postman_id": "b713299a-ce6a-41d1-9817-93ec421ca355",
+		"name": "BrandGuru",
+		"description": "# 📄 Get started here\n\nThis template contains a boilerplate for documentation that you can quickly customize and reuse.\n\n## 🔖 How to use this template\n\n- Replace the content given brackets (()) with your API's details.\n- Tips are formatted in `codespan` - feel free to read and remove them.\n    \n\n---\n\n`Start with a brief overview of what your API offers.`\n\nThe ((product name)) provides many API products, tools, and resources that enable you to ((add product value here)).\n\n`You can also list the APIs you offer, link to the relevant pages, or do both in this section.`\n\n## **Getting started guide**\n\n`List the steps or points required to start using your APIs. Make sure to cover everything required to reach success with your API as quickly as possible.`\n\nTo start using the ((add APIs here)), you need to -\n\n`The points given below are from The Postman API's documentation. You can reference it to write your own getting started guide.`\n\n- You must use a valid API Key to send requests to the API endpoints. You can get your API key from Postman's [integrations dashboard](https://go.postman.co/settings/me/api-keys).\n- The API has [rate and usage limits](https://learning.postman.com/docs/developer/postman-api/postman-api-rate-limits/).\n- The API only responds to HTTPS-secured communications. Any requests sent via HTTP return an HTTP 301 redirect to the corresponding HTTPS resources.\n- The API returns request responses in JSON format. When an API request returns an error, it is sent in the JSON response as an error key.\n    \n\n## Authentication\n\n`Add details on the authorization keys/tokens required, steps that cover how to get them, and the relevant error codes.`\n\nThe ((product name)) API uses ((add your API's authorization type)) for authentication.\n\n`The details given below are from the Postman API's documentation. You can reference it to write your own authentication section.`\n\nPostman uses API keys for authentication. You can generate a Postman API key in the [API keys](https://postman.postman.co/settings/me/api-keys) section of your Postman account settings.\n\nYou must include an API key in each request to the Postman API with the X-Api-Key request header.\n\n### Authentication error response\n\nIf an API key is missing, malformed, or invalid, you will receive an HTTP 401 Unauthorized response code.\n\n## Rate and usage limits\n\n`Use this section to cover your APIs' terms of use. Include API limits, constraints, and relevant error codes, so consumers understand the permitted API usage and practices.`\n\n`The example given below is from The Postman API's documentation. Use it as a reference to write your APIs' terms of use.`\n\nAPI access rate limits apply at a per-API key basis in unit time. The limit is 300 requests per minute. Also, depending on your plan, you may have usage limits. If you exceed either limit, your request will return an HTTP 429 Too Many Requests status code.\n\nEach API response returns the following set of headers to help you identify your use status:\n\n| Header | Description |\n| --- | --- |\n| `X-RateLimit-Limit` | The maximum number of requests that the consumer is permitted to make per minute. |\n| `X-RateLimit-Remaining` | The number of requests remaining in the current rate limit window. |\n| `X-RateLimit-Reset` | The time at which the current rate limit window resets in UTC epoch seconds. |\n\n### 503 response\n\nAn HTTP `503` response from our servers indicates there is an unexpected spike in API access traffic. The server is usually operational within the next five minutes. If the outage persists or you receive any other form of an HTTP `5XX` error, [contact support](https://support.postman.com/hc/en-us/requests/new/).\n\n### **Need some help?**\n\n`Add links that customers can refer to whenever they need help.`\n\nIn case you have questions, go through our tutorials ((link to your video or help documentation here)). Or visit our FAQ page ((link to the relevant page)).\n\nOr you can check out our community forum, there’s a good chance our community has an answer for you. Visit our developer forum ((link to developer forum)) to review topics, ask questions, and learn from others.\n\n`You can also document or add links to libraries, code examples, and other resources needed to make a request.`",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "50811782",
+		"_collection_link": "https://lead-manager-api-team-8716.postman.co/workspace/BrandGuru~77f48f16-3431-4214-9a91-c9c95af351da/collection/36232705-b713299a-ce6a-41d1-9817-93ec421ca355?action=share&source=collection_link&creator=50811782"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "User Login",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"user-agent": true
+						}
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phone\": \"+8801567965315\",\n    \"password\": \"Admin#123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{localUrl}}/influencer/auth/login",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"influencer",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User Signup",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"H. R.\",\n  \"lastName\": \"Masum\",\n  \"email\": \"hrmasum67@gmail.com\",\n  \"phone\": \"+8801794669675\",\n  \"password\": \"Inf#1234\",\n  \"role\": \"influencer\"\n}"
+						},
+						"url": {
+							"raw": "{{localUrl}}/influencer/auth/signup",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"influencer",
+								"auth",
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Signup Verify OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"+8801794669675\",\n  \"otp\": \"1234\" \n}"
+						},
+						"url": {
+							"raw": "{{localUrl}}/influencer/auth/verify-otp",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"influencer",
+								"auth",
+								"verify-otp"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"identifier\": \"+8801794669675\"\n}"
+						},
+						"url": {
+							"raw": "{{localUrl}}/influencer/auth/forgot-password",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"influencer",
+								"auth",
+								"forgot-password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"identifier\": \"+8801794669675\",\n  \"otp\": \"2240\",\n  \"newPassword\": \"Inf#1234\"\n}"
+						},
+						"url": {
+							"raw": "{{localUrl}}/influencer/auth/reset-password",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"influencer",
+								"auth",
+								"reset-password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resend OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"+8801794669675\"\n}"
+						},
+						"url": {
+							"raw": "{{localUrl}}/influencer/auth/resend-otp",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"influencer",
+								"auth",
+								"resend-otp"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"+8801234567890\",\n  \"password\": \"Admin#123\",\n  \"role\": \"admin\"\n}"
+						},
+						"url": {
+							"raw": "{{localUrl}}/influencer/auth/create-admin",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"influencer",
+								"auth",
+								"create-admin"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Influencer Verify",
+					"item": [
+						{
+							"name": "Get Pending Profiles",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/profiles?page=1&limit=10",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"profiles"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Single Profile Details",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/profile/:userId",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"profile",
+										":userId"
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Approve/Reject Niche",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"identifier\": \"Fashion\",\r\n  \"status\": \"approved\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/profile/:userId/niche",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"profile",
+										":userId",
+										"niche"
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Approve/Reject Skill",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"identifier\": \"Modeling\",\r\n  \"status\": \"rejected\",\r\n  \"rejectReason\": \"Duplicate skill\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/profile/:userId",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"profile",
+										":userId"
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Approve/Reject Social Link",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"identifier\": \"https://instagram.com/hania\",\r\n  \"status\": \"approved\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/profile/:userId/social",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"profile",
+										":userId",
+										"social"
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Approve/Reject NID",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"nidStatus\": \"approved\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/profile/:userId/nid",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"profile",
+										":userId",
+										"nid"
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": "3d37b93b-7e9b-44fb-9b0b-8f89d63e112b"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Approve/Reject Bank Payout",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"accountNo\": \"1111211234\",\r\n  \"status\": \"approved\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/profile/:userId/payout/bank",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"profile",
+										":userId",
+										"payout",
+										"bank"
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Approve/Reject Mobile Payout",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"accountNo\": \"01794669675\",\r\n  \"status\": \"approved\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/profile/:userId/payout/mobile",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"profile",
+										":userId",
+										"payout",
+										"mobile"
+									],
+									"variable": [
+										{
+											"key": "userId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Admin Settings",
+					"item": [
+						{
+							"name": "Get Platform Fees & VAT",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/settings/general",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"settings",
+										"general"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Activity Logs",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/settings/security/activity-log",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"settings",
+										"security",
+										"activity-log"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Niches",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/settings/niches",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"settings",
+										"niches"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Skills",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/settings/skills",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"settings",
+										"skills"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Product Types",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/settings/product-types",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"settings",
+										"product-types"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Platform Fees & VAT",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"platformFee\": 2,\r\n    \"vatTax\": 15\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/settings/general",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"settings",
+										"general"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Change Admin Password",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"oldPassword\": \"Admin#123\",\r\n  \"newPassword\": \"Admin@123\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/settings/security/password",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"settings",
+										"security",
+										"password"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add a New Niche",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"name\": \"Health & Wellness\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/settings/niches",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"settings",
+										"niches"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add a New Skill",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"name\": \"Video Editing\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/settings/skills",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"settings",
+										"skills"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add a Product Type",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"name\": \"Digital Product\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/settings/product-types",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"settings",
+										"product-types"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Client Verification",
+					"item": [
+						{
+							"name": "Get All Client Profiles",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/clients?page=1&limit=10",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"clients"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Clients Pending NID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/clients/pending-nid?page=1&limit=10",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"clients",
+										"pending-nid"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Clients Pending Trade License",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/clients/pending-trade-license?page=1&limit=10",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"clients",
+										"pending-trade-license"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Client Profile Details",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/client/:userId",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"client",
+										":userId"
+									],
+									"variable": [
+										{
+											"key": ":userId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Client NID Status",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"nidStatus\": \"approved\",\n  \"rejectionReason\": \"\"\n}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/client/:userId/nid",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"client",
+										":userId",
+										"nid"
+									],
+									"variable": [
+										{
+											"key": ":userId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Client Trade License Status",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"tradeLicenseStatus\": \"approved\",\n  \"rejectionReason\": \"\"\n}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/client/:userId/trade-license",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"client",
+										":userId",
+										"trade-license"
+									],
+									"variable": [
+										{
+											"key": ":userId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Client Social Status",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"profileUrl\": \"https://instagram.com/example\",\n  \"status\": \"approved\"\n}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/client/:userId/social",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"client",
+										":userId",
+										"social"
+									],
+									"variable": [
+										{
+											"key": ":userId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Influencer Verification - Additional",
+					"item": [
+						{
+							"name": "Force Approve User",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/profile/:userId/approve",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"profile",
+										":userId",
+										"approve"
+									],
+									"variable": [
+										{
+											"key": ":userId",
+											"value": ""
+										}
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\"status\": \"approved\", \"rejectReason\": \"\"}"
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Revoke Verification",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/verification/profile/:userId/revoke",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"verification",
+										"profile",
+										":userId",
+										"revoke"
+									],
+									"variable": [
+										{
+											"key": ":userId",
+											"value": ""
+										}
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\"status\": \"revoked\", \"rejectReason\": \"\"}"
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Campaign Management",
+					"item": [
+						{
+							"name": "Get All Campaigns",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/campaigns?page=1&limit=10&status=&clientId=",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"campaigns"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										},
+										{
+											"key": "status",
+											"value": ""
+										},
+										{
+											"key": "clientId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Campaign Statistics",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/campaigns/stats",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"campaigns",
+										"stats"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Campaign by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/admin/campaigns/:campaignId",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"admin",
+										"campaigns",
+										":campaignId"
+									],
+									"variable": [
+										{
+											"key": ":campaignId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{admin_token}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Influencer",
+			"item": [
+				{
+					"name": "Influencer Profile",
+					"item": [
+						{
+							"name": "Signup Onboarding",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"fullAddress\": \"House 10, Road 5, Banani\",\r\n  \"thana\": \"Banani\",\r\n  \"zilla\": \"Dhaka\",\r\n  \"website\": \"https://hrmasum.com\",\r\n  \"socialLinks\": [\r\n    { \"platform\": \"Instagram\", \"url\": \"https://instagram.com/hrmasum\", \"status\": \"unverified\" },\r\n    { \"platform\": \"Facebook\", \"url\": \"https://facebook.com/hrmasum\", \"status\": \"unverified\" }\r\n  ],\r\n  \"nidNumber\": \"1234567890\",\r\n  \"nidFrontImg\": \"https://influencer-mediafiles.s3.ap-south-1.amazonaws.com/brandguru/influencer/nid/nid front.png-1765695683248\",\r\n  \"nidBackImg\": \"https://influencer-mediafiles.s3.ap-south-1.amazonaws.com/brandguru/influencer/nid/nid back.png-1765695757634\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/profile/onboarding",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"profile",
+										"onboarding"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Niches",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"niches\": [\"Fashion\", \"Travel\", \"Lifestyle\"]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/profile/niches",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"profile",
+										"niches"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Skills",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"skills\": [\"Modeling\", \"Video Editing\", \"Content Writing\"]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/profile/skills",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"profile",
+										"skills"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Payout (Bank)",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"bank\": {\r\n    \"bankName\": \"Dutch Bangla Bank\",\r\n    \"bankAccHolderName\": \"H. R. Masum\",\r\n    \"bankAccNo\": \"1111211234\",\r\n    \"bankBranchName\": \"Gulshan\",\r\n    \"bankRoutingNo\": \"0987654321\"\r\n  }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/profile/payouts",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"profile",
+										"payouts"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Payout (Mobile)",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"mobileBanking\": {\r\n    \"accountType\": \"Bkash\",\r\n    \"accountHolderName\": \"H. R. Masum\",\r\n    \"accountNo\": \"01794669675\"\r\n  }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/profile/payouts",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"profile",
+										"payouts"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Address",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"addresses\": {\r\n    \"addressName\": \"Studio\",\r\n    \"thana\": \"Dhanmondi\",\r\n    \"zilla\": \"Dhaka\",\r\n    \"fullAddress\": \"Flat 4A, Road 27, Dhanmondi\"\r\n  }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/profile/address",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"profile",
+										"address"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Profile",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/profile",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"profile"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Basic Info",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"bio\": \"Professional influencer\",\n  \"profileImage\": \"https://example.com/image.jpg\"\n}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/profile/basic-info",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"profile",
+										"basic-info"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Remove Profile Image",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/profile/profile-image",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"profile",
+										"profile-image"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Remove Niche",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/influencer/profile/niche/Fashion",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"profile",
+										"niche",
+										"Fashion"
+									],
+									"variable": [
+										{
+											"key": "nicheName",
+											"value": "Fashion"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Remove Payout",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"type\": \"bank\",\n  \"id\": \"payout-id\"\n}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/influencer/profile/payouts",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"influencer",
+										"profile",
+										"payouts"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzZDM3YjkzYi03ZTliLTQ0ZmItOWIwYi04Zjg5ZDYzZTExMmIiLCJlbWFpbCI6ImhybWFzdW02N0BnbWFpbC5jb20iLCJwaG9uZSI6Iis4ODAxNzk0NjY5Njc1Iiwicm9sZSI6ImluZmx1ZW5jZXIiLCJpYXQiOjE3NjU2OTk2MjUsImV4cCI6MTc2Njk5NTYyNX0.Dhq2xtAaGC1Y_kDGuVU-eiiccKNBbIqesJXJwhvv21A",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Client",
+			"item": [
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{localUrl}}/client/profile",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"client",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Address",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"thana\": \"Banani\",\n  \"zila\": \"Dhaka\",\n  \"fullAddress\": \"House 10, Road 5\"\n}"
+						},
+						"url": {
+							"raw": "{{localUrl}}/client/profile/address",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"client",
+								"profile",
+								"address"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Social Links",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"website\": \"https://example.com\",\n  \"socialLinks\": [{\"platform\": \"instagram\", \"profileUrl\": \"https://instagram.com/example\"}]\n}"
+						},
+						"url": {
+							"raw": "{{localUrl}}/client/profile/social",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"client",
+								"profile",
+								"social"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update NID",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nidNumber\": \"1234567890\",\n  \"nidFrontImg\": \"https://s3.url/nid-front.jpg\",\n  \"nidBackImg\": \"https://s3.url/nid-back.jpg\"\n}"
+						},
+						"url": {
+							"raw": "{{localUrl}}/client/profile/nid",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"client",
+								"profile",
+								"nid"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Trade License",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tradeLicenseNumber\": \"TL12345\",\n  \"tradeLicenseImg\": \"https://s3.url/license.jpg\"\n}"
+						},
+						"url": {
+							"raw": "{{localUrl}}/client/profile/trade-license",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"client",
+								"profile",
+								"trade-license"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Complete Onboarding",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"thana\": \"Banani\",\n  \"zila\": \"Dhaka\",\n  \"fullAddress\": \"House 10, Road 5\",\n  \"website\": \"https://example.com\",\n  \"socialLinks\": [],\n  \"nidNumber\": \"1234567890\",\n  \"nidFrontImg\": \"https://s3.url/nid-front.jpg\",\n  \"nidBackImg\": \"https://s3.url/nid-back.jpg\",\n  \"tradeLicenseNumber\": \"TL12345\",\n  \"tradeLicenseImg\": \"https://s3.url/license.jpg\"\n}"
+						},
+						"url": {
+							"raw": "{{localUrl}}/client/profile/onboarding",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"client",
+								"profile",
+								"onboarding"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"brandName\": \"My Brand\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\"\n}"
+						},
+						"url": {
+							"raw": "{{localUrl}}/client/profile",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"client",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Clients (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{localUrl}}/client?page=1&limit=10",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"client"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Client by ID (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{localUrl}}/client/:id",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"client",
+								":id"
+							],
+							"variable": [
+								{
+									"key": ":id",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Client (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{localUrl}}/client/:id",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"client",
+								":id"
+							],
+							"variable": [
+								{
+									"key": ":id",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{client_token}}",
+						"type": "string"
+					}
+				]
+			}
+		},
+		{
+			"name": "Campaign",
+			"item": [
+				{
+					"name": "Client - Campaign Creation",
+					"item": [
+						{
+							"name": "Create Campaign",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"campaignName\": \"Summer Campaign\", \"campaignType\": \"paid_ad\"}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Campaign Step 2",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"productType\": \"Fashion\", \"campaignNiche\": \"Fashion & Beauty\", \"preferredInfluencerIds\": [], \"notPreferableInfluencerIds\": []}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign/:id/step-2",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										":id",
+										"step-2"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Campaign Step 3",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"campaignGoals\": \"Increase brand awareness\", \"productServiceDetails\": \"Product details\", \"reportingRequirements\": \"Weekly reports\", \"usageRights\": \"6 months\", \"startingDate\": \"2025-01-01\", \"duration\": 30}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign/:id/step-3",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										":id",
+										"step-3"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Campaign Step 4",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"baseBudget\": 50000, \"milestones\": [{\"contentTitle\": \"Instagram Post 1\", \"platform\": \"instagram\", \"contentQuantity\": \"1\", \"deliveryDays\": 7, \"expectedReach\": 10000, \"expectedViews\": 15000, \"expectedLikes\": 500, \"expectedComments\": 50}, {\"contentTitle\": \"TikTok Video 1\", \"platform\": \"tiktok\", \"contentQuantity\": \"2\", \"deliveryDays\": 14, \"expectedReach\": 50000, \"expectedViews\": 100000, \"expectedLikes\": 5000, \"expectedComments\": 800}]}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign/:id/step-4",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										":id",
+										"step-4"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Campaign Step 5",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"needSampleProduct\": true, \"assets\": [{\"assetType\": \"brand_logo\", \"fileName\": \"logo.png\", \"fileUrl\": \"https://example.com/logo.png\", \"fileSize\": 102400, \"mimeType\": \"image/png\", \"description\": \"Brand logo\"}, {\"assetType\": \"product_demo_video\", \"fileName\": \"demo.mp4\", \"fileUrl\": \"https://example.com/demo.mp4\", \"fileSize\": 5242880, \"mimeType\": \"video/mp4\", \"description\": \"Product demo video\"}, {\"assetType\": \"brand_guidelines\", \"fileName\": \"guidelines.pdf\", \"fileUrl\": \"https://example.com/guidelines.pdf\", \"fileSize\": 2097152, \"mimeType\": \"application/pdf\", \"description\": \"Brand guidelines document\"}]}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign/:id/step-5",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										":id",
+										"step-5"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Place Campaign",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/:id/place",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										":id",
+										"place"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get My Campaigns",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/my-campaigns",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"my-campaigns"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Campaign by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/:id",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										":id"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Campaign",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/:id",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										":id"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Asset",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/asset/:assetId",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"asset",
+										":assetId"
+									],
+									"variable": [
+										{
+											"key": ":assetId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Client - Negotiation",
+					"item": [
+						{
+							"name": "Get Budget Preview",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/budget/preview?baseBudget=10000",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"budget",
+										"preview"
+									],
+									"query": [
+										{
+											"key": "baseBudget",
+											"value": "10000"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Send Counter Offer",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"campaignId\": \"550e8400-e29b-41d4-a716-446655440000\", \"proposedBaseBudget\": 60000}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign/negotiation/counter-offer",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"negotiation",
+										"counter-offer"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Accept Negotiation",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"campaignId\": \"550e8400-e29b-41d4-a716-446655440000\"}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign/negotiation/accept",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"negotiation",
+										"accept"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Reject Negotiation",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"campaignId\": \"550e8400-e29b-41d4-a716-446655440000\", \"reason\": \"Budget too low\"}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign/negotiation/reject",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"negotiation",
+										"reject"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Negotiation History",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/:id/negotiations",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										":id",
+										"negotiations"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Admin - Campaign Management",
+					"item": [
+						{
+							"name": "Get All Campaigns (Admin)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/admin/all",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"admin",
+										"all"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Campaign (Admin)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/admin/:id",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"admin",
+										":id"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Campaign Status",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"status\": \"active\"\n}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign/admin/:id/status",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"admin",
+										":id",
+										"status"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Admin - Negotiation",
+					"item": [
+						{
+							"name": "Send Quote",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"campaignId\": \"550e8400-e29b-41d4-a716-446655440000\", \"proposedBaseBudget\": 50000}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign/admin/negotiation/send-quote",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"admin",
+										"negotiation",
+										"send-quote"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Accept Negotiation (Admin)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"campaignId\": \"550e8400-e29b-41d4-a716-446655440000\"}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign/admin/negotiation/accept",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"admin",
+										"negotiation",
+										"accept"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Reject Negotiation (Admin)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"campaignId\": \"550e8400-e29b-41d4-a716-446655440000\", \"reason\": \"Rejected reason\"}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign/admin/negotiation/reject",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"admin",
+										"negotiation",
+										"reject"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Negotiation History (Admin)",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/admin/:id/negotiations",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"admin",
+										":id",
+										"negotiations"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Reset Negotiation",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/admin/:id/reset-negotiation",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"admin",
+										":id",
+										"reset-negotiation"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Mark Negotiation as Read",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/negotiation/:negotiationId/read",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"negotiation",
+										":negotiationId",
+										"read"
+									],
+									"variable": [
+										{
+											"key": ":negotiationId",
+											"value": ""
+										}
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\"negotiationId\": \"550e8400-e29b-41d4-a716-446655440000\"}"
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Admin - Assignment",
+					"item": [
+						{
+							"name": "Assign Campaign",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"campaignId\": \"550e8400-e29b-41d4-a716-446655440000\", \"influencerId\": \"550e8400-e29b-41d4-a716-446655440001\"}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign/admin/assign",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"admin",
+										"assign"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Campaign Assignments",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/admin/:id/assignments",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"admin",
+										":id",
+										"assignments"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Assignments",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/admin/assignments/all",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"admin",
+										"assignments",
+										"all"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Assignment",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"offeredAmount\": 25000, \"message\": \"Great opportunity!\"}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign/admin/assignment/:assignmentId",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"admin",
+										"assignment",
+										":assignmentId"
+									],
+									"variable": [
+										{
+											"key": ":assignmentId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Cancel Assignment",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/admin/assignment/:assignmentId",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"admin",
+										"assignment",
+										":assignmentId"
+									],
+									"variable": [
+										{
+											"key": ":assignmentId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Influencer - Jobs",
+					"item": [
+						{
+							"name": "Get My Jobs",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/influencer/jobs",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"influencer",
+										"jobs"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Job Counts",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/influencer/jobs/counts",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"influencer",
+										"jobs",
+										"counts"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Job Details",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/influencer/job/:jobId",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"influencer",
+										"job",
+										":jobId"
+									],
+									"variable": [
+										{
+											"key": ":jobId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Accept Job",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"message\": \"Excited to work!\"}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign/influencer/job/:jobId/accept",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"influencer",
+										"job",
+										":jobId",
+										"accept"
+									],
+									"variable": [
+										{
+											"key": ":jobId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Decline Job",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"reason\": \"Not interested\"}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/campaign/influencer/job/:jobId/decline",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"influencer",
+										"job",
+										":jobId",
+										"decline"
+									],
+									"variable": [
+										{
+											"key": ":jobId",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Start Job",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/influencer/job/:jobId/start",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"influencer",
+										"job",
+										":jobId",
+										"start"
+									],
+									"variable": [
+										{
+											"key": ":jobId",
+											"value": ""
+										}
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Complete Job",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/campaign/influencer/job/:jobId/complete",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"campaign",
+										"influencer",
+										"job",
+										":jobId",
+										"complete"
+									],
+									"variable": [
+										{
+											"key": ":jobId",
+											"value": ""
+										}
+									]
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\"completionNotes\": \"Job completed successfully\"}"
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{client_token}}",
+						"type": "string"
+					}
+				]
+			}
+		},
+		{
+			"name": "Lead Manager",
+			"item": [
+				{
+					"name": "Auth",
+					"item": [
+						{
+							"name": "Login",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"username\": \"leadmanager\",\n  \"password\": \"password123\"\n}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/auth/login",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"auth",
+										"login"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "B2B",
+					"item": [
+						{
+							"name": "Create B2B",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"companyName\": \"Company Name\", \"email\": \"contact@company.com\", \"phone\": \"+8801XXXXXXXXX\", \"category\": \"Technology\", \"serviceOverview\": []}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/b2b/create",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2b",
+										"create"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk Create B2B",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"records\": []}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/b2b/bulk-create",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2b",
+										"bulk-create"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All B2B",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/b2b?page=1&limit=10",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2b"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Search B2B",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/b2b/search?page=1&limit=10",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2b",
+										"search"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Export B2B",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/b2b/export",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2b",
+										"export"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get B2B by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/b2b/:id",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2b",
+										":id"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update B2B",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/b2b/:id",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2b",
+										":id"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete B2B",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/b2b/:id",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2b",
+										":id"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "B2C",
+					"item": [
+						{
+							"name": "Create B2C",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"firstName\": \"John\", \"lastName\": \"Doe\", \"email\": \"customer@example.com\", \"phone\": \"+8801XXXXXXXXX\", \"company\": \"ABC Corp\"}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/b2c/create",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2c",
+										"create"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Bulk Create B2C",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"leads\": [{\"firstName\": \"John\", \"lastName\": \"Doe\", \"email\": \"customer@example.com\", \"phone\": \"+8801XXXXXXXXX\"}]}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/b2c/bulk-create",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2c",
+										"bulk-create"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All B2C",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/b2c?page=1&limit=10",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2c"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Search B2C",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/b2c/search?page=1&limit=10",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2c",
+										"search"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Export B2C",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/b2c/export",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2c",
+										"export"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get B2C by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/b2c/:id",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2c",
+										":id"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update B2C",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{localUrl}}/b2c/:id",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2c",
+										":id"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete B2C",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{localUrl}}/b2c/:id",
+									"host": [
+										"{{localUrl}}"
+									],
+									"path": [
+										"b2c",
+										":id"
+									],
+									"variable": [
+										{
+											"key": ":id",
+											"value": ""
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{lead_manager_token}}",
+						"type": "string"
+					}
+				]
+			}
+		},
+		{
+			"name": "App",
+			"item": [
+				{
+					"name": "Hello",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{localUrl}}/",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"/"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Upload",
+			"item": [
+				{
+					"name": "Create Signed Url",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fileName\": \"b2b.png\",\n  \"fileType\": \"image/png\",\n  \"module\": \"lead-manager/b2b\" \n}"
+						},
+						"url": {
+							"raw": "{{localUrl}}/upload/signed-url",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"upload",
+								"signed-url"
+							]
+						},
+						"description": "Create a new B2B business entry"
+					},
+					"response": []
+				},
+				{
+					"name": "Upload  File",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "image/png",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "file",
+							"file": {
+								"src": "/E:/ShafaCode/files/b2b.png"
+							}
+						},
+						"url": {
+							"raw": "https://influencer-mediafiles.s3.ap-south-1.amazonaws.com/lead-manager/b2b/b2b.png-1765349906282?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIATSMCXTUQM6LTU4GY%2F20251210%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20251210T065826Z&X-Amz-Expires=600&X-Amz-Signature=a14706cff43d189f51df83bb057796ff8283097bf119b2efa307e4b89c83ffe9&X-Amz-SignedHeaders=host&x-amz-checksum-crc32=AAAAAA%3D%3D&x-amz-sdk-checksum-algorithm=CRC32&x-id=PutObject",
+							"protocol": "https",
+							"host": [
+								"influencer-mediafiles",
+								"s3",
+								"ap-south-1",
+								"amazonaws",
+								"com"
+							],
+							"path": [
+								"lead-manager",
+								"b2b",
+								"b2b.png-1765349906282"
+							],
+							"query": [
+								{
+									"key": "X-Amz-Algorithm",
+									"value": "AWS4-HMAC-SHA256"
+								},
+								{
+									"key": "X-Amz-Content-Sha256",
+									"value": "UNSIGNED-PAYLOAD"
+								},
+								{
+									"key": "X-Amz-Credential",
+									"value": "AKIATSMCXTUQM6LTU4GY%2F20251210%2Fap-south-1%2Fs3%2Faws4_request"
+								},
+								{
+									"key": "X-Amz-Date",
+									"value": "20251210T065826Z"
+								},
+								{
+									"key": "X-Amz-Expires",
+									"value": "600"
+								},
+								{
+									"key": "X-Amz-Signature",
+									"value": "a14706cff43d189f51df83bb057796ff8283097bf119b2efa307e4b89c83ffe9"
+								},
+								{
+									"key": "X-Amz-SignedHeaders",
+									"value": "host"
+								},
+								{
+									"key": "x-amz-checksum-crc32",
+									"value": "AAAAAA%3D%3D"
+								},
+								{
+									"key": "x-amz-sdk-checksum-algorithm",
+									"value": "CRC32"
+								},
+								{
+									"key": "x-id",
+									"value": "PutObject"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Notification",
+			"item": [
+				{
+					"name": "Get My Notifications",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{localUrl}}/notifications?page=1&limit=10",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"notifications"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Single Notification as Read",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{localUrl}}/notifications/:id/read",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"notifications",
+								":id",
+								"read"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "b7a6f661-b6b5-4a93-8a76-0bdacd448d1f"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark All as Read",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{localUrl}}/notifications/read-all",
+							"host": [
+								"{{localUrl}}"
+							],
+							"path": [
+								"notifications",
+								"read-all"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzZDM3YjkzYi03ZTliLTQ0ZmItOWIwYi04Zjg5ZDYzZTExMmIiLCJlbWFpbCI6ImhybWFzdW02N0BnbWFpbC5jb20iLCJwaG9uZSI6Iis4ODAxNzk0NjY5Njc1Iiwicm9sZSI6ImluZmx1ZW5jZXIiLCJpYXQiOjE3NjU3MzY4MjMsImV4cCI6MTc2NzAzMjgyM30.1kvVs5JKOBxpDutt9a62Rif72QVz5LNUwwE0LF6Kx0I",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "User Login",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {}
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "User-Agent",
+						"value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"phone\": \"+8801567965315\",\n    \"password\": \"Admin#123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{localUrl}}/influencer/auth/login",
+					"host": [
+						"{{localUrl}}"
+					],
+					"path": [
+						"influencer",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://farming-simulator.pstmn.io"
+		},
+		{
+			"key": "localUrl",
+			"value": ""
+		},
+		{
+			"key": "admin_token",
+			"value": ""
+		},
+		{
+			"key": "influencer_token",
+			"value": ""
+		},
+		{
+			"key": "agency_token",
+			"value": ""
+		},
+		{
+			"key": "client_token",
+			"value": ""
+		}
+	]
+}
