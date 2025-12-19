@@ -23,6 +23,10 @@ export class SignupDto {
   brandName?: string;
 
   @IsNotEmpty()
+  @IsString()
+  agencyName: string;
+
+  @IsNotEmpty()
   @Matches(/^\+?[0-9]{11,14}$/, {
     message: 'Enter a valid BD phone number e.g. +8801XXXXXXXXX',
   })

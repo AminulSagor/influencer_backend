@@ -15,9 +15,20 @@ import { InfluencerProfileEntity } from '../influencer/entities/influencer-profi
 import { ClientProfileEntity } from '../client/entities/client-profile.entity';
 import { SmsService } from 'src/common/services/sms.service';
 import { InfluencerService } from '../influencer/influencer.service';
-import { SignupDto, VerifyOtpDto, ResendOtpDto, CreateAdminDto } from './dto/auth.dto';
+import {
+  SignupDto,
+  VerifyOtpDto,
+  ResendOtpDto,
+  CreateAdminDto,
+} from './dto/auth.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password.dto';
+import { Request } from 'express';
+import * as geoip from 'geoip-lite';
+import { UAParser } from 'ua-parser-js';
+import * as requestIp from 'request-ip';
+import { LoginLogEntity } from '../admin/entities/login-log.entity';
+import { AgencyProfileEntity } from '../agency/entities/agency-profile.entity';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +37,10 @@ export class AuthService {
     private readonly userRepo: Repository<UserEntity>,
     @InjectRepository(ClientProfileEntity)
     private readonly clientProfileRepo: Repository<ClientProfileEntity>,
+    @InjectRepository(LoginLogEntity) // Inject Log Repo
+    private readonly loginLogRepo: Repository<LoginLogEntity>,
+    @InjectRepository(AgencyProfileEntity) // Inject Agency Repo
+    private readonly agencyRepo: Repository<AgencyProfileEntity>,
     private dataSource: DataSource, // Required for Signup Transaction
     private influencerService: InfluencerService,
     private jwtService: JwtService,
@@ -100,6 +115,36 @@ export class AuthService {
         await queryRunner.manager.save(ClientProfileEntity, clientProfile);
       }
       // else if (dto.role === UserRole.ADMIN) - No profile needed for admin
+      else if (dto.role === UserRole.AGENCY) {
+        if (!dto.agencyName) {
+          throw new BadRequestException('Agency Name (agencyName) is required');
+        }
+        if (!dto.firstName || !dto.lastName) {
+          throw new BadRequestException(
+            'First and Last Name are required for Agency',
+          );
+        }
+
+        const profile = new AgencyProfileEntity();
+        profile.userId = savedUser.id;
+        profile.agencyName = dto.agencyName;
+
+        profile.firstName = dto.firstName;
+        profile.lastName = dto.lastName;
+
+        await queryRunner.manager.save(AgencyProfileEntity, profile);
+      }
+      // else if (dto.role === UserRole.BRAND) {
+      //   if (!dto.companyName) throw new BadRequestException('Company Name required for Brands');
+
+      //   const profile = new BrandProfileEntity();
+      //   profile.userId = savedUser.id;
+      //   profile.brandName = dto.companyName;
+      //   profile.phone = dto.phone;
+
+      //   await queryRunner.manager.save(BrandProfileEntity, profile);
+
+      // }
 
       // D. Send SMS (Wrapped to identify if SMS is the cause of failure)
       console.log(`Attempting to send OTP: ${otp} to ${dto.phone}`);
@@ -142,7 +187,7 @@ export class AuthService {
   }
 
   // --- 2. VERIFY SIGNUP OTP ---
-  async verifyOtp(dto: VerifyOtpDto) {
+  async verifyOtp(dto: VerifyOtpDto, req: Request) {
     // Find user by Phone
     const user = await this.userRepo.findOne({
       where: { phone: dto.phone },
@@ -159,7 +204,7 @@ export class AuthService {
 
     if (!user) throw new NotFoundException('User not found');
 
-    if (user.isPhoneVerified) return this.generateToken(user);
+    if (user.isPhoneVerified) return this.generateToken(user, req);
 
     if (new Date() > user.otpExpires!)
       throw new BadRequestException('OTP Expired');
@@ -174,11 +219,11 @@ export class AuthService {
 
     await this.userRepo.save(user);
 
-    return this.generateToken(user);
+    return this.generateToken(user, req);
   }
 
   // --- 3. LOGIN ---
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto, req: Request) {
     // const userBase = await this.userRepo.findOne({
     //   where: { email: dto.email },
     //   select: ['id', 'password', 'role'],
@@ -205,7 +250,7 @@ export class AuthService {
     const isMatch = await bcrypt.compare(dto.password, user!.password);
     if (!isMatch) throw new UnauthorizedException('Invalid credentials');
 
-    return this.generateToken(user!);
+    return this.generateToken(user, req);
   }
 
   // --- 4. FORGOT PASSWORD (Email OR Phone) ---
@@ -307,9 +352,7 @@ export class AuthService {
 
     // Check if the last OTP was sent within 1 minute (rate limiting)
     if (user.otpExpires) {
-      const lastOtpSentAt = new Date(
-        user.otpExpires.getTime() - 5 * 60 * 1000,
-      ); // OTP expires in 5 mins, so sent time = expiry - 5 mins
+      const lastOtpSentAt = new Date(user.otpExpires.getTime() - 5 * 60 * 1000); // OTP expires in 5 mins, so sent time = expiry - 5 mins
       const timeSinceLastOtp = Date.now() - lastOtpSentAt.getTime();
       const oneMinute = 60 * 1000;
 
@@ -339,17 +382,72 @@ export class AuthService {
     return { message: 'New OTP has been sent to your phone number' };
   }
 
-  private async generateToken(user: UserEntity) {
+  private async generateToken(user: UserEntity, req: Request) {
     const payload = {
       sub: user.id,
       email: user.email,
       phone: user.phone,
       role: user.role,
     };
+
+    // LOGGING LOGIC FOR ADMIN ONLY
+    if (user.role === UserRole.ADMIN) {
+      // Pass req (even if it is undefined, the helper will handle it)
+      await this.logAdminLogin(user, req);
+    }
+
     return {
       accessToken: await this.jwtService.signAsync(payload),
       message: 'Successful',
     };
+  }
+
+  // Helper to save log
+  private async logAdminLogin(user: UserEntity, req: Request) {
+    try {
+      // Default values in case req is missing
+      let clientIp = '127.0.0.1';
+      let browser = 'Unknown';
+      let device = 'Unknown';
+      let location = 'Unknown Location';
+
+      // Only attempt extraction if 'req' exists
+      if (req) {
+        clientIp = requestIp.getClientIp(req) || '127.0.0.1';
+
+        // Safe Header Access
+        const userAgent = req.headers ? req.headers['user-agent'] : '';
+
+        // Parse User Agent
+        // Note: Make sure UAParser is imported correctly as: import UAParser from 'ua-parser-js';
+        // OR if using the * as syntax: new UAParser.UAParser(userAgent); depending on version.
+        // Assuming standard usage:
+        const parser = new UAParser(userAgent);
+        const ua = parser.getResult();
+
+        browser =
+          `${ua.browser.name || 'Unknown'} ${ua.browser.version || ''}`.trim();
+        device = `${ua.os.name || 'Unknown'} ${ua.os.version || ''} - ${ua.device.type || 'Desktop'}`;
+
+        // Geo Lookup
+        const geo = geoip.lookup(clientIp);
+        if (geo) {
+          location = `${geo.city}, ${geo.country}`;
+        }
+      }
+
+      await this.loginLogRepo.save({
+        user,
+        status: 'success',
+        device,
+        browser,
+        location,
+        ip: clientIp,
+      });
+    } catch (error) {
+      console.error('Failed to log admin login:', error);
+      // Don't block login if logging fails
+    }
   }
 
   // --- 7. CREATE ADMIN (If not exists) ---
@@ -366,9 +464,10 @@ export class AuthService {
       .getOne();
 
     if (existingUser) {
-      const message = existingUser.role === UserRole.ADMIN
-        ? 'Admin user already exists with this email or phone'
-        : 'A user already exists with this email or phone';
+      const message =
+        existingUser.role === UserRole.ADMIN
+          ? 'Admin user already exists with this email or phone'
+          : 'A user already exists with this email or phone';
       throw new ConflictException(message);
     }
 

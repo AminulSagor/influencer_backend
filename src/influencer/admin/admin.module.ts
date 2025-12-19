@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+// import { JwtModule } from '@nestjs/jwt';
+// import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
@@ -10,6 +10,11 @@ import { UserEntity } from '../user/entities/user.entity';
 import { ClientProfileEntity } from '../client/entities/client-profile.entity';
 import { CampaignEntity } from '../campaign/entities/campaign.entity';
 import { CampaignAssignmentEntity } from '../campaign/entities/campaign-assignment.entity';
+import { SystemSettingEntity } from './entities/system-setting.entity';
+import { MasterDataEntity } from './entities/master-data.entity';
+import { LoginLogEntity } from './entities/login-log.entity';
+import { AgencyProfileEntity } from '../agency/entities/agency-profile.entity';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -19,8 +24,13 @@ import { CampaignAssignmentEntity } from '../campaign/entities/campaign-assignme
       ClientProfileEntity,
       CampaignEntity,
       CampaignAssignmentEntity,
+      SystemSettingEntity, // Register
+      MasterDataEntity, // Register
+      LoginLogEntity, // Register
+      AgencyProfileEntity,
     ]), // Register Repos
     PassportModule,
+    NotificationModule,
     // JwtModule.registerAsync({
     //   imports: [ConfigModule],
     //   useFactory: async (configService: ConfigService) => ({

@@ -12,6 +12,7 @@ import {
   DeleteItemDto,
   UpdateInfluencerDto,
 } from './dto/update-influencer.dto';
+import { CampaignAssignmentEntity } from '../campaign/entities/campaign-assignment.entity';
 
 @Injectable()
 export class InfluencerService {

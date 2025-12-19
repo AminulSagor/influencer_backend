@@ -363,22 +363,49 @@ export class B2bService {
       throw new NotFoundException('B2B profile not found');
     }
 
-    // Map the updated values to the existing entity
-    const updated = Object.assign(existing, dto);
+    // 1. Manually handle metaTags if present
+    // If dto.metaTags exists, join it into a string. Otherwise, keep existing.
+    const metaTagsString = dto.metaTags
+      ? dto.metaTags.join(',')
+      : existing.metaTags;
 
-    // Ensure serviceOverview is always an array
-    updated.serviceOverview =
-      dto.serviceOverview?.map((service) => ({
+    // 2. Prepare the update payload
+    // We explicitly overwrite metaTags with the string version
+    const updatePayload = {
+      ...dto,
+      metaTags: metaTagsString,
+    };
+
+    // 3. Merge changes into existing entity
+    const updated = Object.assign(existing, updatePayload);
+
+    // 4. Handle Nested Objects (Service Overview)
+    // Only map if provided, otherwise keep existing or default to empty
+    if (dto.serviceOverview) {
+      updated.serviceOverview = dto.serviceOverview.map((service) => ({
         serviceName: service.serviceName,
         category: service.category,
-        subCategory: service.subCategory || '', // Default empty string if undefined
-        serviceDescription: service.serviceDescription || '', // Default empty string if undefined
+        subCategory: service.subCategory || '',
+        serviceDescription: service.serviceDescription || '',
         pricingModel: service.pricingModel,
         rate: service.rate,
         currency: service.currency,
         serviceAvailability: service.serviceAvailability,
         onlineService: service.onlineService,
-      })) || []; // Default to empty array if undefined
+      }));
+    }
+
+    // 5. Handle Key Contacts
+    if (dto.keyContacts) {
+      updated.keyContacts = dto.keyContacts.map((k) => ({
+        name: k.keyContactName,
+        position: k.keyContactPosition,
+        department: k.keyContactDepartment,
+        phone: k.keyContactPhone,
+        email: k.keyContactEmail,
+        linkedIn: k.keyContactLinkedIn,
+      }));
+    }
 
     const saved = await this.b2bRepo.save(updated);
 

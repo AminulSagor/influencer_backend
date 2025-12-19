@@ -1,8 +1,10 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
   Patch,
+  Post,
   Query,
   Request,
   UseGuards,
@@ -14,6 +16,11 @@ import { NotificationService } from './notification.service';
 @UseGuards(AuthGuard('jwt-brandguru')) // Or 'jwt-influencer' etc based on your strategy naming
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
+
+  @Post('device-token')
+  async updateDeviceToken(@Request() req, @Body('token') token: string) {
+    return this.notificationService.saveFcmToken(req.user.userId, token);
+  }
 
   @Get()
   async getMyNotifications(

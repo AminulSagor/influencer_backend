@@ -12,11 +12,19 @@ import { ClientProfileEntity } from '../client/entities/client-profile.entity';
 import { InfluencerModule } from '../influencer/influencer.module';
 import { CommonModule } from 'src/common/common.module';
 import { JwtStrategy } from './jwt.strategy';
+import { LoginLogEntity } from '../admin/entities/login-log.entity';
+import { AgencyProfileEntity } from '../agency/entities/agency-profile.entity';
 
 @Module({
   imports: [
     // Register Entities for this module
-    TypeOrmModule.forFeature([UserEntity, InfluencerProfileEntity, ClientProfileEntity]),
+    TypeOrmModule.forFeature([
+      UserEntity,
+      InfluencerProfileEntity,
+      LoginLogEntity,
+      AgencyProfileEntity,
+  ClientProfileEntity
+    ]),
     InfluencerModule,
     CommonModule,
     PassportModule,
