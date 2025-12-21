@@ -198,35 +198,6 @@ export class AdminController {
   }
 
   // =============================================
-  // CAMPAIGN MANAGEMENT
-  // =============================================
-
-  /**
-   * Get all campaigns with filters and pagination
-   * Query params: page, limit, status, clientId, search, startDateFrom, startDateTo
-   */
-  @Get('campaigns')
-  async getAllCampaigns(@Query() query: GetCampaignsQueryDto) {
-    return this.adminService.getAllCampaigns(query);
-  }
-
-  /**
-   * Get campaign statistics for dashboard
-   */
-  @Get('campaigns/stats')
-  async getCampaignStats() {
-    return this.adminService.getCampaignStats();
-  }
-
-  /**
-   * Get single campaign details by ID
-   */
-  @Get('campaigns/:campaignId')
-  async getCampaignById(@Param('campaignId') campaignId: string) {
-    return this.adminService.getCampaignById(campaignId);
-  }
-
-  // =============================================
   // SETTINGS: General (Fees)
   // =============================================
 

@@ -12,15 +12,16 @@ import { CampaignEntity } from './campaign.entity';
 export enum NegotiationSender {
   CLIENT = 'client',
   ADMIN = 'admin',
+  AGENCY = 'agency',
 }
 
 // Negotiation action type
 export enum NegotiationAction {
-  REQUEST = 'request',           // Admin sends quote
+  REQUEST = 'request', // Admin sends quote
   COUNTER_OFFER = 'counter_offer', // Counter-offer with different price
-  ACCEPT = 'accept',             // Accept the current terms
-  REJECT = 'reject',             // Reject the campaign
-  MESSAGE = 'message',           // General message/comment
+  ACCEPT = 'accept', // Accept the current terms
+  REJECT = 'reject', // Reject the campaign
+  MESSAGE = 'message', // General message/comment
 }
 
 @Entity('campaign_negotiations')
