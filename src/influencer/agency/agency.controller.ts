@@ -5,6 +5,7 @@ import {
   Get,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -26,6 +27,7 @@ import {
   AgencyNichesDto,
 } from './dto/update-agency.dto';
 import { AgencyOnboardingDto } from './dto/create-agency.dto';
+import { ReportFilterDto } from '../campaign/dto/report-filter.dto';
 
 @Controller('agency/profile')
 @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
@@ -102,5 +104,15 @@ export class AgencyController {
   @Delete('payouts')
   async deletePayout(@Request() req, @Body() dto: DeleteAgencyItemDto) {
     return this.agencyService.deletePayout(req.user.userId, dto);
+  }
+
+  // -----------------------------------------------------------
+  // AGENCY: Report / Issues Dashboard
+  // -----------------------------------------------------------
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.AGENCY)
+  @Get('reports')
+  async getAgencyReports(@Request() req, @Query() dto: ReportFilterDto) {
+    return await this.agencyService.getAgencyReports(req.user.userId, dto);
   }
 }

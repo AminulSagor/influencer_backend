@@ -6,6 +6,7 @@ import {
   IsEnum,
   Min,
   IsArray,
+  IsNotEmpty,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { JobStatus } from '../entities/campaign-assignment.entity';
@@ -19,6 +20,16 @@ import { JobStatus } from '../entities/campaign-assignment.entity';
 // Influencer completes → Goes to "Completed"
 // Influencer declines → Goes to "Declined"
 // ============================================
+
+export enum MilestoneStatus {
+  PENDING = 'pending',
+  TODO = 'todo',
+  IN_REVIEW = 'in_review',
+  DECLINED = 'declined',
+  COMPLETED = 'completed',
+  PARTIAL_PAID = 'partial_paid',
+  PAID = 'paid',
+}
 
 // ============================================
 // Admin: Assign Campaign to Influencer(s)
@@ -90,6 +101,28 @@ export class SearchAssignmentDto {
   @Type(() => Number)
   @IsOptional()
   limit?: number = 10;
+}
+
+// ✅ ADDED: Submit Milestone DTO
+export class SubmitMilestoneDto {
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  liveLinks?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  proofAttachments?: string[];
+
+  @IsNumber()
+  @Min(1)
+  @IsNotEmpty()
+  requestPaymentAmount: number;
 }
 
 // Re-export JobStatus for convenience

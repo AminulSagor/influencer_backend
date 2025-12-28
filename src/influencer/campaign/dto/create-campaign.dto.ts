@@ -14,7 +14,7 @@ import {
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { CampaignType, Platform } from '../entities/campaign.entity';
-import { AssetType } from '../entities/campaign-asset.entity';
+import { AssetCategory } from '../entities/campaign-asset.entity';
 
 // ============================================
 // STEP 1: Basic Campaign Information
@@ -33,8 +33,8 @@ export class CreateCampaignStep1Dto {
 // ============================================
 export class UpdateCampaignStep2Dto {
   @IsString()
-  @IsNotEmpty()
-  productType: string;
+  @IsOptional()
+  productType?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -49,6 +49,17 @@ export class UpdateCampaignStep2Dto {
   @IsUUID('4', { each: true })
   @IsOptional()
   notPreferableInfluencerIds?: string[];
+
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @IsOptional()
+  agencyId?: string[]; // For selected Ad Agency
+
+  // // Use this if the design allows multiple recommended agencies
+  // @IsArray()
+  // @IsUUID('all', { each: true })
+  // @IsOptional()
+  // otherAgencyIds?: string[];
 }
 
 // ============================================
@@ -78,6 +89,14 @@ export class UpdateCampaignStep3Dto {
   @IsNumber()
   @Min(1)
   duration: number; // Duration in days
+
+  @IsString()
+  @IsOptional()
+  dos?: string; // ✅ Added
+
+  @IsString()
+  @IsOptional()
+  donts?: string; // ✅ Added
 }
 
 // ============================================
@@ -94,6 +113,10 @@ export class MilestoneDto {
   @IsString()
   @IsNotEmpty()
   contentQuantity: string;
+
+  @IsString()
+  @IsOptional()
+  promotionGoal?: string;
 
   @IsNumber()
   @Min(1)
@@ -136,8 +159,10 @@ export class UpdateCampaignStep4Dto {
 // STEP 5: Content Assets & Final Setup
 // ============================================
 export class AssetDto {
-  @IsEnum(AssetType)
-  assetType: AssetType;
+  // @IsEnum(AssetType)
+  @IsString()
+  @IsNotEmpty()
+  assetType: string;
 
   @IsString()
   @IsNotEmpty()
@@ -158,6 +183,9 @@ export class AssetDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @IsEnum(AssetCategory)
+  category: AssetCategory;
 }
 
 export class UpdateCampaignStep5Dto {

@@ -15,6 +15,8 @@ import { MasterDataEntity } from './entities/master-data.entity';
 import { LoginLogEntity } from './entities/login-log.entity';
 import { AgencyProfileEntity } from '../agency/entities/agency-profile.entity';
 import { NotificationModule } from '../notification/notification.module';
+import { AgencyModule } from '../agency/agency.module';
+import { MilestoneSubmissionEntity } from '../campaign/entities/milestone-submission.entity';
 
 @Module({
   imports: [
@@ -28,9 +30,11 @@ import { NotificationModule } from '../notification/notification.module';
       MasterDataEntity, // Register
       LoginLogEntity, // Register
       AgencyProfileEntity,
+      MilestoneSubmissionEntity,
     ]), // Register Repos
     PassportModule,
     NotificationModule,
+    AgencyModule,
     // JwtModule.registerAsync({
     //   imports: [ConfigModule],
     //   useFactory: async (configService: ConfigService) => ({

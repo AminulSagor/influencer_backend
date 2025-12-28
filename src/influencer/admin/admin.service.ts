@@ -49,6 +49,10 @@ import * as requestIp from 'request-ip';
 import { Request } from 'express';
 import { GetInfluencersDto, UserStatusFilter } from './dto/admin-browsing.dto';
 import { AgencyProfileEntity } from '../agency/entities/agency-profile.entity';
+import { AgencyService } from '../agency/agency.service';
+import { GetAgenciesDto } from '../agency/dto/get-agencies.dto';
+import { AdminReportFilterDto } from '../campaign/dto/report-filter.dto';
+import { MilestoneSubmissionEntity } from '../campaign/entities/milestone-submission.entity';
 
 @Injectable()
 export class AdminService {
@@ -71,7 +75,10 @@ export class AdminService {
     private readonly loginLogRepo: Repository<LoginLogEntity>,
     @InjectRepository(AgencyProfileEntity)
     private readonly agencyProfileRepo: Repository<AgencyProfileEntity>,
+    @InjectRepository(MilestoneSubmissionEntity)
+    private readonly submissionRepo: Repository<MilestoneSubmissionEntity>,
     private readonly notificationService: NotificationService,
+    private readonly agencyService: AgencyService,
   ) {}
 
   private async getRawProfile(userId: string) {
@@ -1443,6 +1450,10 @@ export class AdminService {
     return { data, meta: { total, page, limit } };
   }
 
+  async getAllAgencies(dto: GetAgenciesDto) {
+    return await this.agencyService.getAllAgencies(dto);
+  }
+
   // 2. Get Single Agency Details (Full Entity for Admin View)
   async getAgencyProfileDetails(userId: string) {
     const profile = await this.agencyProfileRepo.findOne({
@@ -1644,5 +1655,74 @@ export class AdminService {
     await this.checkAndToggleAgencyVerification(profile);
 
     return { success: true, message: `Agency Payout ${dto.status}` };
+  }
+
+  // ==================================================================
+  // ADMIN REPORT API (All Reports with User Filter)
+  // ==================================================================
+  async getAdminReports(dto: AdminReportFilterDto) {
+    const { page = 1, limit = 10, search, status, userType } = dto;
+    const skip = (page - 1) * limit;
+
+    const query = this.submissionRepo
+      .createQueryBuilder('submission')
+      .leftJoinAndSelect('submission.milestone', 'milestone')
+      .leftJoinAndSelect('milestone.campaign', 'campaign')
+      .leftJoinAndSelect('campaign.client', 'client')
+      .leftJoinAndSelect('campaign.assignedAgencies', 'agency');
+    if (search) {
+      query.andWhere('campaign.title ILIKE :search', { search: `%${search}%` });
+    }
+
+    if (status) {
+      if (status === 'Resolved') {
+        query.andWhere('submission.status IN (:...statuses)', {
+          statuses: ['approved', 'paid'],
+        });
+      } else {
+        query.andWhere('submission.status NOT IN (:...statuses)', {
+          statuses: ['approved', 'paid'],
+        });
+      }
+    }
+
+    if (userType === 'AGENCY') {
+      query.andWhere('campaign.selectedAgencyId IS NOT NULL');
+    }
+    // Client is always present in campaign, so no explicit filter needed unless searching by client name.
+
+    const [submissions, total] = await query
+      .orderBy('submission.updatedAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    const formattedReports = submissions.map((sub) => {
+      const agencyName =
+        sub.milestone.campaign.assignedAgencies?.find(
+          (a) => a.id === sub.milestone.campaign.selectedAgencyId,
+        )?.agencyName || 'Unknown Agency';
+
+      return {
+        reportId: sub.id,
+        campaignName: sub.milestone.campaign.campaignName,
+        status: ['approved', 'paid'].includes(sub.status)
+          ? 'Resolved'
+          : 'Pending',
+
+        relatedEntity:
+          userType === 'CLIENT'
+            ? { type: 'Client', name: sub.milestone.campaign.client?.brandName }
+            : { type: 'Agency', name: agencyName },
+
+        milestone: sub.milestone.contentTitle,
+      };
+    });
+
+    return {
+      success: true,
+      data: formattedReports,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 }

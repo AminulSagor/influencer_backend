@@ -16,6 +16,7 @@ import { CampaignMilestoneEntity } from './campaign-milestone.entity';
 import { CampaignAssetEntity } from './campaign-asset.entity';
 import { CampaignNegotiationEntity } from './campaign-negotiation.entity';
 import { CampaignAssignmentEntity } from './campaign-assignment.entity';
+import { AgencyProfileEntity } from 'src/influencer/agency/entities/agency-profile.entity';
 
 // Campaign Type
 export enum CampaignType {
@@ -25,12 +26,27 @@ export enum CampaignType {
 
 // Campaign Status - Proper Flow
 export enum CampaignStatus {
-  RECEIVED = 'received',             // Client created, Admin received it
-  QUOTED = 'quoted',                 // Admin sent quote to client
-  PAID = 'paid',                     // Client paid for the campaign
-  PROMOTING = 'promoting',           // Active - Influencers working on it
-  COMPLETED = 'completed',           // Campaign completed successfully
-  CANCELLED = 'cancelled',           // Campaign cancelled
+  RECEIVED = 'received', // Client created, Admin received it
+  QUOTED = 'quoted', // Admin sent quote to client
+  PAID = 'paid', // Client paid for the campaign
+  PROMOTING = 'promoting', // Active - Influencers working on it
+  COMPLETED = 'completed', // Campaign completed successfully
+  CANCELLED = 'cancelled', // Campaign cancelled
+  DRAFT = 'draft',
+  NEGOTIATING = 'negotiating',
+  ACCEPTED = 'accepted',
+  ACTIVE = 'active',
+  IN_REVIEW = 'in_review',
+  PENDING_AGENCY = 'pending_agency',
+  AGENCY_ACCEPTED = 'agency_accepted',
+  AGENCY_NEGOTIATING = 'agency_negotiating',
+  PARTIAL_PAID = 'partial_paid',
+}
+
+export enum PaymentStatus {
+  PENDING = 'pending',
+  PARTIAL = 'partial',
+  FULL = 'full',
 }
 
 // Legacy alias for backward compatibility
@@ -92,6 +108,30 @@ export class CampaignEntity {
   })
   notPreferableInfluencers: InfluencerProfileEntity[];
 
+  // ✅ ADDED: Agency Relation & ID
+  // @Column({ type: 'uuid', nullable: true })
+  // agencyId: string | null;
+
+  @ManyToMany(() => AgencyProfileEntity)
+  @JoinTable({
+    name: 'campaign_assigned_agencies',
+    joinColumn: { name: 'campaignId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'agencyId', referencedColumnName: 'id' },
+  })
+  assignedAgencies: AgencyProfileEntity[];
+
+  @Column({ type: 'timestamp', nullable: true })
+  assignedAt: Date;
+
+  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  proposedServiceFeePercent: number; // To store the Admin's initial offer (e.g., 13.00)
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  platformFeeAmount: number;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  availableBudgetForAgency: number;
+
   // ============================================
   // STEP 3: Campaign Details
   // ============================================
@@ -113,6 +153,12 @@ export class CampaignEntity {
   @Column({ type: 'int', nullable: true })
   duration: number; // Duration in days
 
+  @Column({ type: 'text', nullable: true })
+  dos: string | null; // ✅ Added
+
+  @Column({ type: 'text', nullable: true })
+  donts: string | null;
+
   // ============================================
   // STEP 4: Budget & Campaign Milestones
   // ============================================
@@ -127,6 +173,32 @@ export class CampaignEntity {
 
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   netPayableAmount: number; // Final amount
+
+  @Column({ type: 'uuid', nullable: true })
+  selectedAgencyId: string; // The one agency the client finally chooses
+
+  // ✅ ADDED: Payment Status
+  @Column({
+    type: 'enum',
+    enum: PaymentStatus,
+    default: PaymentStatus.PENDING,
+  })
+  paymentStatus: PaymentStatus;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  paidAmount: number;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  dueAmount: number;
+
+  @Column({ default: false })
+  isRated: boolean;
+
+  @Column({ type: 'int', nullable: true })
+  rating: number; // 1-5
+
+  // @Column({ type: 'text', nullable: true })
+  // clientReview: string;
 
   // Milestones (One-to-Many)
   @OneToMany(() => CampaignMilestoneEntity, (milestone) => milestone.campaign, {
@@ -172,9 +244,13 @@ export class CampaignEntity {
   // ============================================
   // Negotiation
   // ============================================
-  @OneToMany(() => CampaignNegotiationEntity, (negotiation) => negotiation.campaign, {
-    cascade: true,
-  })
+  @OneToMany(
+    () => CampaignNegotiationEntity,
+    (negotiation) => negotiation.campaign,
+    {
+      cascade: true,
+    },
+  )
   negotiations: CampaignNegotiationEntity[];
 
   // Track whose turn it is to respond: 'client' or 'admin'
@@ -184,9 +260,13 @@ export class CampaignEntity {
   // ============================================
   // Assignments (Influencers assigned to this campaign)
   // ============================================
-  @OneToMany(() => CampaignAssignmentEntity, (assignment) => assignment.campaign, {
-    cascade: true,
-  })
+  @OneToMany(
+    () => CampaignAssignmentEntity,
+    (assignment) => assignment.campaign,
+    {
+      cascade: true,
+    },
+  )
   assignments: CampaignAssignmentEntity[];
 
   // ============================================
