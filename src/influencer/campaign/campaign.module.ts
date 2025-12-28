@@ -9,6 +9,11 @@ import { CampaignNegotiationEntity } from './entities/campaign-negotiation.entit
 import { CampaignAssignmentEntity } from './entities/campaign-assignment.entity';
 import { ClientProfileEntity } from '../client/entities/client-profile.entity';
 import { InfluencerProfileEntity } from '../influencer/entities/influencer-profile.entity';
+import { AgencyProfileEntity } from '../agency/entities/agency-profile.entity';
+import { SystemSettingEntity } from '../admin/entities/system-setting.entity';
+import { MilestoneSubmissionEntity } from './entities/milestone-submission.entity';
+import { UserEntity } from '../user/entities/user.entity';
+import { SubmissionReportEntity } from './entities/submission-report.entity';
 
 @Module({
   imports: [
@@ -18,8 +23,13 @@ import { InfluencerProfileEntity } from '../influencer/entities/influencer-profi
       CampaignAssetEntity,
       CampaignNegotiationEntity,
       CampaignAssignmentEntity,
+      UserEntity,
       ClientProfileEntity,
       InfluencerProfileEntity,
+      AgencyProfileEntity,
+      SystemSettingEntity,
+      MilestoneSubmissionEntity,
+      SubmissionReportEntity,
     ]),
   ],
   controllers: [CampaignController],

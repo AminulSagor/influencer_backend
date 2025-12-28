@@ -6,8 +6,10 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { CampaignEntity, Platform } from './campaign.entity';
+import { MilestoneSubmissionEntity } from './milestone-submission.entity';
 
 @Entity('campaign_milestones')
 export class CampaignMilestoneEntity {
@@ -46,6 +48,19 @@ export class CampaignMilestoneEntity {
   @Column({ type: 'int', nullable: true })
   expectedComments: number;
 
+  @Column({ type: 'text', nullable: true })
+  promotionGoal: string | null;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  amount: number;
+
+  // Bonus Payment
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  bonusAmount: number;
+
+  @Column({ default: 'unpaid' }) // unpaid, paid
+  bonusStatus: string;
+
   // Milestone Status
   @Column({ default: 'pending' }) // pending, in_progress, completed, approved
   status: string;
@@ -65,6 +80,9 @@ export class CampaignMilestoneEntity {
   })
   @JoinColumn({ name: 'campaignId' })
   campaign: CampaignEntity;
+
+  @OneToMany(() => MilestoneSubmissionEntity, (s) => s.milestone)
+  submissions: MilestoneSubmissionEntity[];
 
   // ============================================
   // Timestamps

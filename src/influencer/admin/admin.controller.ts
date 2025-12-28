@@ -34,6 +34,8 @@ import { UserRole } from '../user/entities/user.entity';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { MasterDataType } from './entities/master-data.entity';
 import { GetInfluencersDto } from './dto/admin-browsing.dto';
+import { GetAgenciesDto } from '../agency/dto/get-agencies.dto';
+import { AdminReportFilterDto } from '../campaign/dto/report-filter.dto';
 
 @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard) // 1. Apply Guards
 @Roles(UserRole.ADMIN)
@@ -361,6 +363,11 @@ export class AdminController {
     );
   }
 
+  @Get('/agencies') // URL: admin/agencies?page=1&limit=10&search=tech&niche=gadget
+  async getAllAgencies(@Query() dto: GetAgenciesDto) {
+    return await this.adminService.getAllAgencies(dto);
+  }
+
   @Get('verification/agency/:userId')
   async getAgencyProfile(@Param('userId') userId: string) {
     return this.adminService.getAgencyProfileDetails(userId);
@@ -420,5 +427,15 @@ export class AdminController {
     @Body() dto: UpdatePayoutStatusDto,
   ) {
     return this.adminService.updateAgencyPayout(userId, dto, 'mobile');
+  }
+
+  // -----------------------------------------------------------
+  // ADMIN: Reports (With Tab Filter)
+  // -----------------------------------------------------------
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/reports')
+  async getAdminReports(@Query() dto: AdminReportFilterDto) {
+    return await this.adminService.getAdminReports(dto);
   }
 }

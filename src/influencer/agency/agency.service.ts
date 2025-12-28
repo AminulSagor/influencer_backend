@@ -18,12 +18,17 @@ import {
   UpdateAgencyNidDto,
 } from './dto/update-agency.dto';
 import { AgencyOnboardingDto } from './dto/create-agency.dto';
+import { GetAgenciesDto } from './dto/get-agencies.dto';
+import { MilestoneSubmissionEntity } from '../campaign/entities/milestone-submission.entity';
+import { ReportFilterDto } from '../campaign/dto/report-filter.dto';
 
 @Injectable()
 export class AgencyService {
   constructor(
     @InjectRepository(AgencyProfileEntity)
     private readonly agencyRepo: Repository<AgencyProfileEntity>,
+    @InjectRepository(MilestoneSubmissionEntity)
+    private readonly submissionRepo: Repository<MilestoneSubmissionEntity>,
   ) {}
 
   async updateOnboarding(userId: string, dto: AgencyOnboardingDto) {
@@ -65,6 +70,70 @@ export class AgencyService {
     const profile = await this.agencyRepo.findOne({ where: { userId } });
     if (!profile) throw new NotFoundException('Agency profile not found');
     return profile;
+  }
+
+  async getAllAgencies(dto: GetAgenciesDto) {
+    const { page = 1, limit = 10, search, niche, location, minRating } = dto;
+    const skip = (page - 1) * limit;
+
+    const query = this.agencyRepo
+      .createQueryBuilder('agency')
+      .leftJoinAndSelect('agency.user', 'au')
+      .select([
+        'agency.id',
+        'agency.agencyName',
+        'agency.logo',
+        'agency.niches',
+        'agency.socialLinks',
+        'agency.averageRating',
+        'agency.totalReviews',
+        'agency.firstName',
+        'agency.lastName',
+        'au.email',
+      ]);
+
+    if (search) {
+      query.andWhere(
+        '(agency.agencyName ILIKE :search OR agency.firstName ILIKE :search OR agency.lastName ILIKE :search OR au.email ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    if (niche) {
+      query.andWhere('agency.niches::text ILIKE :niche', {
+        niche: `%${niche}%`,
+      });
+    }
+
+    if (location) {
+      query.andWhere('agency.address::text ILIKE :location', {
+        location: `%${location}%`,
+      });
+    }
+
+    if (minRating) {
+      query.andWhere('agency.averageRating >= :minRating', { minRating });
+    }
+
+    query.orderBy('agency.averageRating', 'DESC');
+
+    const [data, total] = await query.skip(skip).take(limit).getManyAndCount();
+
+    const formattedData = data.map((agency) => ({
+      ...agency,
+      fullName: `${agency.firstName} ${agency.lastName}`.trim(),
+    }));
+
+    return {
+      success: true,
+      data: formattedData,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   // --- UPDATE BASIC INFO ---
@@ -208,5 +277,97 @@ export class AgencyService {
     }
 
     return this.agencyRepo.save(profile);
+  }
+
+  // ==================================================================
+  // AGENCY REPORT API: Issues & Status Tracker
+  // ==================================================================
+  async getAgencyReports(userId: string, dto: ReportFilterDto) {
+    const agency = await this.getProfile(userId);
+    const { page = 1, limit = 10, search } = dto;
+    const skip = (page - 1) * limit;
+
+    const query = this.submissionRepo
+      .createQueryBuilder('submission')
+      .leftJoinAndSelect('submission.milestone', 'milestone')
+      .leftJoinAndSelect('milestone.campaign', 'campaign')
+      .leftJoinAndSelect('submission.reports', 'reports')
+      .where('campaign.selectedAgencyId = :agencyId', { agencyId: agency.id });
+
+    if (search) {
+      query.andWhere('campaign.title ILIKE :search', { search: `%${search}%` });
+    }
+
+    // query.andWhere('submission.status IN (:...statuses)', { statuses: ['declined', 'in_review', 'pending'] });
+
+    query
+      .orderBy(
+        `CASE 
+        WHEN submission.status = 'declined' THEN 1 
+        WHEN submission.status = 'pending' OR submission.status = 'in_review' THEN 2 
+        ELSE 3 
+      END`,
+        'ASC',
+      )
+      .addOrderBy('submission.updatedAt', 'DESC');
+
+    const [submissions, total] = await query
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    const formattedReports = submissions.map((sub) => {
+      // Logic Mapping
+      let reportStatus = 'Resolved';
+      let priority = 'Low';
+
+      if (sub.status === 'declined') {
+        reportStatus = 'Flagged';
+        priority = 'High';
+      } else if (['pending', 'in_review'].includes(sub.status)) {
+        reportStatus = 'Pending';
+        priority = 'Medium';
+      }
+
+      const latestReport =
+        sub.reports?.length > 0
+          ? sub.reports.sort(
+              (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+            )[0]
+          : null;
+
+      return {
+        reportId: sub.id,
+        campaignName: sub.milestone.campaign.campaignName,
+        milestoneTitle: sub.milestone.contentTitle,
+        submissionDescription: sub.submissionDescription,
+
+        // Mapped Status
+        status: reportStatus, // Flagged, Pending, Resolved
+        submissionStatus: sub.status, // Real DB Status
+        priority: priority,
+
+        // Issue Details
+        issueSummary:
+          sub.rejectionReason ||
+          latestReport?.content ||
+          'No specific issue logged',
+
+        // Navigation Helper
+        campaignId: sub.milestone.campaign.id,
+        milestoneId: sub.milestone.id,
+      };
+    });
+
+    return {
+      success: true,
+      data: formattedReports,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 }

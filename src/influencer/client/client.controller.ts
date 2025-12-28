@@ -23,6 +23,9 @@ import {
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserRole } from '../user/entities/user.entity';
+import { GetAgenciesDto } from '../agency/dto/get-agencies.dto';
+import { ReportFilterDto } from '../campaign/dto/report-filter.dto';
+import { AnalyticsFilterDto } from './dto/analytics-filter.dto';
 
 @Controller('client')
 export class ClientController {
@@ -89,6 +92,15 @@ export class ClientController {
     return this.clientService.updateProfile(req.user.userId, dto);
   }
 
+  // Agency
+
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Get('/agencies') // URL: client/agencies?page=1&limit=10&search=tech&niche=gadget
+  async getAllAgencies(@Query() dto: GetAgenciesDto) {
+    return await this.clientService.getAllAgencies(dto);
+  }
+
   // ============================================
   // ADMIN ROUTES
   // ============================================
@@ -115,5 +127,25 @@ export class ClientController {
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.clientService.remove(id);
+  }
+
+  // -----------------------------------------------------------
+  // CLIENT: Reports
+  // -----------------------------------------------------------
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Get('client/reports')
+  async getClientReports(@Request() req, @Query() dto: ReportFilterDto) {
+    return await this.clientService.getClientReports(req.user.userId, dto);
+  }
+
+  // -----------------------------------------------------------
+  // CLIENT ANALYTICS & TRANSACTIONS
+  // -----------------------------------------------------------
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Get('analytics')
+  async getClientAnalytics(@Request() req, @Query() dto: AnalyticsFilterDto) {
+    return await this.clientService.getClientAnalytics(req.user.userId, dto);
   }
 }

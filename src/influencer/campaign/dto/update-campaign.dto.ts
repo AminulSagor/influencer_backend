@@ -11,8 +11,12 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { CampaignType, CampaignStatus, Platform } from '../entities/campaign.entity';
-import { AssetType } from '../entities/campaign-asset.entity';
+import {
+  CampaignType,
+  CampaignStatus,
+  Platform,
+} from '../entities/campaign.entity';
+// import { AssetType } from '../entities/campaign-asset.entity';
 
 // ============================================
 // Update Milestone DTO
@@ -68,9 +72,9 @@ export class UpdateAssetDto {
   @IsOptional()
   id?: string;
 
-  @IsEnum(AssetType)
+  @IsString()
   @IsOptional()
-  assetType?: AssetType;
+  assetType?: string;
 
   @IsString()
   @IsOptional()

@@ -7,10 +7,18 @@ import { ClientController } from './client.controller';
 import { ClientProfileEntity } from './entities/client-profile.entity';
 import { UserEntity } from '../user/entities/user.entity';
 import { CommonModule } from 'src/common/common.module';
+import { AgencyModule } from '../agency/agency.module';
+import { CampaignEntity } from '../campaign';
+import { MilestoneSubmissionEntity } from '../campaign/entities/milestone-submission.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ClientProfileEntity, UserEntity]),
+    TypeOrmModule.forFeature([
+      ClientProfileEntity,
+      UserEntity,
+      CampaignEntity,
+      MilestoneSubmissionEntity,
+    ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -20,6 +28,7 @@ import { CommonModule } from 'src/common/common.module';
       inject: [ConfigService],
     }),
     CommonModule,
+    AgencyModule,
   ],
   controllers: [ClientController],
   providers: [ClientService],

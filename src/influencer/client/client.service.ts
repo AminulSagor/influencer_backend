@@ -17,6 +17,12 @@ import {
   UpdateClientTradeLicenseDto,
   ClientOnboardingDto,
 } from './dto/update-client.dto';
+import { AgencyService } from '../agency/agency.service';
+import { GetAgenciesDto } from '../agency/dto/get-agencies.dto';
+import { AnalyticsFilterDto } from './dto/analytics-filter.dto';
+import { CampaignEntity } from '../campaign/entities/campaign.entity';
+import { ReportFilterDto } from '../campaign/dto/report-filter.dto';
+import { MilestoneSubmissionEntity } from '../campaign/entities/milestone-submission.entity';
 
 @Injectable()
 export class ClientService {
@@ -25,6 +31,11 @@ export class ClientService {
     private readonly clientProfileRepo: Repository<ClientProfileEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
+    @InjectRepository(CampaignEntity)
+    private readonly campaignRepo: Repository<CampaignEntity>,
+    @InjectRepository(MilestoneSubmissionEntity)
+    private readonly submissionRepo: Repository<MilestoneSubmissionEntity>,
+    private readonly agencyService: AgencyService,
   ) {}
 
   // --- 1. GET PROFILE ---
@@ -275,5 +286,197 @@ export class ClientService {
       steps.nidVerification !== 'unverified';
 
     return requiredStepsCompleted;
+  }
+
+  // Agency
+
+  async getAllAgencies(dto: GetAgenciesDto) {
+    return await this.agencyService.getAllAgencies(dto);
+  }
+
+  // ==================================================================
+  // CLIENT REPORT API (My Campaign Reports)
+  // ==================================================================
+  async getClientReports(userId: string, dto: ReportFilterDto) {
+    const client = await this.getProfile(userId);
+    const { page = 1, limit = 10, search, status } = dto;
+    const skip = (page - 1) * limit;
+
+    const query = this.submissionRepo
+      .createQueryBuilder('submission')
+      .leftJoinAndSelect('submission.milestone', 'milestone')
+      .leftJoinAndSelect('milestone.campaign', 'campaign')
+      .where('campaign.clientId = :clientId', { clientId: client.id });
+
+    if (search) {
+      query.andWhere('campaign.title ILIKE :search', { search: `%${search}%` });
+    }
+
+    if (status) {
+      if (status === 'Resolved') {
+        query.andWhere('submission.status IN (:...statuses)', {
+          statuses: ['approved', 'paid'],
+        });
+      } else {
+        query.andWhere('submission.status NOT IN (:...statuses)', {
+          statuses: ['approved', 'paid'],
+        });
+      }
+    }
+
+    const [submissions, total] = await query
+      .orderBy('submission.updatedAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    const formattedReports = submissions.map((sub) => ({
+      reportId: sub.id,
+      campaignName: sub.milestone.campaign.campaignName,
+      milestoneTitle: sub.milestone.contentTitle,
+      submissionDate: sub.createdAt,
+      status: ['approved', 'paid'].includes(sub.status)
+        ? 'Resolved'
+        : 'Pending',
+      details: sub.submissionDescription,
+      amount: sub.requestedAmount,
+    }));
+
+    return {
+      success: true,
+      data: formattedReports,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  // ==================================================================
+  // CLIENT ANALYTICS: Top Stats + Transactions List
+  // ==================================================================
+  async getClientAnalytics(userId: string, dto: AnalyticsFilterDto) {
+    const client = await this.getProfile(userId);
+    const { page = 1, limit = 10, search, sortOrder = 'high_to_low' } = dto;
+    const skip = (page - 1) * limit;
+
+    // ---------------------------------------------------------
+    // A. HIGHLIGHTS (Top Campaign & Top Influencer)
+    // ---------------------------------------------------------
+
+    // 1. Top Campaign (Highest Budget)
+    const topCampaign = await this.campaignRepo.findOne({
+      where: { clientId: client.id },
+      order: { totalBudget: 'DESC' },
+      select: ['id', 'campaignName', 'totalBudget', 'status', 'createdAt'],
+    });
+
+    // 2. Top Influencer (Highest Earned from this Client)
+    const topInfluencerRaw = await this.campaignRepo
+      .createQueryBuilder('c')
+      .select('c.selectedAgencyId', 'agencyId')
+      .addSelect('SUM(c.paidAmount)', 'totalEarned')
+      .where('c.clientId = :clientId', { clientId: client.id })
+      .andWhere('c.selectedAgencyId IS NOT NULL')
+      .groupBy('c.selectedAgencyId')
+      .orderBy('"totalEarned"', 'DESC') // 'totalEarned' is alias
+      .limit(1)
+      .getRawOne();
+
+    let topInfluencerData = null;
+    // if (topInfluencerRaw?.agencyId) {
+    //     const agency = await this.agencyRepo.findOne({
+    //         where: { id: topInfluencerRaw.agencyId },
+    //         select: ['id', 'firstName', 'lastName', 'agencyName', 'logo']
+    //     });
+
+    //     const displayName = agency.firstName && agency.lastName
+    //         ? `${agency.firstName} ${agency.lastName}`
+    //         : agency.agencyName;
+
+    //     topInfluencerData = {
+    //         id: agency.id,
+    //         name: displayName,
+    //         totalEarned: topInfluencerRaw.totalEarned,
+    //         logo: agency.logo
+    //     };
+    // }
+
+    // ---------------------------------------------------------
+    // B. TRANSACTIONS LIST (From Submissions)
+    // ---------------------------------------------------------
+    const query = this.submissionRepo
+      .createQueryBuilder('sub')
+      .leftJoinAndSelect('sub.milestone', 'milestone')
+      .leftJoinAndSelect('milestone.campaign', 'campaign')
+      .leftJoinAndSelect('campaign.assignedAgencies', 'agency') // For Influencer Name in list
+      .where('campaign.clientId = :clientId', { clientId: client.id })
+      .andWhere('sub.paidToAgencyAmount > 0');
+
+    // Filter: Search by Campaign Name
+    if (search) {
+      query.andWhere('campaign.title ILIKE :search', { search: `%${search}%` });
+    }
+
+    // Sort: Low to High / High to Low
+    if (sortOrder === 'low_to_high') {
+      query.orderBy('sub.paidToAgencyAmount', 'ASC');
+    } else {
+      query.orderBy('sub.paidToAgencyAmount', 'DESC');
+    }
+
+    // Add secondary sort by date
+    query.addOrderBy('sub.updatedAt', 'DESC');
+
+    const [transactions, total] = await query
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    // Formatting Transactions
+    const formattedTransactions = transactions.map((t) => {
+      // Find the specific agency for this campaign
+      const agency = t.milestone.campaign.assignedAgencies?.find(
+        (a) => a.id === t.milestone.campaign.selectedAgencyId,
+      );
+      const influencerName = agency
+        ? agency.firstName
+          ? `${agency.firstName} ${agency.lastName}`
+          : agency.agencyName
+        : 'Unknown Influencer';
+
+      return {
+        transactionId: t.id,
+        campaignTitle: t.milestone.campaign.campaignName,
+        milestoneTitle: t.milestone.contentTitle,
+        influencerName: influencerName,
+        amount: t.paidToAgencyAmount,
+        date: t.createdAt, // Payment Date
+        status: 'Success',
+      };
+    });
+
+    return {
+      success: true,
+      data: {
+        highlights: {
+          topCampaign: topCampaign
+            ? {
+                id: topCampaign.id,
+                title: topCampaign.campaignName,
+                budget: topCampaign.totalBudget,
+                date: topCampaign.createdAt,
+              }
+            : null,
+          topInfluencer: topInfluencerData,
+        },
+        transactions: {
+          data: formattedTransactions,
+          meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+          },
+        },
+      },
+    };
   }
 }

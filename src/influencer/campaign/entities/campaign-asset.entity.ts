@@ -9,20 +9,32 @@ import {
 import { CampaignEntity } from './campaign.entity';
 
 // Asset Types
-export enum AssetType {
-  BRAND_LOGO = 'brand_logo',
-  PRODUCT_DEMO_VIDEO = 'product_demo_video',
-  BRAND_GUIDELINES = 'brand_guidelines',
-  IMAGE = 'image',
-  VIDEO = 'video',
-  PDF = 'pdf',
-  OTHER = 'other',
+// export enum AssetType {
+//   BRAND_LOGO = 'brand_logo',
+//   PRODUCT_DEMO_VIDEO = 'product_demo_video',
+//   BRAND_GUIDELINES = 'brand_guidelines',
+//   IMAGE = 'image',
+//   VIDEO = 'video',
+//   PDF = 'pdf',
+//   OTHER = 'other',
+// }
+
+export enum AssetCategory {
+  BRAND = 'brand',
+  CONTENT = 'content',
 }
 
 @Entity('campaign_assets')
 export class CampaignAssetEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({
+    type: 'enum',
+    enum: AssetCategory,
+    default: AssetCategory.CONTENT,
+  })
+  category: AssetCategory; // ✅ Distinguishes Brand vs Content
 
   // Asset Type
   @Column({

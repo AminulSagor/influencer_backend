@@ -33,6 +33,9 @@ export class AgencyProfileEntity {
   agencyBio: string;
 
   @Column({ nullable: true })
+  serviceFee: string;
+
+  @Column({ nullable: true })
   website: string;
 
   // Location
@@ -105,6 +108,12 @@ export class AgencyProfileEntity {
       accStatus: string;
     }>;
   };
+
+  @Column({ type: 'decimal', precision: 3, scale: 1, default: 0 })
+  averageRating: number; // e.g., 4.5
+
+  @Column({ type: 'int', default: 0 })
+  totalReviews: number;
 
   // Foreign Key
   @Column({ type: 'uuid', nullable: true })

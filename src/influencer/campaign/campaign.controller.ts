@@ -10,6 +10,7 @@ import {
   Request,
   Query,
   ParseUUIDPipe,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CampaignService } from './campaign.service';
@@ -37,10 +38,27 @@ import {
   AcceptJobDto,
   DeclineJobDto,
   SearchAssignmentDto,
+  SubmitMilestoneDto,
 } from './dto/campaign-assignment.dto';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserRole } from '../user/entities/user.entity';
+import { AgencySearchCampaignDto } from './dto/agency-campaign.dto';
+import {
+  AgencyQuoteActionDto,
+  AgencyRequoteDto,
+  AssignAgencyDto,
+  SelectAgencyDto,
+} from './dto/admin-agency.dto';
+import { PayBonusDto, PayDueDto } from './dto/payment.dto';
+import {
+  AdminPayMilestoneDto,
+  ApproveMilestoneDto,
+  ReviewMilestoneDto,
+  UpdateMilestoneAmountDto,
+  UpdateMilestoneResultDto,
+} from './dto/campaign-milestone.dto';
+import { RateCampaignDto } from './dto/rate-campaign.dto';
 
 @Controller('campaign')
 export class CampaignController {
@@ -142,7 +160,10 @@ export class CampaignController {
   @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Delete('asset/:assetId')
-  deleteAsset(@Param('assetId', ParseUUIDPipe) assetId: string, @Request() req) {
+  deleteAsset(
+    @Param('assetId', ParseUUIDPipe) assetId: string,
+    @Request() req,
+  ) {
     return this.campaignService.deleteAsset(assetId, req.user.sub);
   }
 
@@ -185,16 +206,29 @@ export class CampaignController {
   @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Get(':id/negotiations')
-  clientGetNegotiations(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
-    return this.campaignService.getNegotiationHistory(id, req.user.sub, 'client');
+  clientGetNegotiations(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req,
+  ) {
+    return this.campaignService.getNegotiationHistory(
+      id,
+      req.user.sub,
+      'client',
+    );
   }
 
   // --- Get Campaign Assignments (Client - View Own Campaign Assignments) ---
   @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Get(':id/assignments')
-  clientGetCampaignAssignments(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
-    return this.campaignService.getCampaignAssignmentsForClient(id, req.user.sub);
+  clientGetCampaignAssignments(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req,
+  ) {
+    return this.campaignService.getCampaignAssignmentsForClient(
+      id,
+      req.user.sub,
+    );
   }
 
   // ============================================
@@ -257,7 +291,11 @@ export class CampaignController {
   @Roles(UserRole.ADMIN)
   @Get('admin/:id/negotiations')
   adminGetNegotiations(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
-    return this.campaignService.getNegotiationHistory(id, req.user.sub, 'admin');
+    return this.campaignService.getNegotiationHistory(
+      id,
+      req.user.sub,
+      'admin',
+    );
   }
 
   // --- Admin: Reset Negotiation (to resend quote) ---
@@ -284,7 +322,10 @@ export class CampaignController {
   @Roles(UserRole.ADMIN)
   @Post('admin/assign')
   assignCampaign(@Request() req, @Body() dto: AssignCampaignDto) {
-    return this.campaignService.assignCampaignToInfluencers(req.user.userId, dto);
+    return this.campaignService.assignCampaignToInfluencers(
+      req.user.userId,
+      dto,
+    );
   }
 
   // --- Admin: Get Campaign Assignments ---
@@ -372,10 +413,7 @@ export class CampaignController {
   @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.INFLUENCER)
   @Get('influencer/job/:jobId')
-  getJobDetails(
-    @Param('jobId', ParseUUIDPipe) jobId: string,
-    @Request() req,
-  ) {
+  getJobDetails(@Param('jobId', ParseUUIDPipe) jobId: string, @Request() req) {
     return this.campaignService.getJobDetails(jobId, req.user.sub);
   }
 
@@ -407,10 +445,7 @@ export class CampaignController {
   @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.INFLUENCER)
   @Post('influencer/job/:jobId/start')
-  startJob(
-    @Param('jobId', ParseUUIDPipe) jobId: string,
-    @Request() req,
-  ) {
+  startJob(@Param('jobId', ParseUUIDPipe) jobId: string, @Request() req) {
     return this.campaignService.startJob(jobId, req.user.sub);
   }
 
@@ -418,10 +453,414 @@ export class CampaignController {
   @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.INFLUENCER)
   @Post('influencer/job/:jobId/complete')
-  completeJob(
-    @Param('jobId', ParseUUIDPipe) jobId: string,
+  completeJob(@Param('jobId', ParseUUIDPipe) jobId: string, @Request() req) {
+    return this.campaignService.completeJob(jobId, req.user.sub);
+  }
+
+  // ============================================
+  // ADMIN-AGENCY ROUTES
+  // ============================================
+
+  // --- 1. Assign Agency (Modal in Admin Dashboard) ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/assign-agency')
+  assignAgency(@Request() req, @Body() dto: AssignAgencyDto) {
+    return this.campaignService.assignCampaignToAgencies(req.user.sub, dto);
+  }
+
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch('milestone/:id/amount')
+  async updateMilestoneAmount(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateMilestoneAmountDto,
+  ) {
+    return await this.campaignService.updateMilestoneAmount(id, dto);
+  }
+
+  //  Admin Assigns Agencies ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/assign-agencies')
+  assignAgencies(@Request() req, @Body() dto: AssignAgencyDto) {
+    return this.campaignService.assignCampaignToAgencies(req.user.sub, dto);
+  }
+
+  // ---  Client: Get Agency Bids (Comparison View) ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Get('client/bids/:campaignId')
+  async getAgencyBids(
+    @Param('campaignId', ParseUUIDPipe) campaignId: string,
     @Request() req,
   ) {
-    return this.campaignService.completeJob(jobId, req.user.sub);
+    return await this.campaignService.getCampaignAgencyBids(
+      campaignId,
+      req.user.sub,
+    );
+  }
+
+  // --- Client Picks Winner ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Post('client/select-agency')
+  selectWinner(@Request() req, @Body() dto: SelectAgencyDto) {
+    return this.campaignService.clientSelectAgency(req.user.sub, dto);
+  }
+
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Get('client/details/:campaignId')
+  async getCampaignDetails(
+    @Param('campaignId', ParseUUIDPipe) campaignId: string,
+    @Request() req,
+  ) {
+    const userId = req.user.userId;
+    return await this.campaignService.getClientCampaignDetails(
+      campaignId,
+      userId,
+    );
+  }
+
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Post('client/pay-due')
+  async payDue(@Request() req, @Body() dto: PayDueDto) {
+    const userId = req.user.userId;
+    return await this.campaignService.payDueAmount(
+      userId,
+      dto.campaignId,
+      dto.amount,
+    );
+  }
+
+  // @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  // @Roles(UserRole.CLIENT)
+  // @Post('client/milestone/approve')
+  // async approveMilestone(@Request() req, @Body() dto: ApproveMilestoneDto) {
+  //   return await this.campaignService.clientApproveMilestone(
+  //     req.user.userId,
+  //     dto,
+  //   );
+  // }
+
+  // --- Admin/Client: View agencies assigned to a specific campaign ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.CLIENT)
+  @Get('admin/:id/assigned-agencies')
+  getAssignedAgencies(@Param('id', ParseUUIDPipe) id: string) {
+    return this.campaignService.getCampaignAssignedAgencies(id);
+  }
+
+  // --- Admin: View all campaigns assigned to agencies globally ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/agency-assignments/all')
+  getAllAgencyJobs(@Query() query: AgencySearchCampaignDto) {
+    return this.campaignService.getAllAgencyAssignments(query);
+  }
+
+  // --- Admin: Update Agency Assignment ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch('admin/agency-assignment/:id')
+  updateAgencyAssignment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AgencyQuoteActionDto,
+  ) {
+    return this.campaignService.updateAgencyAssignment(id, dto);
+  }
+
+  // --- Admin: Cancel Agency Assignment ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Delete('admin/agency-assignment/:id')
+  cancelAgencyAssignment(@Param('id', ParseUUIDPipe) id: string) {
+    return this.campaignService.cancelAgencyAssignment(id);
+  }
+
+  // --- 2. Accept Agency Requote ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/agency-quote/accept')
+  acceptAgencyQuote(@Request() req, @Body() dto: AgencyQuoteActionDto) {
+    return this.campaignService.adminManageAgencyQuote(
+      req.user.sub,
+      dto,
+      'accept',
+    );
+  }
+
+  // --- 3. Reject Agency Requote ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/agency-quote/reject')
+  rejectAgencyQuote(@Request() req, @Body() dto: AgencyQuoteActionDto) {
+    return this.campaignService.adminManageAgencyQuote(
+      req.user.sub,
+      dto,
+      'reject',
+    );
+  }
+
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Post('client/submission/:submissionId/review') // Changed URL to be specific
+  async clientReview(
+    @Param('submissionId', ParseUUIDPipe) submissionId: string,
+    @Request() req,
+    @Body() dto: ReviewMilestoneDto,
+  ) {
+    return await this.campaignService.clientReviewSubmission(
+      req.user.userId,
+      submissionId,
+      dto,
+    );
+  }
+
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/submission/:submissionId/review')
+  async adminReview(
+    @Param('submissionId', ParseUUIDPipe) submissionId: string,
+    @Body() dto: ReviewMilestoneDto,
+  ) {
+    return await this.campaignService.adminReviewSubmission(submissionId, dto);
+  }
+
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/submission/:submissionId/pay')
+  async adminPay(
+    @Param('submissionId', ParseUUIDPipe) submissionId: string,
+    @Body() dto: AdminPayMilestoneDto,
+  ) {
+    return await this.campaignService.adminPaySubmission(submissionId, dto);
+  }
+
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/submission/:submissionId/decline')
+  async adminDecline(
+    @Param('submissionId', ParseUUIDPipe) submissionId: string,
+    @Body('reason') reason: string,
+  ) {
+    return await this.campaignService.adminDeclineSubmission(
+      submissionId,
+      reason,
+    );
+  }
+
+  // ============================================
+  // AGENCY ROUTES (New Section)
+  // ============================================
+
+  // --- Agency: Dashboard Stats ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.AGENCY)
+  @Get('agency/stats')
+  agencyStats(@Request() req) {
+    return this.campaignService.getAgencyDashboardStats(req.user.sub);
+  }
+
+  // --- Agency: List Campaigns ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.AGENCY)
+  @Get('agency/list')
+  agencyList(@Request() req, @Query() query: AgencySearchCampaignDto) {
+    return this.campaignService.getAgencyCampaigns(req.user.sub, query);
+  }
+
+  // --- Agency: Get Single Campaign ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.AGENCY)
+  @Get('agency/:id')
+  agencyGetCampaign(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    return this.campaignService.getAgencyCampaignById(id, req.user.sub);
+  }
+
+  // --- Agency: Accept Invite ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.AGENCY)
+  @Post('agency/:id/accept')
+  agencyAccept(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    return this.campaignService.agencyAcceptInvite(id, req.user.sub);
+  }
+
+  //  Agency Submits Requote ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.AGENCY)
+  @Post('agency/:id/requote')
+  async agencyRequote(
+    @Param('id') id: string,
+    @Request() req,
+    @Body() dto: AgencyRequoteDto,
+  ) {
+    const userId = req.user.userId;
+
+    if (!userId) {
+      throw new BadRequestException('User ID not found in token payload');
+    }
+
+    return this.campaignService.agencyRequote(id, userId, dto);
+  }
+
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.AGENCY)
+  @Get('agency/milestones/:campaignId')
+  async getAgencyMilestones(
+    @Param('campaignId', ParseUUIDPipe) campaignId: string,
+    @Request() req,
+  ) {
+    const userId = req.user.userId;
+    return await this.campaignService.getAgencyMilestones(campaignId, userId);
+  }
+
+  // --- Agency: Submit Milestone ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.AGENCY)
+  @Post('agency/milestone/:milestoneId/submit')
+  async agencySubmitMilestone(
+    @Param('milestoneId', ParseUUIDPipe) milestoneId: string,
+    @Request() req,
+    @Body() dto: SubmitMilestoneDto,
+  ) {
+    return await this.campaignService.agencySubmitMilestone(
+      milestoneId,
+      req.user.userId,
+      dto,
+    );
+  }
+
+  // -----------------------------------------------------------
+  // AGENCY: Resubmit / Edit a Declined Submission
+  // -----------------------------------------------------------
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.AGENCY)
+  @Patch('agency/submission/:submissionId/resubmit')
+  async agencyResubmit(
+    @Param('submissionId', ParseUUIDPipe) submissionId: string,
+    @Request() req,
+    @Body() dto: SubmitMilestoneDto,
+  ) {
+    return await this.campaignService.agencyResubmitSubmission(
+      submissionId,
+      req.user.userId,
+      dto,
+    );
+  }
+
+  // -----------------------------------------------------------
+  // SHARED: Get All Milestones for a Campaign
+  // -----------------------------------------------------------
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.AGENCY, UserRole.CLIENT, UserRole.ADMIN)
+  @Get('milestones/:campaignId') // URL: /campaign/milestones/{campaignId}
+  async getMilestones(
+    @Param('campaignId', ParseUUIDPipe) campaignId: string,
+    @Request() req,
+  ) {
+    return await this.campaignService.getCampaignMilestones(
+      campaignId,
+      req.user.userId,
+    );
+  }
+
+  // -----------------------------------------------------------
+  // SHARED: Get Single Milestone Details (includes Submission list)
+  // -----------------------------------------------------------
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.AGENCY, UserRole.CLIENT, UserRole.ADMIN)
+  @Get('milestone/:milestoneId') // URL: /campaign/milestone/{milestoneId}
+  async getMilestone(
+    @Param('milestoneId', ParseUUIDPipe) milestoneId: string,
+    @Request() req,
+  ) {
+    return await this.campaignService.getMilestoneById(
+      milestoneId,
+      req.user.userId,
+    );
+  }
+
+  // -----------------------------------------------------------
+  // SHARED: Get Single Submission Details
+  // -----------------------------------------------------------
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.AGENCY, UserRole.CLIENT, UserRole.ADMIN)
+  @Get('submission/:submissionId') // URL: /campaign/submission/{submissionId}
+  async getSubmission(
+    @Param('submissionId', ParseUUIDPipe) submissionId: string,
+    @Request() req,
+  ) {
+    return await this.campaignService.getSubmissionById(
+      submissionId,
+      req.user.userId,
+    );
+  }
+
+  // -----------------------------------------------------------
+  // AGENCY: Update Milestone Results (Metrics)
+  // -----------------------------------------------------------
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.AGENCY)
+  @Patch('agency/submission/:id/results')
+  async updateResults(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req,
+    @Body() dto: UpdateMilestoneResultDto,
+  ) {
+    return await this.campaignService.updateSubmissionResults(
+      id,
+      req.user.userId,
+      dto,
+    );
+  }
+
+  // -----------------------------------------------------------
+  // CLIENT: Pay Bonus for Overflow
+  // -----------------------------------------------------------
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Post('client/milestone/:id/bonus')
+  async payBonus(
+    @Param('id') id: string,
+    @Request() req,
+    @Body() dto: PayBonusDto,
+  ) {
+    return await this.campaignService.clientPayBonus(id, req.user.userId, dto);
+  }
+
+  // -----------------------------------------------------------
+  // CLIENT: Rate Agency (After Completion)
+  // -----------------------------------------------------------
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Post('client/campaign/:id/rate')
+  async rateAgency(
+    @Param('id') id: string,
+    @Request() req,
+    @Body() dto: RateCampaignDto,
+  ) {
+    return await this.campaignService.rateAgency(id, req.user.userId, dto);
+  }
+
+  // -----------------------------------------------------------
+  // ANALYTICS: Get Campaign Stats
+  // -----------------------------------------------------------
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT, UserRole.ADMIN)
+  @Get(':id/analytics')
+  async getAnalytics(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    return await this.campaignService.getCampaignAnalytics(id, req.user.userId);
+  }
+
+  // -----------------------------------------------------------
+  // REPORT: Get Submission Conversation History
+  // -----------------------------------------------------------
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Get('submission/:id/report')
+  async getReport(@Param('id', ParseUUIDPipe) id: string) {
+    return await this.campaignService.getSubmissionHistory(id);
   }
 }

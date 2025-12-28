@@ -12,15 +12,16 @@ import { CampaignEntity } from './campaign.entity';
 export enum NegotiationSender {
   CLIENT = 'client',
   ADMIN = 'admin',
+  AGENCY = 'agency',
 }
 
 // Negotiation action type
 export enum NegotiationAction {
-  REQUEST = 'request',           // Admin sends quote
+  REQUEST = 'request', // Admin sends quote
   COUNTER_OFFER = 'counter_offer', // Counter-offer with different price
-  ACCEPT = 'accept',             // Accept the current terms
-  REJECT = 'reject',             // Reject the campaign
-  MESSAGE = 'message',           // General message/comment
+  ACCEPT = 'accept', // Accept the current terms
+  REJECT = 'reject', // Reject the campaign
+  MESSAGE = 'message', // General message/comment
 }
 
 @Entity('campaign_negotiations')
@@ -58,6 +59,11 @@ export class CampaignNegotiationEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   proposedTotalBudget: number;
 
+  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  proposedServiceFeePercent: number;
+
+  @Column({ type: 'varchar', nullable: true })
+  clientProposedServiceFee: string;
   // ============================================
   // Read Status
   // ============================================
@@ -80,7 +86,7 @@ export class CampaignNegotiationEntity {
   campaign: CampaignEntity;
 
   // User ID of the sender (for tracking)
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ type: 'uuid', nullable: true, name: 'sender_id' })
   senderId: string;
 
   // ============================================
