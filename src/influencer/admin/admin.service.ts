@@ -53,12 +53,19 @@ import { AgencyService } from '../agency/agency.service';
 import { GetAgenciesDto } from '../agency/dto/get-agencies.dto';
 import { AdminReportFilterDto } from '../campaign/dto/report-filter.dto';
 import { MilestoneSubmissionEntity } from '../campaign/entities/milestone-submission.entity';
+import {
+  FinanceFilterDto,
+  PaymentStatus,
+  PayoutType,
+} from './entities/finance-filter.dto';
 
 @Injectable()
 export class AdminService {
   constructor(
     @InjectRepository(InfluencerProfileEntity)
-    private readonly profileRepo: Repository<InfluencerProfileEntity>,
+    private readonly influencerRepo: Repository<InfluencerProfileEntity>,
+    @InjectRepository(AgencyProfileEntity)
+    private readonly agencyRepo: Repository<AgencyProfileEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
     @InjectRepository(ClientProfileEntity)
@@ -82,7 +89,7 @@ export class AdminService {
   ) {}
 
   private async getRawProfile(userId: string) {
-    const profile = await this.profileRepo.findOne({
+    const profile = await this.influencerRepo.findOne({
       where: { userId },
       relations: ['user'],
     });
@@ -192,7 +199,7 @@ export class AdminService {
   }
 
   async getPendingProfiles(page = 1, limit = 10) {
-    const [profiles, total] = await this.profileRepo.findAndCount({
+    const [profiles, total] = await this.influencerRepo.findAndCount({
       take: limit,
       skip: (page - 1) * limit,
       relations: ['user'],
@@ -216,7 +223,7 @@ export class AdminService {
   }
 
   async getProfileDetails(userId: string) {
-    const profile = await this.profileRepo.findOne({
+    const profile = await this.influencerRepo.findOne({
       where: { userId },
       relations: ['user'],
     });
@@ -285,7 +292,7 @@ export class AdminService {
       );
     }
 
-    await this.profileRepo.save(profile);
+    await this.influencerRepo.save(profile);
     await this.notifyUser(
       userId,
       `Niche (${dto.identifier})`,
@@ -315,7 +322,7 @@ export class AdminService {
       );
     }
 
-    await this.profileRepo.save(profile);
+    await this.influencerRepo.save(profile);
     await this.notifyUser(
       userId,
       `Skill (${dto.identifier})`,
@@ -345,7 +352,7 @@ export class AdminService {
       );
     }
 
-    await this.profileRepo.save(profile);
+    await this.influencerRepo.save(profile);
     await this.notifyUser(userId, 'Social Link', dto.status, dto.rejectReason);
     await this.checkAndToggleUserVerification(profile);
 
@@ -370,7 +377,7 @@ export class AdminService {
       );
     }
 
-    await this.profileRepo.save(profile);
+    await this.influencerRepo.save(profile);
     await this.notifyUser(userId, 'Bank Account', dto.status, dto.rejectReason);
     await this.checkAndToggleUserVerification(profile);
 
@@ -396,7 +403,7 @@ export class AdminService {
       );
     }
 
-    await this.profileRepo.save(profile);
+    await this.influencerRepo.save(profile);
     await this.notifyUser(
       userId,
       'Mobile Banking',
@@ -420,7 +427,7 @@ export class AdminService {
         ? dto.rejectReason || 'No reason'
         : '';
 
-    await this.profileRepo.save(profile);
+    await this.influencerRepo.save(profile);
     await this.notifyUser(
       userId,
       'NID Document',
@@ -1085,7 +1092,7 @@ export class AdminService {
   // =============================================
   async getAllInfluencers(dto: GetInfluencersDto) {
     const { page, limit, search, status } = dto;
-    const query = this.profileRepo
+    const query = this.influencerRepo
       .createQueryBuilder('profile')
       .leftJoinAndSelect('profile.user', 'user')
       .orderBy('profile.createdAt', 'DESC')
@@ -1186,7 +1193,7 @@ export class AdminService {
 
   // Get SINGLE INFLUENCER DETAILS
   async getInfluencerFullDetails(userId: string) {
-    const profile = await this.profileRepo.findOne({
+    const profile = await this.influencerRepo.findOne({
       where: { userId },
       relations: ['user'],
     });
@@ -1252,7 +1259,7 @@ export class AdminService {
   // INFLUENCER CAMPAIGNS (Tab View)
   async getInfluencerCampaigns(userId: string, statusFilter?: string) {
     // 1. Get Profile ID
-    const profile = await this.profileRepo.findOne({
+    const profile = await this.influencerRepo.findOne({
       where: { userId },
       select: ['id'],
     });
@@ -1671,7 +1678,9 @@ export class AdminService {
       .leftJoinAndSelect('campaign.client', 'client')
       .leftJoinAndSelect('campaign.assignedAgencies', 'agency');
     if (search) {
-      query.andWhere('campaign.title ILIKE :search', { search: `%${search}%` });
+      query.andWhere('campaign.campaignName ILIKE :search', {
+        search: `%${search}%`,
+      });
     }
 
     if (status) {
@@ -1692,7 +1701,7 @@ export class AdminService {
     // Client is always present in campaign, so no explicit filter needed unless searching by client name.
 
     const [submissions, total] = await query
-      .orderBy('submission.updatedAt', 'DESC')
+      .orderBy('submission.createdAt', 'DESC')
       .skip(skip)
       .take(limit)
       .getManyAndCount();
@@ -1723,6 +1732,494 @@ export class AdminService {
       success: true,
       data: formattedReports,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  // ==================================================================
+  // ADMIN FINANCE: Payouts & Transactions
+  // ==================================================================
+
+  async getFinanceData(dto: FinanceFilterDto) {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      tab,
+      status,
+      dateFrom,
+      dateTo,
+      amountSort,
+    } = dto;
+    const skip = (page - 1) * limit;
+
+    let query;
+
+    // ---------------------------------------------------------
+    // A. Query Selection Based on Tab (Client vs Agency)
+    // ---------------------------------------------------------
+    if (tab === PayoutType.CLIENT) {
+      query = this.campaignRepo
+        .createQueryBuilder('c')
+        .leftJoin('c.client', 'userProfile')
+        .leftJoin('userProfile.user', 'user')
+
+        // ✅ FIX: Use .select() instead of .addSelect() for the first selection
+        // This prevents duplicate 'c.id' selection error
+        .select([
+          'c.id',
+          'c.campaignName',
+          'c.totalBudget',
+          'c.paidAmount',
+          'c.dueAmount',
+          'c.createdAt',
+          'c.updatedAt',
+          'c.paymentStatus',
+        ])
+
+        // ✅ Continue using .addSelect() for joined tables
+        .addSelect([
+          'userProfile.brandName',
+          'userProfile.firstName',
+          'userProfile.lastName',
+          'userProfile.userId',
+        ])
+
+        .addSelect(['user.email', 'user.phone']);
+
+      // Status Filters
+      if (status) {
+        if (status === PaymentStatus.FULL)
+          query.andWhere('c.paymentStatus = :ps', { ps: 'full' });
+        else if (status === PaymentStatus.PARTIAL)
+          query.andWhere('c.paymentStatus = :ps', { ps: 'partial' });
+        else if (status === PaymentStatus.PENDING)
+          query.andWhere('c.dueAmount > 0');
+      }
+    } else {
+      // -------------------------------------------------------
+      // Agency/Influencer Payouts
+      // -------------------------------------------------------
+      query = this.submissionRepo
+        .createQueryBuilder('sub')
+        .leftJoinAndSelect('sub.milestone', 'milestone')
+        .leftJoinAndSelect('milestone.campaign', 'campaign')
+        .leftJoinAndSelect('campaign.assignedAgencies', 'agency')
+        .where('sub.paidToAgencyAmount > 0 OR sub.requestedAmount > 0');
+
+      if (status) {
+        if (status === PaymentStatus.COMPLETED)
+          query.andWhere('sub.paymentStatus = :ps', { ps: 'paid' });
+        else if (status === PaymentStatus.PENDING)
+          query.andWhere('sub.paymentStatus != :ps', { ps: 'paid' });
+      }
+    }
+
+    // ---------------------------------------------------------
+    // B. Global Filters (Search, Date, Sort)
+    // ---------------------------------------------------------
+    if (search) {
+      const searchTerm = `%${search}%`;
+      if (tab === PayoutType.CLIENT) {
+        query.andWhere(
+          '(c.campaignName ILIKE :s OR userProfile.brandName ILIKE :s OR userProfile.firstName ILIKE :s OR userProfile.lastName ILIKE :s OR user.email ILIKE :s OR user.phone ILIKE :s)',
+          { s: searchTerm },
+        );
+      } else {
+        // Agency Search
+        query.andWhere(
+          '(campaign.campaignName ILIKE :s OR agency.agencyName ILIKE :s OR agency.firstName ILIKE :s)',
+          { s: searchTerm },
+        );
+      }
+    }
+
+    if (dateFrom && dateTo) {
+      const dateColumn =
+        tab === PayoutType.CLIENT ? 'c.updatedAt' : 'sub.updatedAt';
+      query.andWhere(`${dateColumn} BETWEEN :from AND :to`, {
+        from: dateFrom,
+        to: dateTo,
+      });
+    }
+
+    if (amountSort) {
+      const amountCol =
+        tab === PayoutType.CLIENT ? 'c.totalBudget' : 'sub.requestedAmount';
+      query.orderBy(amountCol, amountSort === 'low_to_high' ? 'ASC' : 'DESC');
+    } else {
+      const dateCol =
+        tab === PayoutType.CLIENT ? 'c.updatedAt' : 'sub.updatedAt';
+      query.orderBy(dateCol, 'DESC');
+    }
+
+    const [results, total] = await query
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    // ---------------------------------------------------------
+    // C. Data Formatting
+    // ---------------------------------------------------------
+    const formattedData = results.map((item) => {
+      if (tab === PayoutType.CLIENT) {
+        // Client Payout Logic
+        const clientName = item.client?.brandName
+          ? item.client.brandName
+          : `${item.client?.firstName} ${item.client?.lastName}`;
+
+        return {
+          id: item.id,
+          transactionType: 'Income (Client Payment)',
+          entityName: clientName, // ✅ Brand Name or Full Name
+          contact: item.client?.user?.email || item.client?.user?.phone,
+          campaign: item.campaignName,
+          amountTotal: item.totalBudget,
+          amountPaid: item.paidAmount,
+          amountDue: item.dueAmount,
+          status: item.dueAmount > 0 ? 'Pending Clearance' : 'Completed',
+          date: item.updatedAt,
+          canNotify: Number(item.dueAmount) > 0,
+          clientId: item.client?.userId,
+        };
+      } else {
+        // Agency Payout Logic
+        const agency = item.milestone.campaign.assignedAgencies?.[0];
+        const agencyName = agency?.firstName
+          ? `${agency.firstName} ${agency.lastName}`
+          : agency?.agencyName || 'Unknown Agency';
+
+        return {
+          id: item.id,
+          transactionType: 'Expense (Agency Payout)',
+          entityName: agencyName,
+          campaign: item.milestone.campaign.campaignName,
+          milestone: item.milestone.contentTitle,
+          amountRequested: item.requestedAmount,
+          amountPaid: item.paidToAgencyAmount,
+          status:
+            item.paymentStatus === 'paid' ? 'Completed' : 'Pending Clearance',
+          date: item.updatedAt,
+        };
+      }
+    });
+
+    return {
+      success: true,
+      data: formattedData,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  // ==================================================================
+  // ADMIN NOTIFICATION: Notify Client for Due Payment
+  // ==================================================================
+  async notifyClientForDue(clientId: string, campaignId: string) {
+    const campaign = await this.campaignRepo.findOne({
+      where: { id: campaignId },
+    });
+    if (!campaign) throw new NotFoundException('Campaign not found');
+
+    const due = Number(campaign.dueAmount);
+    if (due <= 0) throw new BadRequestException('No due amount to notify for.');
+
+    // FCM Notification Logic
+    const message = `Reminder: You have a due balance of ${due} for campaign "${campaign.campaignName}". Please clear it to avoid service interruption.`;
+
+    // Assuming you have a NotificationService injected
+    await this.notificationService.sendToUser(clientId, {
+      title: 'Payment Reminder',
+      body: message,
+      data: { campaignId: campaign.id, type: 'payment_due' },
+    });
+
+    return {
+      success: true,
+      data: message,
+      message: 'Notification sent successfully.',
+    };
+  }
+
+  // ==================================================================
+  // ADMIN ANALYTICS: Overview Charts
+  // ==================================================================
+  async getAdminAnalytics() {
+    // 1. Total Income (Client Paid)
+    const { income } = await this.campaignRepo
+      .createQueryBuilder('c')
+      .select('SUM(c.paidAmount)', 'income')
+      .getRawOne();
+
+    // 2. Total Expense (Agency Paid)
+    const { expense } = await this.submissionRepo
+      .createQueryBuilder('s')
+      .select('SUM(s.paidToAgencyAmount)', 'expense')
+      .getRawOne();
+
+    const profit = (Number(income) || 0) - (Number(expense) || 0);
+
+    return {
+      success: true,
+      data: {
+        totalIncome: income || 0,
+        totalPayouts: expense || 0,
+        netProfit: profit,
+        // You can add monthly breakdown logic here if needed
+      },
+    };
+  }
+
+  // ==================================================================
+  // ADMIN DASHBOARD: Action Required (Unified Task List)
+  // ==================================================================
+  async getActionRequired() {
+    // 1. Pending Agencies (NID or Trade License)
+    // JSONB কুয়েরি করার জন্য createQueryBuilder ব্যবহার করা হলো
+    const pendingAgencies = await this.agencyRepo
+      .createQueryBuilder('agency')
+      .where("agency.nidVerification ->> 'nidStatus' = :status", {
+        status: 'pending',
+      })
+      .orWhere('agency.tradeLicenseStatus = :status', { status: 'pending' })
+      .select([
+        'agency.id',
+        'agency.agencyName',
+        'agency.nidVerification',
+        'agency.tradeLicenseStatus',
+        'agency.updatedAt',
+      ])
+      .orderBy('agency.updatedAt', 'DESC')
+      .take(5)
+      .getMany();
+
+    // 2. Pending Influencers (NID Verification)
+    // (Assuming InfluencerProfileEntity is injected as this.influencerRepo)
+    const pendingInfluencers = await this.influencerRepo
+      .createQueryBuilder('inf')
+      .where("inf.nidVerification ->> 'nidStatus' = :status", {
+        status: 'pending',
+      })
+      .select([
+        'inf.id',
+        'inf.firstName',
+        'inf.lastName',
+        'inf.nidVerification',
+        'inf.updatedAt',
+      ])
+      .orderBy('inf.updatedAt', 'DESC')
+      .take(5)
+      .getMany();
+
+    // 3. New Campaign Requests
+    const pendingCampaigns = await this.campaignRepo.find({
+      where: { status: 'pending' },
+      relations: ['client'],
+      select: {
+        id: true,
+        campaignName: true, // ✅ FIX: Changed from title to campaignName
+        totalBudget: true,
+        createdAt: true,
+        client: { brandName: true, firstName: true, lastName: true },
+      },
+      take: 5,
+      order: { createdAt: 'DESC' },
+    });
+
+    // 4. Payout Requests
+    const pendingPayouts = await this.submissionRepo.find({
+      where: { status: 'client_approved' },
+      relations: ['milestone'],
+      select: {
+        id: true,
+        requestedAmount: true,
+        createdAt: true, // ✅ FIX: Used createdAt instead of updatedAt
+        milestone: { id: true, contentTitle: true },
+      },
+      take: 5,
+      order: { createdAt: 'DESC' },
+    });
+
+    // --- Data Merging & Formatting ---
+
+    // ✅ FIX: Defined type explicitly to avoid 'never' error
+    const actions: {
+      id: string;
+      type: string;
+      priority: string;
+      title: string;
+      description: string;
+      date: Date;
+      actionLink: string;
+    }[] = [];
+
+    // A. Format Agencies
+    pendingAgencies.forEach((agency) => {
+      // Check which document is pending
+      const isNidPending = agency.nidVerification?.nidStatus === 'pending';
+      const doc = isNidPending ? 'NID' : 'Trade License';
+
+      actions.push({
+        id: agency.id,
+        type: 'verification',
+        priority: 'High',
+        title: `Verify ${doc} for ${agency.agencyName}`,
+        description: `${agency.agencyName} submitted ${doc} for verification.`,
+        date: agency.updatedAt,
+        actionLink: `/admin/agency/${agency.id}/verify`,
+      });
+    });
+
+    // B. Format Influencers
+    pendingInfluencers.forEach((inf) => {
+      const name = `${inf.firstName} ${inf.lastName}`;
+      actions.push({
+        id: inf.id,
+        type: 'verification',
+        priority: 'High',
+        title: `Verify NID for ${name}`,
+        description: `${name} submitted NID for verification.`,
+        date: inf.updatedAt,
+        actionLink: `/admin/influencer/${inf.id}/verify`,
+      });
+    });
+
+    // C. Format Campaigns
+    pendingCampaigns.forEach((camp) => {
+      const clientName = camp.client?.brandName || 'Client';
+      actions.push({
+        id: camp.id,
+        type: 'campaign_approval',
+        priority: 'Medium',
+        title: `Approve Campaign: ${camp.campaignName}`, // ✅ FIX: campaignName
+        description: `New request from ${clientName} ($${camp.totalBudget})`,
+        date: camp.createdAt,
+        actionLink: `/admin/campaign/${camp.id}/review`,
+      });
+    });
+
+    // D. Format Payouts
+    pendingPayouts.forEach((sub) => {
+      actions.push({
+        id: sub.id,
+        type: 'payout',
+        priority: 'High',
+        title: `Release Payment: ${sub.milestone.contentTitle}`,
+        description: `Amount: $${sub.requestedAmount}. Approved by client.`,
+        date: sub.createdAt, // ✅ FIX: createdAt
+        actionLink: `/admin/payout/${sub.id}`,
+      });
+    });
+
+    // --- Final Sorting (Newest First) ---
+    return {
+      success: true,
+      data: actions.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      ),
+    };
+  }
+
+  // ==================================================================
+  // ADMIN DASHBOARD: Recent Activity
+  // ==================================================================
+  async getRecentActivity() {
+    const limit = 5;
+
+    const campaigns = await this.campaignRepo.find({
+      order: { createdAt: 'DESC' },
+      take: limit,
+      relations: ['client'],
+      select: {
+        id: true,
+        campaignName: true,
+        createdAt: true,
+        client: { brandName: true },
+      },
+    });
+
+    const submissions = await this.submissionRepo.find({
+      order: { createdAt: 'DESC' },
+      take: limit,
+      relations: [
+        'milestone',
+        'milestone.campaign',
+        'milestone.campaign.assignedAgencies',
+      ],
+      select: {
+        id: true,
+        createdAt: true,
+        milestone: { id: true, contentTitle: true },
+      },
+    });
+
+    const activities = [
+      ...campaigns.map((c) => ({
+        type: 'campaign',
+        title: 'New Campaign Created',
+        description: `"${c.campaignName}" by ${c.client?.brandName || 'Client'}.`,
+        date: c.createdAt,
+      })),
+      ...submissions.map((s) => {
+        const agency = s.milestone.campaign.assignedAgencies?.[0];
+        const agencyName = agency?.agencyName || 'An Agency';
+        return {
+          type: 'submission',
+          title: 'Milestone Submitted',
+          description: `${agencyName} submitted work for "${s.milestone.contentTitle}".`,
+          date: s.createdAt,
+        };
+      }),
+    ];
+
+    const sortedActivities = activities
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .slice(0, limit);
+
+    return {
+      success: true,
+      data: sortedActivities,
+    };
+  }
+
+  // ==================================================================
+  // ADMIN DASHBOARD: Campaign Chart Data (Accepted vs Declined)
+  // ==================================================================
+  async getCampaignChartStats() {
+    const rawStats = await this.campaignRepo
+      .createQueryBuilder('c')
+      .select('c.status', 'status')
+      .addSelect('COUNT(c.id)', 'count')
+      .groupBy('c.status')
+      .getRawMany();
+
+    const acceptedStatuses = [
+      'promoting',
+      'ongoing',
+      'completed',
+      'agency_accepted',
+      'approved',
+      'placed',
+    ];
+
+    const declinedStatuses = ['declined', 'cancelled', 'rejected'];
+
+    let acceptedCount = 0;
+    let declinedCount = 0;
+
+    rawStats.forEach((stat) => {
+      const count = Number(stat.count); // Postgres count string
+      if (acceptedStatuses.includes(stat.status)) {
+        acceptedCount += count;
+      } else if (declinedStatuses.includes(stat.status)) {
+        declinedCount += count;
+      }
+    });
+
+    return {
+      success: true,
+      data: [
+        { label: 'Accepted', value: acceptedCount, color: '#10B981' }, // Green
+        { label: 'Declined', value: declinedCount, color: '#EF4444' }, // Red
+      ],
     };
   }
 }

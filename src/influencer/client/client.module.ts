@@ -10,6 +10,7 @@ import { CommonModule } from 'src/common/common.module';
 import { AgencyModule } from '../agency/agency.module';
 import { CampaignEntity } from '../campaign';
 import { MilestoneSubmissionEntity } from '../campaign/entities/milestone-submission.entity';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { MilestoneSubmissionEntity } from '../campaign/entities/milestone-submis
     }),
     CommonModule,
     AgencyModule,
+    NotificationModule,
   ],
   controllers: [ClientController],
   providers: [ClientService],

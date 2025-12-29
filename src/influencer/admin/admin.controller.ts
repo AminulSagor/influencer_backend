@@ -36,6 +36,7 @@ import { MasterDataType } from './entities/master-data.entity';
 import { GetInfluencersDto } from './dto/admin-browsing.dto';
 import { GetAgenciesDto } from '../agency/dto/get-agencies.dto';
 import { AdminReportFilterDto } from '../campaign/dto/report-filter.dto';
+import { FinanceFilterDto } from './entities/finance-filter.dto';
 
 @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard) // 1. Apply Guards
 @Roles(UserRole.ADMIN)
@@ -432,10 +433,69 @@ export class AdminController {
   // -----------------------------------------------------------
   // ADMIN: Reports (With Tab Filter)
   // -----------------------------------------------------------
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Get('admin/reports')
+  @Get('reports')
   async getAdminReports(@Query() dto: AdminReportFilterDto) {
     return await this.adminService.getAdminReports(dto);
+  }
+
+  // -----------------------------------------------------------
+  // FINANCE: List Transactions (Payouts & Income)
+  // -----------------------------------------------------------
+
+  @Get('finance/transactions')
+  async getTransactions(@Query() dto: FinanceFilterDto) {
+    return await this.adminService.getFinanceData(dto);
+  }
+
+  // -----------------------------------------------------------
+  // ANALYTICS: High Level Stats
+  // -----------------------------------------------------------
+
+  @Get('finance/analytics')
+  async getAnalytics() {
+    return await this.adminService.getAdminAnalytics();
+  }
+
+  // -----------------------------------------------------------
+  // ACTION: Notify Client
+  // -----------------------------------------------------------
+
+  @Post('finance/notify-due')
+  async notifyClient(@Body() body: { clientId: string; campaignId: string }) {
+    return await this.adminService.notifyClientForDue(
+      body.clientId,
+      body.campaignId,
+    );
+  }
+
+  // ===========================================================
+  // ADMIN DASHBOARD APIs
+  // ===========================================================
+
+  // -----------------------------------------------------------
+  // DASHBOARD: Action Required (Verification, Payouts, Approvals)
+  // -----------------------------------------------------------
+
+  @Get('dashboard/actions')
+  async getActionRequired() {
+    return await this.adminService.getActionRequired();
+  }
+
+  // -----------------------------------------------------------
+  // DASHBOARD: Recent Activity Stream
+  // -----------------------------------------------------------
+
+  @Get('dashboard/activity')
+  async getRecentActivity() {
+    return await this.adminService.getRecentActivity();
+  }
+
+  // -----------------------------------------------------------
+  // DASHBOARD: Campaign Statistics (For Charts)
+  // -----------------------------------------------------------
+
+  @Get('dashboard/chart-stats')
+  async getCampaignChartStats() {
+    return await this.adminService.getCampaignChartStats();
   }
 }

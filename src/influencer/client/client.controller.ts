@@ -26,6 +26,7 @@ import { UserRole } from '../user/entities/user.entity';
 import { GetAgenciesDto } from '../agency/dto/get-agencies.dto';
 import { ReportFilterDto } from '../campaign/dto/report-filter.dto';
 import { AnalyticsFilterDto } from './dto/analytics-filter.dto';
+import { ClientDashboardFilterDto } from './dto/client-dashboard.dto';
 
 @Controller('client')
 export class ClientController {
@@ -101,6 +102,79 @@ export class ClientController {
     return await this.clientService.getAllAgencies(dto);
   }
 
+  // -----------------------------------------------------------
+  // CLIENT: Reports
+  // -----------------------------------------------------------
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Get('reports')
+  async getClientReports(@Request() req, @Query() dto: ReportFilterDto) {
+    return await this.clientService.getClientReports(req.user.userId, dto);
+  }
+
+  // -----------------------------------------------------------
+  // CLIENT ANALYTICS & TRANSACTIONS
+  // -----------------------------------------------------------
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Get('analytics')
+  async getClientAnalytics(@Request() req, @Query() dto: AnalyticsFilterDto) {
+    return await this.clientService.getClientAnalytics(req.user.userId, dto);
+  }
+
+  // ===========================================================
+  // CLIENT DASHBOARD SPECIFIC APIs
+  // ===========================================================
+
+  // 1. Active Jobs (Dashboard Widget - Limits usually)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Get('dashboard/active-jobs')
+  async getActiveJobs(@Request() req, @Query() dto: ClientDashboardFilterDto) {
+    return await this.clientService.getActiveJobs(req.user.userId, dto);
+  }
+
+  // 2. Action Required (Rejected Docs & Fixes)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Get('dashboard/action-required')
+  async getActionRequired(@Request() req) {
+    return await this.clientService.getActionRequired(req.user.userId);
+  }
+
+  // 3. Upcoming Deadlines
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Get('dashboard/upcoming-deadlines')
+  async getUpcomingDeadlines(
+    @Request() req,
+    @Query() dto: ClientDashboardFilterDto,
+  ) {
+    return await this.clientService.getUpcomingDeadlines(req.user.userId, dto);
+  }
+
+  // 4. Lifetime Summary (Stats)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Get('lifetime-summary')
+  async getLifetimeSummary(@Request() req) {
+    return await this.clientService.getLifetimeSummary(req.user.userId);
+  }
+
+  // 5. Notifications (New & Earlier)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Get('notifications')
+  async getNotifications(
+    @Request() req,
+    @Query() dto: ClientDashboardFilterDto,
+  ) {
+    return await this.clientService.getClientNotifications(
+      req.user.userId,
+      dto,
+    );
+  }
+
   // ============================================
   // ADMIN ROUTES
   // ============================================
@@ -127,25 +201,5 @@ export class ClientController {
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.clientService.remove(id);
-  }
-
-  // -----------------------------------------------------------
-  // CLIENT: Reports
-  // -----------------------------------------------------------
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.CLIENT)
-  @Get('client/reports')
-  async getClientReports(@Request() req, @Query() dto: ReportFilterDto) {
-    return await this.clientService.getClientReports(req.user.userId, dto);
-  }
-
-  // -----------------------------------------------------------
-  // CLIENT ANALYTICS & TRANSACTIONS
-  // -----------------------------------------------------------
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.CLIENT)
-  @Get('analytics')
-  async getClientAnalytics(@Request() req, @Query() dto: AnalyticsFilterDto) {
-    return await this.clientService.getClientAnalytics(req.user.userId, dto);
   }
 }

@@ -15,6 +15,33 @@ export class NotificationService {
     private readonly fcmService: FcmService,
   ) {}
 
+  // =========================================================
+  // NEW METHOD: Helper to send notification easily
+  // =========================================================
+  async sendToUser(
+    userId: string,
+    payload: { title: string; body: string; data?: any },
+  ) {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      select: ['role'],
+    });
+
+    if (!user) {
+      console.warn(`Notification skipped: User ${userId} not found.`);
+      return;
+    }
+
+    return this.createNotification(
+      userId,
+      user.role, // Fetched Role
+      payload.title,
+      payload.body,
+      payload.data?.type || 'general', // Default type
+      payload.data,
+    );
+  }
+
   // 1. Create Notification (DB + Push)
   async createNotification(
     userId: string,
