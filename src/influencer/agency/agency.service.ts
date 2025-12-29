@@ -295,21 +295,25 @@ export class AgencyService {
       .where('campaign.selectedAgencyId = :agencyId', { agencyId: agency.id });
 
     if (search) {
-      query.andWhere('campaign.title ILIKE :search', { search: `%${search}%` });
+      query.andWhere('campaign.campaignName ILIKE :search', {
+        search: `%${search}%`,
+      });
     }
 
     // query.andWhere('submission.status IN (:...statuses)', { statuses: ['declined', 'in_review', 'pending'] });
 
+    query.addSelect(
+      `CASE 
+      WHEN submission.status = 'declined' THEN 1 
+      WHEN submission.status = 'pending' OR submission.status = 'in_review' THEN 2 
+      ELSE 3 
+    END`,
+      'status_rank',
+    ); // 'status_rank' is our new alias
+
     query
-      .orderBy(
-        `CASE 
-        WHEN submission.status = 'declined' THEN 1 
-        WHEN submission.status = 'pending' OR submission.status = 'in_review' THEN 2 
-        ELSE 3 
-      END`,
-        'ASC',
-      )
-      .addOrderBy('submission.updatedAt', 'DESC');
+      .orderBy('status_rank', 'ASC')
+      .addOrderBy('submission.createdAt', 'DESC');
 
     const [submissions, total] = await query
       .skip(skip)
