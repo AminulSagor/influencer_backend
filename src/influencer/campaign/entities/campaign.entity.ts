@@ -32,9 +32,11 @@ export enum CampaignStatus {
   PROMOTING = 'promoting', // Active - Influencers working on it
   COMPLETED = 'completed', // Campaign completed successfully
   CANCELLED = 'cancelled', // Campaign cancelled
+  DECLINED = 'declined', // Campaign cancelled
   DRAFT = 'draft',
   NEGOTIATING = 'negotiating',
   ACCEPTED = 'accepted',
+  APPROVED = 'approved',
   ACTIVE = 'active',
   IN_REVIEW = 'in_review',
   PENDING_AGENCY = 'pending_agency',
@@ -91,7 +93,9 @@ export class CampaignEntity {
   campaignNiche: string;
 
   // Preferred Influencers (Many-to-Many)
-  @ManyToMany(() => InfluencerProfileEntity)
+  @ManyToMany(() => InfluencerProfileEntity, {
+    cascade: true,
+  })
   @JoinTable({
     name: 'campaign_preferred_influencers',
     joinColumn: { name: 'campaignId', referencedColumnName: 'id' },
@@ -100,7 +104,9 @@ export class CampaignEntity {
   preferredInfluencers: InfluencerProfileEntity[];
 
   // Not Preferable Influencers (Many-to-Many)
-  @ManyToMany(() => InfluencerProfileEntity)
+  @ManyToMany(() => InfluencerProfileEntity, {
+    cascade: true,
+  })
   @JoinTable({
     name: 'campaign_not_preferable_influencers',
     joinColumn: { name: 'campaignId', referencedColumnName: 'id' },
@@ -130,7 +136,7 @@ export class CampaignEntity {
   platformFeeAmount: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  availableBudgetForAgency: number;
+  availableBudgetForExecution: number;
 
   // ============================================
   // STEP 3: Campaign Details
@@ -194,7 +200,7 @@ export class CampaignEntity {
   @Column({ default: false })
   isRated: boolean;
 
-  @Column({ type: 'int', nullable: true })
+  @Column({ type: 'decimal', precision: 3, scale: 1, default: 0 })
   rating: number; // 1-5
 
   // @Column({ type: 'text', nullable: true })

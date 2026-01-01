@@ -69,7 +69,10 @@ export class InfluencerController {
     if (dto.nidBackImg) updateData.nidBackImg = dto.nidBackImg;
 
     // 2. Call Service
-    return this.influencerService.updateProfile(req.user.userId, updateData);
+    return this.influencerService.completeOnboarding(
+      req.user.userId,
+      updateData,
+    );
   }
 
   @Patch('niches')

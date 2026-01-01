@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -53,15 +54,27 @@ export class InfluencerService {
     return this.influencerRepo.save(profile);
   }
 
-  async updateProfile(
+  async completeOnboarding(
     userId: string,
     updateData: Partial<InfluencerProfileEntity>,
   ): Promise<InfluencerProfileEntity> {
     const profile = await this.influencerRepo.findOne({ where: { userId } });
-    if (!profile) throw new NotFoundException('Profile not found');
+
+    if (!profile) {
+      throw new NotFoundException('Profile not found');
+    }
+
+    // CHECK: Prevent if already onboarded
+    if (profile.isOnboardingComplete) {
+      throw new ForbiddenException(
+        'Onboarding is already completed. Go to Edit Profile.',
+      );
+    }
 
     // Merge new data with existing data
     const updatedProfile = this.influencerRepo.merge(profile, updateData);
+
+    updatedProfile.isOnboardingComplete = true;
 
     return this.influencerRepo.save(updatedProfile);
   }

@@ -69,6 +69,10 @@ export class InfluencerProfileEntity {
   @Column({ nullable: true })
   profileImg: string; // S3 URL
 
+  // --- Profile Completion Status ---
+  @Column({ default: false })
+  isOnboardingComplete: boolean;
+
   // --- Payments (Array of payouts) ---
   // Stores multiple payouts like Bank, Bkash, Nagad
   @Column('jsonb', { nullable: true })
@@ -88,6 +92,12 @@ export class InfluencerProfileEntity {
       accStatus: string;
     }>;
   };
+
+  @Column({ type: 'decimal', precision: 3, scale: 1, default: 0 })
+  averageRating: number; // e.g., 4.5
+
+  @Column({ type: 'int', default: 0 })
+  totalReviews: number;
 
   // Verification Status specific to profile completion. it should be multifield like (social profile verification, phone no verification, payment setup, nid, trade license, TIN, BIN, Email)
   // @Column({ default: 'unverified' }) // unverified, verified, inreview

@@ -413,7 +413,7 @@ export class ClientService {
       .leftJoinAndSelect('milestone.campaign', 'campaign')
       .leftJoinAndSelect('campaign.assignedAgencies', 'agency') // For Influencer Name in list
       .where('campaign.clientId = :clientId', { clientId: client.id })
-      .andWhere('sub.paidToAgencyAmount > 0');
+      .andWhere('sub.paidAmount > 0');
 
     // Filter: Search by Campaign Name
     if (search) {
@@ -424,9 +424,9 @@ export class ClientService {
 
     // Sort: Low to High / High to Low
     if (sortOrder === 'low_to_high') {
-      query.orderBy('sub.paidToAgencyAmount', 'ASC');
+      query.orderBy('sub.paidAmount', 'ASC');
     } else {
-      query.orderBy('sub.paidToAgencyAmount', 'DESC');
+      query.orderBy('sub.paidAmount', 'DESC');
     }
 
     // Add secondary sort by date
@@ -454,7 +454,7 @@ export class ClientService {
         campaignName: t.milestone.campaign.campaignName,
         // milestoneTitle: t.milestone.contentTitle,
         // influencerName: influencerName,
-        amount: t.paidToAgencyAmount,
+        amount: t.paidAmount,
         date: t.createdAt, // Payment Date
         status: 'Success',
       };

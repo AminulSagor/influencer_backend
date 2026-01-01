@@ -89,6 +89,10 @@ export class AgencyProfileEntity {
   @Column({ nullable: true })
   binStatus: string;
 
+  // --- Profile Completion Status ---
+  @Column({ default: false })
+  isOnboardingComplete: boolean;
+
   // --- Payments (Array of payouts) ---
   // Stores multiple payouts like Bank, Bkash, Nagad
   @Column('jsonb', { nullable: true })

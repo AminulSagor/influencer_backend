@@ -12,6 +12,7 @@ import { Repository, DataSource, In, MoreThanOrEqual } from 'typeorm';
 import {
   CampaignEntity,
   CampaignStatus,
+  CampaignType,
   PaymentStatus,
 } from './entities/campaign.entity';
 import { CampaignMilestoneEntity } from './entities/campaign-milestone.entity';
@@ -71,12 +72,17 @@ import {
 } from './dto/campaign-milestone.dto';
 import { MilestoneSubmissionEntity } from './entities/milestone-submission.entity';
 import { UserEntity, UserRole } from '../user/entities/user.entity';
-import { PayBonusDto } from './dto/payment.dto';
+import { PayBonusDto, PayCampaignDto } from './dto/payment.dto';
 import { RateCampaignDto } from './dto/rate-campaign.dto';
 import { SubmissionReportEntity } from './entities/submission-report.entity';
+import {
+  InfluencerResubmitSubmissionDto,
+  InfluencerSubmitMilestoneDto,
+  InfluencerUpdateSubmissionMetricsDto,
+} from './dto/influencer-milestone.dto';
 
 // VAT Rate constant
-const VAT_RATE = 0.15;
+// const VAT_RATE = 0.15;
 
 @Injectable()
 export class CampaignService {
@@ -109,10 +115,28 @@ export class CampaignService {
   ) {}
 
   // ============================================
+  // HELPER: Fetch VAT Rate
+  // ============================================
+  private async getVatRate(): Promise<number> {
+    // Fetch the single row from settings
+    const settings = await this.systemSettingRepo.findOne({ where: {} });
+
+    // Check if settings exist and have a vatTax, otherwise default to 15% (0.15)
+    if (settings && settings.vatTax) {
+      // Assuming vatTax is stored as a percentage (e.g., 15 for 15%)
+      return Number(settings.vatTax) / 100;
+    }
+
+    return 0.15; // Default fallback if DB is empty
+  }
+
+  // ============================================
   // HELPER: Budget Calculation
   // ============================================
-  private calculateBudget(baseBudget: number) {
-    const vatAmount = baseBudget * VAT_RATE;
+  private async calculateBudget(baseBudget: number) {
+    const vatRate = await this.getVatRate();
+
+    const vatAmount = baseBudget * vatRate;
     const totalBudget = baseBudget + vatAmount;
     return {
       baseBudget,
@@ -204,7 +228,18 @@ export class CampaignService {
     userId: string,
     dto: UpdateCampaignStep2Dto,
   ) {
-    const campaign = await this.verifyCampaignOwnership(campaignId, userId);
+    const campaign = await this.campaignRepo.findOne({
+      where: { id: campaignId, clientId: userId } as any, // Adjust based on your verify logic
+      relations: [
+        'preferredInfluencers',
+        'notPreferableInfluencers',
+        'assignedAgencies',
+      ],
+    });
+
+    if (!campaign) {
+      throw new NotFoundException('Campaign not found or access denied');
+    }
 
     // 1. Update Core Required Fields
     // campaign.productType = dto.productType; // Mandatory in your DTO
@@ -216,7 +251,7 @@ export class CampaignService {
 
     // 2. Handle Selected Ad Agency
     // Note: Entity supports one agencyId. Mapping the first one from the DTO array.
-    // ✅ FIX: Handle Multiple Selected Agencies
+    // FIX: Handle Multiple Selected Agencies
     if (dto.agencyId && dto.agencyId.length > 0) {
       const agencies = await this.agencyRepo.find({
         where: { id: In(dto.agencyId) }, // Use In() for multiple IDs
@@ -253,7 +288,7 @@ export class CampaignService {
 
     return {
       success: true,
-      message: 'Targeting and Agency preferences saved successfully',
+      message: 'Campaign niche and preferences saved successfully',
       data: {
         id: campaign.id,
         currentStep: campaign.currentStep,
@@ -318,7 +353,7 @@ export class CampaignService {
     const campaign = await this.verifyCampaignOwnership(campaignId, userId);
 
     // 1. Calculate budget (backend is source of truth)
-    const budget = this.calculateBudget(dto.baseBudget);
+    const budget = await this.calculateBudget(dto.baseBudget);
 
     campaign.baseBudget = budget.baseBudget;
     campaign.vatAmount = budget.vatAmount;
@@ -334,7 +369,7 @@ export class CampaignService {
 
     const milestones = dto.milestones.map((m, i) =>
       this.milestoneRepo.create({
-        ...m, // ✅ Automatically picks up promotionGoal, expectedReach, etc.
+        ...m, // Automatically picks up promotionGoal, expectedReach, etc.
         campaignId,
         order: m.order ?? i,
       }),
@@ -564,6 +599,7 @@ export class CampaignService {
         baseBudget: true,
         vatAmount: true,
         totalBudget: true,
+        paymentStatus: true,
         startingDate: true,
         duration: true,
         dos: true,
@@ -675,10 +711,12 @@ export class CampaignService {
   // ============================================
   // GET: Budget Preview
   // ============================================
-  getBudgetPreview(baseBudget: number) {
+  async getBudgetPreview(baseBudget: number) {
+    const data = await this.calculateBudget(baseBudget);
+
     return {
       success: true,
-      data: this.calculateBudget(baseBudget),
+      data: data,
     };
   }
 
@@ -786,7 +824,7 @@ export class CampaignService {
     }
 
     // Calculate budget with VAT
-    const proposedBudget = this.calculateBudget(dto.proposedBaseBudget);
+    const proposedBudget = await this.calculateBudget(dto.proposedBaseBudget);
 
     const negotiation = this.negotiationRepo.create({
       campaignId: dto.campaignId,
@@ -843,7 +881,7 @@ export class CampaignService {
     }
 
     // Calculate budget with VAT
-    const proposedBudget = this.calculateBudget(dto.proposedBaseBudget);
+    const proposedBudget = await this.calculateBudget(dto.proposedBaseBudget);
 
     const negotiation = this.negotiationRepo.create({
       campaignId: dto.campaignId,
@@ -883,6 +921,12 @@ export class CampaignService {
     role: 'client' | 'admin',
     dto: AcceptNegotiationDto,
   ) {
+    // 1. Fetch Settings (For Platform Fee %)
+    const settings = await this.systemSettingRepo.findOne({ where: {} });
+    const PLATFORM_FEE_PERCENT = settings ? Number(settings.platformFee) : 2; // Default to 10% if not set
+    const PLATFORM_FEE_RATE = PLATFORM_FEE_PERCENT / 100;
+
+    // 2. Fetch Campaign
     const campaign = await this.campaignRepo.findOne({
       where: { id: dto.campaignId },
     });
@@ -906,10 +950,27 @@ export class CampaignService {
 
     // Apply the accepted quote price to campaign
     if (lastNegotiation && lastNegotiation.proposedBaseBudget) {
-      campaign.baseBudget = lastNegotiation.proposedBaseBudget;
-      campaign.vatAmount = lastNegotiation.proposedVatAmount;
-      campaign.totalBudget = lastNegotiation.proposedTotalBudget;
+      const base = Number(lastNegotiation.proposedBaseBudget);
+      const vat = Number(lastNegotiation.proposedVatAmount);
+      const total = Number(lastNegotiation.proposedTotalBudget);
+
+      // A. Standard Financials
+      campaign.baseBudget = base;
+      campaign.vatAmount = vat;
+      campaign.totalBudget = total;
+      campaign.netPayableAmount = total;
+      campaign.dueAmount = total;
+
+      // B. Calculate Platform Fee & Execution Budget
+      // Logic: Platform Fee is taken from the Base Budget.
+      // The rest is available for execution (whether by Agency or directly to Influencers)
+      campaign.platformFeeAmount = base * PLATFORM_FEE_RATE;
+
+      // CALCULATED & SAVED
+      campaign.availableBudgetForExecution = base - campaign.platformFeeAmount;
     }
+
+    campaign.paymentStatus = PaymentStatus.PENDING;
 
     // Create acceptance entry
     await this.negotiationRepo.save(
@@ -927,16 +988,20 @@ export class CampaignService {
     // Campaign is now PAID (ready for influencer assignment)
     campaign.status = CampaignStatus.QUOTED;
     campaign.negotiationTurn = null;
-    await this.campaignRepo.save(campaign);
+
+    const savedCampaign = await this.campaignRepo.save(campaign);
 
     return {
       success: true,
-      message: 'Quote accepted. Campaign budget finalized.',
+      message: 'Quote accepted. Budget calculated and finalized.',
       data: {
-        campaignId: campaign.id,
-        status: campaign.status,
-        agreedBudget: campaign.baseBudget,
-        totalWithVat: campaign.totalBudget,
+        campaignId: savedCampaign.id,
+        status: savedCampaign.status,
+        agreedBudget: savedCampaign.baseBudget,
+        platformFee: savedCampaign.platformFeeAmount,
+        availableForExecution: savedCampaign.availableBudgetForExecution,
+        totalWithVat: savedCampaign.totalBudget,
+        dueAmount: savedCampaign.dueAmount,
       },
     };
   }
@@ -1096,8 +1161,9 @@ export class CampaignService {
   // ============================================
 
   // --- Helper: Calculate Assignment Budget ---
-  private calculateAssignmentBudget(offeredAmount: number) {
-    const vatAmount = offeredAmount * VAT_RATE;
+  private async calculateAssignmentBudget(offeredAmount: number) {
+    const vatRate = await this.getVatRate();
+    const vatAmount = offeredAmount * vatRate;
     const totalAmount = offeredAmount + vatAmount;
     return {
       offeredAmount,
@@ -1111,91 +1177,86 @@ export class CampaignService {
   // Auto-calculates budget split based on number of influencers
   // ============================================
   async assignCampaignToInfluencers(adminId: string, dto: AssignCampaignDto) {
-    // Check campaign exists
     const campaign = await this.campaignRepo.findOne({
       where: { id: dto.campaignId },
     });
+    if (!campaign) throw new NotFoundException('Campaign not found');
 
-    if (!campaign) {
-      throw new NotFoundException('Campaign not found');
-    }
-
-    // Ensure we have influencer IDs
-    if (!dto.influencerIds || dto.influencerIds.length === 0) {
-      throw new BadRequestException('At least one influencer ID is required');
-    }
-
-    // Check all influencers exist
-    const influencers = await this.influencerRepo.find({
-      where: { id: In(dto.influencerIds) },
-    });
-
-    if (influencers.length !== dto.influencerIds.length) {
-      throw new NotFoundException('One or more influencers not found');
-    }
-
-    // Check for already assigned influencers (not declined) - CHECK BEFORE CAMPAIGN STATUS
-    const existingAssignments = await this.assignmentRepo.find({
-      where: {
-        campaignId: dto.campaignId,
-        influencerId: In(dto.influencerIds),
-        status: In([JobStatus.NEW_OFFER, JobStatus.PENDING, JobStatus.ACTIVE]),
-      },
-    });
-
-    const alreadyAssignedIds = existingAssignments.map((a) => a.influencerId);
-    if (alreadyAssignedIds.length > 0) {
-      throw new ConflictException(
-        `Influencers with IDs ${alreadyAssignedIds.join(', ')} already have active assignments for this campaign`,
-      );
-    }
-
-    // Campaign must be in PAID status to assign influencers - CHECK AFTER DUPLICATE CHECK
-    if (campaign.status !== CampaignStatus.PAID) {
+    if (
+      campaign.status !== CampaignStatus.PAID &&
+      campaign.status !== CampaignStatus.PROMOTING
+    ) {
       throw new BadRequestException(
-        'Campaign must be paid before assigning influencers',
+        'Campaign must be PAID before assigning influencers',
       );
     }
 
-    // Create assignments for all influencers
-    const assignments = dto.influencerIds.map((influencerId) =>
+    // 1. Create Assignments as DRAFT
+    // This allows the Admin to see them in the UI list without notifying the influencer yet.
+    const newAssignments = dto.influencerIds.map((infId) =>
       this.assignmentRepo.create({
         campaignId: dto.campaignId,
-        influencerId,
+        influencerId: infId,
         assignedBy: adminId,
-        status: JobStatus.NEW_OFFER,
+        status: JobStatus.DRAFT, // ✅ Initial Status
       }),
     );
 
-    await this.assignmentRepo.save(assignments);
+    await this.assignmentRepo.save(newAssignments);
 
-    // Recalculate budget split for ALL assignments of this campaign
+    // 2. Calculate Budget (So Admin sees the split immediately)
     await this.recalculateCampaignBudgetSplit(dto.campaignId);
 
-    // Update campaign status to promoting
-    campaign.status = CampaignStatus.PROMOTING;
-    await this.campaignRepo.save(campaign);
-
-    // Fetch updated assignments with calculated amounts
-    const updatedAssignments = await this.assignmentRepo.find({
-      where: {
-        campaignId: dto.campaignId,
-        influencerId: In(dto.influencerIds),
-      },
-    });
+    // Update campaign status
+    if (campaign.status === CampaignStatus.PAID) {
+      campaign.status = CampaignStatus.PROMOTING;
+      await this.campaignRepo.save(campaign);
+    }
 
     return {
       success: true,
-      message: `Campaign assigned to ${updatedAssignments.length} influencer(s)`,
-      data: updatedAssignments.map((assignment) => ({
-        assignmentId: assignment.id,
-        campaignId: assignment.campaignId,
-        influencerId: assignment.influencerId,
-        percentage: assignment.percentage,
-        offeredAmount: assignment.offeredAmount,
-        totalAmount: assignment.totalAmount,
-        status: assignment.status,
-      })),
+      message: `${newAssignments.length} influencers selected. Budget allocated. Ready to invite.`,
+    };
+  }
+
+  // ============================================
+  // STEP 2: Send Invitation (One by One)
+  // ============================================
+  async sendInfluencerInvitation(assignmentId: string, adminUserId: string) {
+    const job = await this.assignmentRepo.findOne({
+      where: { id: assignmentId },
+      relations: ['influencer', 'campaign'],
+    });
+
+    if (!job) throw new NotFoundException('Assignment not found');
+
+    // Only allow sending if it's currently a Draft
+    if (job.status !== JobStatus.DRAFT) {
+      throw new BadRequestException(
+        `Cannot invite. Current status is ${job.status}`,
+      );
+    }
+
+    // 1. Change Status to NEW_OFFER
+    // This makes it visible on the Influencer's Dashboard
+    job.status = JobStatus.NEW_OFFER;
+    job.invitedAt = new Date(); // Optional: Track when invite was sent
+
+    await this.assignmentRepo.save(job);
+
+    // 2. Trigger Notification (Stub)
+    console.log(
+      `Sending Push Notification to ${job.influencer.firstName}: You have a new offer for ${job.campaign.campaignName}`,
+    );
+
+    return {
+      success: true,
+      message: `Invitation sent to ${job.influencer.firstName} successfully.`,
+      data: {
+        assignmentId: job.id,
+        status: job.status,
+        offeredAmount: job.offeredAmount,
+      },
     };
   }
 
@@ -1203,46 +1264,78 @@ export class CampaignService {
   // Helper: Recalculate budget split for all influencers
   // ============================================
   private async recalculateCampaignBudgetSplit(campaignId: string) {
-    // Get campaign with budget
+    // 1. Get campaign with necessary fields
     const campaign = await this.campaignRepo.findOne({
       where: { id: campaignId },
+      relations: ['milestones'], // We need milestones to update their split
     });
 
-    if (!campaign || !campaign.baseBudget) {
-      return;
+    // Validations
+    if (!campaign) {
+      throw new BadRequestException(`Campaign not found for recalculation`);
     }
 
-    // Get all active assignments (not declined/completed)
+    // Use the execution budget we calculated during Quote Acceptance
+    // Fallback to baseBudget if execution budget is missing (legacy safety)
+    const budgetPool = Number(campaign.availableBudgetForExecution);
+
+    // Debug Log
+    console.log(`[Recalc] Campaign: ${campaignId}, Budget Pool: ${budgetPool}`);
+
+    if (budgetPool <= 0) return;
+
+    // 2. Get all ACTIVE assignments (Count "seats" at the table)
+    // We exclude DECLINED or COMPLETED (unless completed should still count for budget history, usually yes, but for dynamic split we focus on active pool)
     const assignments = await this.assignmentRepo.find({
       where: {
         campaignId,
-        status: In([JobStatus.NEW_OFFER, JobStatus.PENDING, JobStatus.ACTIVE]),
+        status: In([
+          JobStatus.DRAFT,
+          JobStatus.NEW_OFFER,
+          JobStatus.PENDING,
+          JobStatus.ACTIVE,
+          JobStatus.TO_DO,
+        ]),
       },
     });
 
-    if (assignments.length === 0) {
-      return;
-    }
+    const activeCount = assignments.length;
+    if (activeCount === 0) return;
 
-    // Calculate equal percentage for each influencer
-    const percentage = Math.round((100 / assignments.length) * 100) / 100; // e.g., 33.33
+    // 3. Calculate Splits
+    const perInfluencerAmount = budgetPool / activeCount;
+    const milestoneCount = campaign.milestones.length;
+    const perMilestoneAmount =
+      milestoneCount > 0 ? perInfluencerAmount / milestoneCount : 0;
 
-    // Calculate amount per influencer
-    const amountPerInfluencer =
-      Math.round((campaign.baseBudget / assignments.length) * 100) / 100;
-    const vatAmount = Math.round(amountPerInfluencer * VAT_RATE * 100) / 100;
-    const totalAmount =
-      Math.round((amountPerInfluencer + vatAmount) * 100) / 100;
+    // Debug Log
+    console.log(`[Recalc] Milestones Found: ${milestoneCount}`);
 
-    // Update all assignments
+    // Formatting for clean 2 decimal places
+    const cleanPerInfluencer = Math.floor(perInfluencerAmount * 100) / 100;
+    const cleanPerMilestone = Math.floor(perMilestoneAmount * 100) / 100;
+
+    // 4. Update Assignments (Influencer Totals)
+    const percentage = Math.round((100 / activeCount) * 100) / 100;
+
+    // We use a loop to update entities locally before saving
     for (const assignment of assignments) {
       assignment.percentage = percentage;
-      assignment.offeredAmount = amountPerInfluencer;
-      assignment.vatAmount = vatAmount;
-      assignment.totalAmount = totalAmount;
+      assignment.offeredAmount = cleanPerInfluencer;
+      // Note: VAT calculation might be specific per influencer depending on their status,
+      // but here we are setting the base offer.
+      assignment.totalAmount = cleanPerInfluencer; // + VAT logic if needed
     }
-
     await this.assignmentRepo.save(assignments);
+
+    // 5. Update Milestones (Milestone Targets)
+    // This ensures "Hania's milestone split is 7500" logic
+    if (campaign.milestones && campaign.milestones.length > 0) {
+      for (const milestone of campaign.milestones) {
+        milestone.amount = cleanPerMilestone;
+      }
+      await this.milestoneRepo.save(campaign.milestones);
+    }
   }
 
   // ============================================
@@ -1258,7 +1351,17 @@ export class CampaignService {
     }
 
     const assignments = await this.assignmentRepo.find({
-      where: { campaignId },
+      where: {
+        campaignId,
+        // Filter only for Accepted/Active/Completed jobs
+        // This excludes 'draft', 'new_offer', and 'declined'
+        status: In([
+          JobStatus.PENDING, // Accepted but not started
+          JobStatus.ACTIVE, // In progress
+          JobStatus.TO_DO, // Working on milestones
+          JobStatus.COMPLETED, // Finished jobs
+        ]),
+      },
       relations: ['influencer'],
       order: { createdAt: 'DESC' },
     });
@@ -1269,7 +1372,7 @@ export class CampaignService {
         id: a.id,
         influencerId: a.influencer.id,
         influencerName: `${a.influencer.firstName} ${a.influencer.lastName}`,
-        profileImage: a.influencer.profileImage,
+        profileImage: a.influencer.profileImg, // Ensure this matches your entity property
         offeredAmount: a.offeredAmount,
         totalAmount: a.totalAmount,
         status: a.status,
@@ -1277,17 +1380,14 @@ export class CampaignService {
         startedAt: a.startedAt,
         completedAt: a.completedAt,
         createdAt: a.createdAt,
-        // Delivery address (only if job accepted)
-        address:
-          a.status !== JobStatus.NEW_OFFER
-            ? {
-                addressName: a.influencerAddressName,
-                street: a.influencerStreet,
-                thana: a.influencerThana,
-                zilla: a.influencerZilla,
-                fullAddress: a.influencerFullAddress,
-              }
-            : null,
+        // Address is always available here because status is accepted/active
+        address: {
+          addressName: a.influencerAddressName,
+          street: a.influencerStreet,
+          thana: a.influencerThana,
+          zilla: a.influencerZilla,
+          fullAddress: a.influencerFullAddress,
+        },
       })),
     };
   }
@@ -1334,7 +1434,7 @@ export class CampaignService {
     }
 
     if (dto.offeredAmount !== undefined) {
-      const budget = this.calculateAssignmentBudget(dto.offeredAmount);
+      const budget = await this.calculateAssignmentBudget(dto.offeredAmount);
       assignment.offeredAmount = budget.offeredAmount;
       assignment.vatAmount = budget.vatAmount;
       assignment.totalAmount = budget.totalAmount;
@@ -1369,18 +1469,12 @@ export class CampaignService {
       throw new NotFoundException('Assignment not found');
     }
 
-    // Can only cancel if not completed
     if (assignment.status === JobStatus.COMPLETED) {
       throw new BadRequestException('Cannot cancel a completed assignment');
     }
 
-    const campaignId = assignment.campaignId;
-
     // Delete the assignment
     await this.assignmentRepo.remove(assignment);
-
-    // Recalculate budget split for remaining influencers
-    await this.recalculateCampaignBudgetSplit(campaignId);
 
     return {
       success: true,
@@ -1759,6 +1853,7 @@ export class CampaignService {
       );
     }
 
+    // 1. Update Status
     job.status = JobStatus.DECLINED;
     job.declinedAt = new Date();
     if (dto?.reason) {
@@ -1766,9 +1861,6 @@ export class CampaignService {
     }
 
     await this.assignmentRepo.save(job);
-
-    // Recalculate budget split for remaining influencers
-    await this.recalculateCampaignBudgetSplit(job.campaignId);
 
     return {
       success: true,
@@ -1844,6 +1936,1329 @@ export class CampaignService {
       success: true,
       message: 'Congratulations! Job completed successfully.',
     };
+  }
+
+  private async requireInfluencerProfile(userId: string) {
+    const influencer = await this.influencerRepo.findOne({ where: { userId } });
+    if (!influencer)
+      throw new NotFoundException('Influencer profile not found');
+    return influencer;
+  }
+
+  private async requireInfluencerJobForCampaign(
+    influencerId: string,
+    campaignId: string,
+  ) {
+    const job = await this.assignmentRepo.findOne({
+      where: { influencerId, campaignId },
+      relations: ['campaign'],
+    });
+
+    if (!job)
+      throw new ForbiddenException('You are not assigned to this campaign');
+    return job;
+  }
+
+  private deriveUiStatusFromSubmission(
+    submission: any,
+    milestoneAmount?: number,
+  ) {
+    if (!submission) return 'to_do';
+
+    if (submission.status === 'declined' || submission.status === 'rejected')
+      return 'declined';
+
+    const paidAmount = submission.paidAmount ?? 0;
+
+    if ((submission.paymentStatus ?? 'unpaid') === 'paid') {
+      const expected = submission.requestedAmount ?? milestoneAmount ?? 0;
+      if (expected > 0 && paidAmount > 0 && paidAmount < expected)
+        return 'partial_paid';
+      return 'paid';
+    }
+
+    // pending / client_approved / approved but unpaid -> treat as in_review
+    return 'in_review';
+  }
+
+  // 1) GET /campaign/influencer/job/:jobId/milestones
+  async getInfluencerJobMilestones(jobId: string, userId: string) {
+    const influencer = await this.requireInfluencerProfile(userId);
+
+    const job = await this.assignmentRepo.findOne({
+      where: { id: jobId, influencerId: influencer.id },
+      relations: ['campaign'],
+    });
+    if (!job) throw new NotFoundException('Job not found');
+
+    const milestones = await this.milestoneRepo.find({
+      where: { campaignId: job.campaignId },
+      order: { createdAt: 'ASC' as any },
+    });
+
+    const milestoneIds = milestones.map((m) => m.id);
+    const latestByMilestone = new Map<string, any>();
+    if (milestoneIds.length > 0) {
+      const submissions = await this.submissionRepo.find({
+        where: {
+          milestone: { id: In(milestoneIds) },
+          assignment: { id: job.id },
+          submittedByRole: 'influencer',
+        } as any,
+        order: { createdAt: 'DESC' },
+        relations: ['milestone'],
+      });
+
+      for (const s of submissions) {
+        // Safe access to milestone ID
+        const mId = s.milestone?.id || s.milestoneId;
+        if (mId && !latestByMilestone.has(mId)) latestByMilestone.set(mId, s);
+      }
+    }
+
+    const isJobAccepted = [
+      JobStatus.PENDING,
+      JobStatus.ACTIVE,
+      JobStatus.TO_DO,
+      JobStatus.INREVIEW,
+      JobStatus.PARTIAL_PAID,
+      JobStatus.PAID,
+      JobStatus.COMPLETED,
+    ].includes(job.status);
+
+    const mapped = milestones.map((m) => {
+      const last = latestByMilestone.get(m.id);
+
+      // Status Logic
+      let status = null;
+      if (isJobAccepted) {
+        status = last ? last.status : 'todo';
+      }
+
+      return {
+        id: m.id,
+        title: m.contentTitle,
+        contentQuantity: m.contentQuantity,
+        amount: m.amount,
+        deliveryDays: m.deliveryDays,
+        order: m.order,
+        expectedLikes: m.expectedLikes,
+        expectedComments: m.expectedComments,
+        status: status, // ✅ Logic applied here
+      };
+    });
+
+    return {
+      success: true,
+      data: { jobId: job.id, campaignId: job.campaignId, milestones: mapped },
+    };
+  }
+
+  // 2) GET /campaign/influencer/milestone/:milestoneId
+  async getInfluencerMilestoneDetails(milestoneId: string, userId: string) {
+    const influencer = await this.requireInfluencerProfile(userId);
+
+    const milestone = await this.milestoneRepo.findOne({
+      where: { id: milestoneId },
+      relations: ['campaign'],
+    });
+    if (!milestone) throw new NotFoundException('Milestone not found');
+
+    const job = await this.requireInfluencerJobForCampaign(
+      influencer.id,
+      milestone.campaignId,
+    );
+
+    const submissions = await this.submissionRepo.find({
+      where: {
+        milestone: { id: milestoneId },
+        assignment: { id: job.id },
+        submittedByRole: 'influencer',
+      } as any,
+      order: { createdAt: 'DESC' },
+      relations: ['milestone'],
+    });
+
+    const latest = submissions?.[0] ?? null;
+
+    // Determine if the job has been accepted
+    const isJobAccepted = [
+      JobStatus.PENDING,
+      JobStatus.ACTIVE,
+      JobStatus.TO_DO,
+      JobStatus.INREVIEW,
+      JobStatus.PARTIAL_PAID,
+      JobStatus.PAID,
+      JobStatus.COMPLETED,
+    ].includes(job.status);
+
+    // Status Logic
+    let status: string | null = null;
+    if (isJobAccepted) {
+      status = latest ? latest.status : 'todo';
+    }
+
+    return {
+      success: true,
+      data: {
+        jobId: job.id,
+        campaignId: milestone.campaignId,
+        milestone: {
+          id: milestone.id,
+          contentTitle: milestone.contentTitle,
+          platform: milestone.platform,
+          contentQuantity: milestone.contentQuantity,
+          deliveryDays: milestone.deliveryDays,
+          expectedReach: milestone.expectedReach,
+          expectedViews: milestone.expectedViews,
+          expectedLikes: milestone.expectedLikes,
+          expectedComments: milestone.expectedComments,
+          promotionGoal: milestone.promotionGoal,
+          amount: milestone.amount,
+          bonusAmount: milestone.bonusAmount,
+          bonusStatus: milestone.bonusStatus,
+          order: milestone.order,
+          createdAt: milestone.createdAt,
+        },
+        status: status, // ✅ Logic applied here
+        latestSubmission: latest,
+        submissions,
+      },
+    };
+  }
+
+  // 3) POST /campaign/influencer/milestone/:milestoneId/submit
+  async submitInfluencerMilestone(
+    milestoneId: string,
+    userId: string,
+    dto: InfluencerSubmitMilestoneDto,
+  ) {
+    const influencer = await this.requireInfluencerProfile(userId);
+
+    const milestone: any = await this.milestoneRepo.findOne({
+      where: { id: milestoneId },
+      relations: ['campaign'],
+    });
+
+    if (!milestone) throw new NotFoundException('Milestone not found');
+
+    const job = await this.requireInfluencerJobForCampaign(
+      influencer.id,
+      milestone.campaignId,
+    );
+
+    // optional status restriction
+    if (job.status !== JobStatus.ACTIVE && job.status !== JobStatus.TO_DO) {
+      throw new BadRequestException(
+        'You must accept the job (Status: In Progress) before submitting work.',
+      );
+    }
+
+    const last = await this.submissionRepo.findOne({
+      where: {
+        milestone: { id: milestoneId },
+        assignment: { id: job.id },
+        submittedByRole: 'influencer',
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (
+      last &&
+      last.status !== 'declined' &&
+      last.status !== 'rejected' &&
+      last.status !== 'changes_requested'
+    ) {
+      throw new BadRequestException(
+        'You already have an active submission. Wait for review.',
+      );
+    }
+
+    const submission = this.submissionRepo.create({
+      milestone: { id: milestoneId } as any,
+      assignment: { id: job.id } as any,
+      submittedByRole: 'influencer',
+
+      submissionDescription: dto.description ?? null,
+      submissionLiveLinks: dto.liveLinks ?? [],
+      submissionAttachments: dto.proofAttachments ?? [],
+
+      achievedViews: dto.achievedViews ?? 0,
+      achievedReach: dto.achievedReach ?? 0,
+      achievedLikes: dto.achievedLikes ?? 0,
+      achievedComments: dto.achievedComments ?? 0,
+
+      status: 'pending',
+      isClientApproved: false,
+      paymentStatus: 'unpaid',
+      paidAmount: 0,
+    });
+
+    await this.submissionRepo.save(submission);
+
+    return {
+      success: true,
+      message: 'Milestone submitted successfully',
+    };
+  }
+
+  // 4) PATCH /campaign/influencer/submission/:submissionId/resubmit
+  async resubmitInfluencerSubmission(
+    submissionId: string,
+    userId: string,
+    dto: InfluencerResubmitSubmissionDto,
+  ) {
+    const influencer = await this.requireInfluencerProfile(userId);
+
+    const submission: any = await this.submissionRepo.findOne({
+      where: { id: submissionId },
+      relations: ['milestone', 'milestone.campaign', 'assignment'],
+    });
+    if (!submission) throw new NotFoundException('Submission not found');
+
+    if (
+      submission.submittedByRole !== 'influencer' ||
+      submission.assignment?.influencerId !== influencer.id
+    ) {
+      throw new ForbiddenException('You cannot modify this submission');
+    }
+
+    // if (submission.status !== 'declined') {
+    //   throw new BadRequestException(
+    //     'Only declined submissions can be resubmitted',
+    //   );
+    // }
+
+    // 4. Update Fields (Mapping DTO -> Entity)
+    if (dto.description !== undefined) {
+      submission.submissionDescription = dto.description;
+    }
+    if (dto.liveLinks !== undefined) {
+      submission.submissionLiveLinks = dto.liveLinks;
+    }
+    if (dto.proofAttachments !== undefined) {
+      submission.submissionAttachments = dto.proofAttachments;
+    }
+    if (dto.requestedAmount !== undefined) {
+      submission.requestedAmount = dto.requestedAmount;
+    }
+
+    // 5. Update Metrics (Optional updates during resubmission)
+    if (dto.achievedViews !== undefined)
+      submission.achievedViews = dto.achievedViews;
+    if (dto.achievedReach !== undefined)
+      submission.achievedReach = dto.achievedReach;
+    if (dto.achievedLikes !== undefined)
+      submission.achievedLikes = dto.achievedLikes;
+    if (dto.achievedComments !== undefined)
+      submission.achievedComments = dto.achievedComments;
+
+    // 6. Reset Status Flags
+    submission.status = 'pending'; // Reset to pending for Admin review
+    submission.isClientApproved = false;
+    submission.paymentStatus = 'unpaid';
+    submission.rejectionReason = null;
+    submission.adminFeedback = null;
+
+    await this.submissionRepo.save(submission);
+
+    return {
+      success: true,
+      message: 'Resubmitted successfully',
+      // data: submission,
+    };
+  }
+
+  // 5) PATCH /campaign/influencer/submission/:submissionId/metrics
+  async updateInfluencerSubmissionMetrics(
+    submissionId: string,
+    userId: string,
+    dto: InfluencerUpdateSubmissionMetricsDto,
+  ) {
+    const influencer = await this.requireInfluencerProfile(userId);
+
+    const submission: any = await this.submissionRepo.findOne({
+      where: { id: submissionId },
+    });
+    if (!submission) throw new NotFoundException('Submission not found');
+
+    if (
+      submission.submittedByRole !== 'influencer' ||
+      submission.assignment?.influencerId !== influencer.id
+    ) {
+      throw new ForbiddenException('Not allowed');
+    }
+
+    if (submission.status === 'declined' || submission.status === 'rejected') {
+      throw new BadRequestException(
+        'Cannot update metrics on a rejected submission. Please resubmit.',
+      );
+    }
+
+    if (dto.achievedViews !== undefined)
+      submission.achievedViews = dto.achievedViews;
+    if (dto.achievedReach !== undefined)
+      submission.achievedReach = dto.achievedReach;
+    if (dto.achievedLikes !== undefined)
+      submission.achievedLikes = dto.achievedLikes;
+    if (dto.achievedComments !== undefined)
+      submission.achievedComments = dto.achievedComments;
+
+    if (dto.proofAttachments !== undefined) {
+      submission.submissionAttachments = (dto as any).proofAttachments;
+    }
+
+    await this.submissionRepo.save(submission);
+
+    return {
+      success: true,
+      message: 'Metrics updated',
+      // data: submission
+    };
+  }
+
+  async getInfluencerSubmissions(userId: string, status?: string) {
+    const influencer = await this.requireInfluencerProfile(userId);
+
+    const query = this.submissionRepo
+      .createQueryBuilder('submission')
+      .leftJoinAndSelect('submission.assignment', 'assignment')
+      .leftJoinAndSelect('assignment.campaign', 'campaign')
+      .leftJoinAndSelect('submission.milestone', 'milestone')
+      .where('assignment.influencerId = :influencerId', {
+        influencerId: influencer.id,
+      })
+      .orderBy('submission.createdAt', 'DESC');
+
+    if (status) {
+      query.andWhere('submission.status = :status', { status });
+    }
+
+    const submissions = await query.getMany();
+
+    return {
+      success: true,
+      count: submissions.length,
+      data: submissions.map((s) => ({
+        id: s.id,
+        campaignName: s.assignment.campaign.campaignName,
+        milestoneTitle: s.milestone.contentTitle,
+        amount: s.milestone.amount,
+        status: s.status,
+        paymentStatus: s.paymentStatus,
+        submittedAt: s.createdAt,
+        adminFeedback: s.adminFeedback,
+      })),
+    };
+  }
+
+  async getInfluencerSubmissionById(submissionId: string, userId: string) {
+    const influencer = await this.requireInfluencerProfile(userId);
+
+    const submission = await this.submissionRepo.findOne({
+      where: { id: submissionId },
+      relations: ['assignment', 'assignment.campaign', 'milestone'],
+    });
+
+    if (!submission) throw new NotFoundException('Submission not found');
+
+    // 🔒 Security Check: Must belong to this influencer
+    // Note: Use assignment relation as the source of truth
+    if (submission.assignment.influencerId !== influencer.id) {
+      throw new ForbiddenException(
+        'You do not have permission to view this submission',
+      );
+    }
+
+    return {
+      success: true,
+      data: {
+        id: submission.id,
+        campaignName: submission.assignment.campaign.campaignName,
+        milestoneTitle: submission.milestone.contentTitle,
+        amount: submission.milestone.amount,
+
+        description: submission.submissionDescription,
+        attachments: submission.submissionAttachments,
+        liveLinks: submission.submissionLiveLinks,
+
+        status: submission.status,
+        paymentStatus: submission.paymentStatus,
+        adminFeedback: submission.adminFeedback,
+        rejectionReason: submission.rejectionReason,
+
+        metrics: {
+          views: submission.achievedViews,
+          reach: submission.achievedReach,
+          likes: submission.achievedLikes,
+          comments: submission.achievedComments,
+        },
+        createdAt: submission.createdAt,
+      },
+    };
+  }
+
+  // ============================================
+  // Client-Influencer
+  // ============================================
+
+  async getClientSubmissions(userId: string, status?: string) {
+    const client = await this.getClientProfile(userId);
+
+    const query = this.submissionRepo
+      .createQueryBuilder('submission')
+      .leftJoinAndSelect('submission.assignment', 'assignment')
+      .leftJoinAndSelect('assignment.campaign', 'campaign')
+      .leftJoinAndSelect('assignment.influencer', 'influencer')
+      .leftJoinAndSelect('submission.milestone', 'milestone')
+      // Filter: Must belong to a campaign owned by this Client
+      .where('campaign.clientId = :clientId', { clientId: client.id })
+      .orderBy('submission.createdAt', 'DESC');
+
+    if (status) {
+      query.andWhere('submission.status = :status', { status });
+    }
+
+    const submissions = await query.getMany();
+
+    return {
+      success: true,
+      count: submissions.length,
+      data: submissions.map((s) => ({
+        id: s.id,
+        campaignId: s.assignment.campaignId,
+        campaignName: s.assignment.campaign.campaignName,
+        influencerName: `${s.assignment.influencer.firstName} ${s.assignment.influencer.lastName}`,
+        influencerImage: s.assignment.influencer.profileImg,
+        milestoneTitle: s.milestone.contentTitle,
+        attachments: s.submissionAttachments,
+        liveLinks: s.submissionLiveLinks,
+        status: s.status,
+        isApproved: s.isClientApproved,
+        submittedAt: s.createdAt,
+      })),
+    };
+  }
+
+  async getClientSubmissionById(submissionId: string, userId: string) {
+    const client = await this.getClientProfile(userId);
+
+    const submission = await this.submissionRepo.findOne({
+      where: { id: submissionId },
+      relations: [
+        'assignment',
+        'assignment.campaign',
+        'assignment.influencer',
+        'milestone',
+      ],
+    });
+
+    if (!submission) throw new NotFoundException('Submission not found');
+
+    // 🔒 Security Check: Must belong to a campaign owned by this client
+    if (submission.assignment.campaign.clientId !== client.id) {
+      throw new ForbiddenException(
+        'You do not have permission to view this submission',
+      );
+    }
+
+    return {
+      success: true,
+      data: {
+        id: submission.id,
+        campaignId: submission.assignment.campaignId,
+        campaignName: submission.assignment.campaign.campaignName,
+
+        influencer: {
+          id: submission.assignment.influencerId,
+          name: `${submission.assignment.influencer.firstName} ${submission.assignment.influencer.lastName}`,
+          image: submission.assignment.influencer.profileImg,
+        },
+
+        milestone: {
+          id: submission.milestoneId,
+          title: submission.milestone.contentTitle,
+          amount: submission.milestone.amount,
+        },
+
+        content: {
+          description: submission.submissionDescription,
+          attachments: submission.submissionAttachments,
+          liveLinks: submission.submissionLiveLinks,
+        },
+
+        status: submission.status,
+        isApproved: submission.isClientApproved,
+        paymentStatus: submission.paymentStatus,
+        createdAt: submission.createdAt,
+      },
+    };
+  }
+
+  // Pay Campaign (Handles Both Agency & Influencer flows)
+
+  async clientPayCampaign(userId: string, dto: PayCampaignDto) {
+    const campaign = await this.campaignRepo.findOne({
+      where: { id: dto.campaignId, clientId: userId },
+      relations: ['milestones'],
+    });
+
+    if (!campaign) throw new NotFoundException('Campaign not found');
+
+    // ---------------------------------------------------------
+    // 1. Validation Logic based on Campaign Type
+    // ---------------------------------------------------------
+
+    // Scenario A: Agency Campaign (Paid Ad)
+    // Client must have selected an agency before paying.
+    if (campaign.campaignType === CampaignType.PAID_AD) {
+      if (!campaign.selectedAgencyId) {
+        throw new BadRequestException(
+          'This is an Agency campaign. Please select an agency before making a payment.',
+        );
+      }
+    }
+
+    // Scenario B: Influencer Campaign
+
+    // Client pays the platform directly after accepting the Quote.
+    // Ensure the negotiation is finished (Status should be QUOTED).
+    // if (campaign.campaignType === CampaignType.INFLUENCER_PROMOTION) {
+    //   if (campaign.status !== CampaignStatus.QUOTED && campaign.paymentStatus !== PaymentStatus.PARTIAL) {
+    //      // Allow payment if it's 'QUOTED' or if they are adding more money to a 'PARTIAL' payment
+    //      // throw new BadRequestException('Campaign is not ready for payment. Please complete negotiation/quote first.');
+    //   }
+    // }
+
+    // ---------------------------------------------------------
+    // 2. Financial Logic (Common for both)
+    // ---------------------------------------------------------
+    const totalAmount = Number(campaign.totalBudget);
+    const incomingPayment = Number(dto.amount);
+    const currentPaid = Number(campaign.paidAmount || 0);
+    const newTotalPaid = currentPaid + incomingPayment;
+
+    if (newTotalPaid > totalAmount) {
+      throw new BadRequestException(
+        `Payment exceeds total budget. Total: ${totalAmount}, Paid: ${currentPaid}, Attempting: ${incomingPayment}`,
+      );
+    }
+
+    campaign.paidAmount = newTotalPaid;
+    campaign.dueAmount = totalAmount - newTotalPaid;
+
+    // Update Payment Status
+    if (campaign.dueAmount <= 0) {
+      campaign.paymentStatus = PaymentStatus.FULL;
+    } else {
+      campaign.paymentStatus = PaymentStatus.PARTIAL;
+    }
+
+    // ---------------------------------------------------------
+    // 3. Status Transition Logic
+    // ---------------------------------------------------------
+
+    // Only change status if it's NOT already in a working state
+    const isAlreadyActive = [
+      CampaignStatus.PAID,
+      CampaignStatus.PROMOTING,
+      CampaignStatus.AGENCY_ACCEPTED,
+    ].includes(campaign.status as CampaignStatus);
+
+    if (!isAlreadyActive) {
+      // BRANCH A: Agency Flow
+      if (campaign.campaignType === CampaignType.PAID_AD) {
+        campaign.status = CampaignStatus.AGENCY_ACCEPTED;
+
+        // For Agencies, we often activate milestones immediately for them to start
+        if (campaign.milestones) {
+          campaign.milestones.forEach((m) => (m.status = 'todo'));
+          await this.milestoneRepo.save(campaign.milestones);
+        }
+      }
+
+      // BRANCH B: Influencer Flow
+      else {
+        // For Influencer campaigns, 'PAID' status tells Admin to start inviting influencers
+        campaign.status = CampaignStatus.PAID;
+
+        // Note: We do NOT set milestones to 'todo' yet.
+        // Milestones in influencer campaigns are per-influencer assignment.
+        // The "Master Milestones" remain as templates.
+      }
+    }
+
+    await this.campaignRepo.save(campaign);
+
+    return {
+      success: true,
+      message: 'Payment received successfully.',
+      data: {
+        campaignType: campaign.campaignType,
+        status: campaign.status, // Will be 'paid' (Influencer) or 'agency_accepted' (Agency)
+        paymentStatus: campaign.paymentStatus,
+        totalBudget: campaign.totalBudget,
+        paidAmount: campaign.paidAmount,
+        dueAmount: campaign.dueAmount,
+      },
+    };
+  }
+
+  async clientReportSubmission(
+    submissionId: string,
+    userId: string,
+    dto: ReviewMilestoneDto,
+  ) {
+    const client = await this.getClientProfile(userId);
+
+    // Fetch submission with deep relations to verify ownership
+    const submission = await this.submissionRepo.findOne({
+      where: { id: submissionId },
+      relations: ['assignment', 'assignment.campaign'],
+    });
+
+    if (!submission) throw new NotFoundException('Submission not found');
+
+    // Validate Campaign Ownership
+    if (submission.assignment?.campaign?.clientId !== client.id) {
+      throw new ForbiddenException(
+        'You do not have permission to report this submission',
+      );
+    }
+
+    // Create Report
+    const report = this.reportRepo.create({
+      submissionId: submission.id,
+      authorId: userId,
+      authorRole: UserRole.CLIENT,
+      content: dto.report || dto.reason,
+      actionTaken: dto.action || 'comment',
+    });
+    await this.reportRepo.save(report);
+
+    await this.reportRepo.save(report);
+
+    return {
+      success: true,
+      message: 'Reported to admin successfully',
+      data: report,
+    };
+  }
+
+  async getClientInfluencersProgress(
+    campaignId: string,
+    userId: string,
+    influencerId?: string,
+  ) {
+    const client = await this.getClientProfile(userId);
+
+    // Verify Campaign Ownership
+    const campaign = await this.campaignRepo.findOne({
+      where: { id: campaignId, clientId: client.id },
+    });
+    if (!campaign) throw new NotFoundException('Campaign not found');
+
+    // 1. Get Assignments
+    const assignmentQuery = this.assignmentRepo
+      .createQueryBuilder('a')
+      .leftJoinAndSelect('a.influencer', 'influencer')
+      .where('a.campaignId = :campaignId', { campaignId });
+
+    if (influencerId) {
+      assignmentQuery.andWhere('a.influencerId = :influencerId', {
+        influencerId,
+      });
+    }
+
+    const assignments = await assignmentQuery.getMany();
+    if (!assignments.length)
+      return { success: true, data: { campaign, influencers: [] } };
+
+    // 2. Get Milestones (Needed for calculation)
+    const milestones = await this.milestoneRepo.find({
+      where: { campaignId },
+      order: { order: 'ASC' },
+    });
+
+    // 3. Get Submissions (Needed for calculation)
+    const assignmentIds = assignments.map((a) => a.id);
+    const submissions = await this.submissionRepo
+      .createQueryBuilder('s')
+      .where('s.assignmentId IN (:...ids)', { ids: assignmentIds })
+      .orderBy('s.createdAt', 'DESC')
+      .getMany();
+
+    const submissionMap = new Map<string, MilestoneSubmissionEntity>();
+    for (const sub of submissions) {
+      const key = `${sub.assignmentId}_${sub.milestoneId}`;
+      if (!submissionMap.has(key)) submissionMap.set(key, sub);
+    }
+
+    // 4. Build Data
+    const influencersData = assignments.map((assignment) => {
+      let completedMilestones = 0;
+
+      // Loop through milestones only to calculate the count
+      milestones.forEach((m) => {
+        const sub = submissionMap.get(`${assignment.id}_${m.id}`);
+        const status = this.deriveUiStatusFromSubmission(sub, m.amount);
+
+        if (status === 'paid') {
+          completedMilestones++;
+        }
+      });
+
+      const progressPercent =
+        milestones.length > 0
+          ? Math.round((completedMilestones / milestones.length) * 100)
+          : 0;
+
+      // ✅ RETURN ONLY PROGRESS INFO (Influencer + Percent)
+      return {
+        assignmentId: assignment.id,
+        influencer: {
+          id: assignment.influencer.id,
+          // name: `${assignment.influencer.firstName} ${assignment.influencer.lastName}`,
+          // profileImg: assignment.influencer.profileImg,
+        },
+        status: assignment.status, // Useful context
+        progressPercent, // ✅ The requested field
+        // Removed: 'milestones' array
+      };
+    });
+
+    return {
+      success: true,
+      data: {
+        campaignName: campaign.campaignName,
+        influencers: influencersData,
+      },
+    };
+  }
+
+  async clientRateInfluencer(
+    campaignId: string,
+    influencerId: string,
+    userId: string,
+    dto: RateCampaignDto,
+  ) {
+    const client = await this.getClientProfile(userId);
+
+    const campaign = await this.campaignRepo.findOne({
+      where: { id: campaignId, clientId: client.id },
+    });
+    if (!campaign) throw new NotFoundException('Campaign not found');
+
+    // Ensure influencer is assigned
+    const assignment = await this.assignmentRepo.findOne({
+      where: { campaignId, influencerId },
+      relations: ['influencer'],
+    });
+    if (!assignment)
+      throw new BadRequestException(
+        'Influencer is not assigned to this campaign',
+      );
+
+    if (assignment.status !== JobStatus.COMPLETED) {
+      throw new BadRequestException(
+        'You can only rate after the job is completed',
+      );
+    }
+
+    // if (assignment.rating) {
+    //   throw new BadRequestException('You have already rated this influencer for this campaign');
+    // }
+
+    assignment.isRated = true;
+    assignment.rating = dto.rating;
+    // campaign.clientReview = dto.review; // Uncomment if you add this column to CampaignEntity
+
+    await this.assignmentRepo.save(assignment);
+
+    // 5. Recalculate Influencer's Average Rating
+    const influencer = assignment.influencer;
+
+    // Formula: New Average = ((Current Avg * Count) + New Rating) / (Count + 1)
+    const currentAvg = Number(influencer.averageRating || 0);
+    const currentCount = Number(influencer.totalReviews || 0);
+
+    const newCount = currentCount + 1;
+    const totalScore = currentAvg * currentCount + dto.rating;
+    const newAverage = totalScore / newCount;
+
+    // Update Profile
+    influencer.averageRating = parseFloat(newAverage.toFixed(2)); // Round to 2 decimals
+    influencer.totalReviews = newCount;
+
+    await this.influencerRepo.save(influencer);
+
+    // 6. Update Campaign Flag (Optional)
+    // We mark the campaign as 'rated' to show the client has engaged at least once.
+    // If you want to check if *all* influencers are rated, you would need an extra check here.
+    campaign.isRated = true;
+    await this.campaignRepo.save(campaign);
+
+    return {
+      success: true,
+      message: `You rated ${influencer.firstName} ${dto.rating}/5 successfully.`,
+      data: {
+        assignmentId: assignment.id,
+        rating: assignment.rating,
+        influencerNewAverage: influencer.averageRating,
+      },
+    };
+  }
+
+  // 4. Get Ratings (From Assignments)
+  async getClientInfluencerRatings(campaignId: string, userId: string) {
+    const client = await this.getClientProfile(userId);
+
+    // Query Campaigns that are rated and belong to this client
+    // We join assignments to show who the influencer was
+    const campaigns = await this.campaignRepo.find({
+      where: {
+        clientId: client.id,
+        isRated: true,
+        // Optional: Filter by specific campaignId if provided, or remove to get all
+        ...(campaignId ? { id: campaignId } : {}),
+      },
+      relations: ['assignments', 'assignments.influencer'],
+      select: {
+        id: true,
+        rating: true,
+        // clientReview: true, // Uncomment if you added review to CampaignEntity
+        assignments: {
+          id: true,
+          influencer: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profileImg: true,
+          },
+        },
+      },
+    });
+
+    return { success: true, data: campaigns };
+  }
+
+  async clientPayBonusForSubmission(
+    submissionId: string,
+    userId: string,
+    dto: PayBonusDto,
+  ) {
+    const client = await this.getClientProfile(userId);
+
+    const submission = await this.submissionRepo.findOne({
+      where: { id: submissionId },
+      relations: ['milestone', 'milestone.campaign'],
+    });
+
+    if (!submission) throw new NotFoundException('Submission not found');
+
+    // Check Ownership via Campaign
+    const campaign = submission.milestone?.campaign;
+    if (!campaign || campaign.clientId !== client.id) {
+      throw new ForbiddenException('Not your campaign');
+    }
+
+    // ✅ FIX: Update MilestoneEntity (where bonus fields exist) instead of Submission
+    const milestone = submission.milestone;
+
+    milestone.bonusAmount =
+      Number(milestone.bonusAmount || 0) + Number(dto.amount);
+    milestone.bonusStatus = 'paid';
+
+    await this.milestoneRepo.save(milestone);
+
+    // Log Report
+    await this.reportRepo.save({
+      submissionId: submission.id,
+      content: `Client paid bonus: ${dto.amount}`,
+      authorRole: UserRole.CLIENT,
+      authorId: client.userId,
+      actionTaken: 'bonus_paid',
+    });
+
+    return {
+      success: true,
+      message: 'Bonus paid successfully',
+      data: milestone,
+    };
+  }
+
+  // ============================================
+  // ADMIN-INFLUENCER
+  // ============================================
+
+  // 1. Get All Submissions (Review Queue)
+  // Useful for a dashboard showing "10 Pending Reviews"
+  async adminGetSubmissions(status?: string, campaignId?: string) {
+    const query = this.submissionRepo
+      .createQueryBuilder('submission')
+      .leftJoinAndSelect('submission.assignment', 'assignment')
+      .leftJoinAndSelect('assignment.influencer', 'influencer')
+      .leftJoinAndSelect('assignment.campaign', 'campaign')
+      .leftJoinAndSelect('submission.milestone', 'milestone')
+      .orderBy('submission.createdAt', 'DESC');
+
+    // Filter by Status (e.g., 'pending')
+    if (status) {
+      query.andWhere('submission.status = :status', { status });
+    }
+
+    // Filter by Campaign
+    if (campaignId) {
+      query.andWhere('assignment.campaignId = :campaignId', { campaignId });
+    }
+
+    // Only show submissions by influencers (ignore old agency test data if any)
+    query.andWhere('submission.submittedByRole = :role', {
+      role: 'influencer',
+    });
+
+    const submissions = await query.getMany();
+
+    return {
+      success: true,
+      count: submissions.length,
+      data: submissions.map((s) => ({
+        submissionId: s.id,
+        campaignName: s.assignment.campaign.campaignName,
+        influencerName: `${s.assignment.influencer.firstName} ${s.assignment.influencer.lastName}`,
+        milestoneTitle: s.milestone.contentTitle,
+        submittedAt: s.createdAt,
+        status: s.status,
+        attachments: s.submissionAttachments,
+        description: s.submissionDescription,
+      })),
+    };
+  }
+
+  // 2. Get Single Submission Details by ID
+  async adminGetSubmissionById(submissionId: string) {
+    const submission = await this.submissionRepo.findOne({
+      where: { id: submissionId },
+      relations: [
+        'assignment',
+        'assignment.influencer',
+        'assignment.campaign',
+        'milestone',
+      ],
+    });
+
+    if (!submission) throw new NotFoundException('Submission not found');
+
+    return {
+      success: true,
+      data: {
+        id: submission.id,
+        status: submission.status,
+        paymentStatus: submission.paymentStatus,
+        isClientApproved: submission.isClientApproved,
+
+        // Campaign Context
+        campaignId: submission.assignment.campaignId,
+        campaignName: submission.assignment.campaign.campaignName,
+
+        // Influencer Context
+        influencerId: submission.assignment.influencerId,
+        influencerName: `${submission.assignment.influencer.firstName} ${submission.assignment.influencer.lastName}`,
+        influencerImage: submission.assignment.influencer.profileImg,
+
+        // Milestone Context
+        milestoneId: submission.milestoneId,
+        milestoneTitle: submission.milestone.contentTitle,
+        amount: submission.milestone.amount,
+
+        // Submission Content
+        description: submission.submissionDescription,
+        attachments: submission.submissionAttachments,
+        liveLinks: submission.submissionLiveLinks,
+
+        // Metrics
+        achievedViews: submission.achievedViews,
+        achievedReach: submission.achievedReach,
+        achievedLikes: submission.achievedLikes,
+        achievedComments: submission.achievedComments,
+
+        // Feedback
+        adminFeedback: submission.adminFeedback,
+        rejectionReason: submission.rejectionReason,
+        createdAt: submission.createdAt,
+      },
+    };
+  }
+
+  async adminListInvitations(campaignId: string) {
+    const jobs = await this.assignmentRepo.find({
+      where: { campaignId },
+      relations: ['influencer'],
+      order: { createdAt: 'DESC' },
+    });
+
+    const data = jobs.map((j) => ({
+      jobId: j.id,
+      influencerName: `${j.influencer.firstName} ${j.influencer.lastName}`,
+      status: j.status,
+      sentAt: j.createdAt,
+      respondedAt: j.acceptedAt || j.declinedAt,
+    }));
+
+    return { success: true, data };
+  }
+
+  // 7. Admin Cancel Invitation
+  async adminCancelInvitation(jobId: string) {
+    const job = await this.assignmentRepo.findOne({ where: { id: jobId } });
+    if (!job) throw new NotFoundException('Job not found');
+
+    if (
+      job.status !== JobStatus.NEW_OFFER &&
+      job.status !== JobStatus.PENDING
+    ) {
+      throw new BadRequestException(
+        'Cannot cancel a job that has already started or been declined',
+      );
+    }
+
+    await this.assignmentRepo.remove(job);
+    return { success: true, message: 'Invitation cancelled and job removed' };
+  }
+
+  // 8. Admin Resend Invitation
+  async adminResendInvitation(jobId: string) {
+    const job = await this.assignmentRepo.findOne({ where: { id: jobId } });
+    if (!job) throw new NotFoundException('Job not found');
+
+    // Reset Job to initial state
+    job.status = JobStatus.NEW_OFFER;
+    job.acceptedAt = null;
+    job.startedAt = null;
+    job.completedAt = null;
+    job.declinedAt = null;
+    job.declineReason = null;
+    job.createdAt = new Date(); // Update timestamp to show as new
+
+    const saved = await this.assignmentRepo.save(job);
+    return { success: true, message: 'Invitation resent', data: saved };
+  }
+
+  // 9. Admin View Influencer Milestones (Wrapper)
+  async adminGetInfluencerMilestones(campaignId: string, influencerId: string) {
+    const job = await this.assignmentRepo.findOne({
+      where: { campaignId, influencerId },
+      relations: ['influencer'],
+    });
+
+    if (!job)
+      throw new NotFoundException(
+        'Influencer is not assigned to this campaign',
+      );
+
+    // Reuse the logic we built for the influencer view
+    // We need the UserID of the influencer to reuse that function
+    const influencerUserId = job.influencer.userId;
+
+    return this.getInfluencerJobMilestones(job.id, influencerUserId);
+  }
+
+  // 10. Admin Get Specific Milestone Details
+  async adminGetInfluencerMilestoneDetails(
+    campaignId: string,
+    influencerId: string,
+    milestoneId: string,
+  ) {
+    // 1. Find Job
+    const job = await this.assignmentRepo.findOne({
+      where: { campaignId, influencerId },
+    });
+    if (!job) throw new NotFoundException('Influencer assignment not found');
+
+    // 2. Find Milestone
+    const milestone = await this.milestoneRepo.findOne({
+      where: { id: milestoneId, campaignId },
+    });
+    if (!milestone) throw new NotFoundException('Milestone not found');
+
+    // 3. Find Submissions
+    const history = await this.submissionRepo.find({
+      where: {
+        milestoneId,
+        assignmentId: job.id,
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    const latest = history.length > 0 ? history[0] : null;
+
+    return {
+      success: true,
+      data: {
+        jobId: job.id,
+        milestoneTitle: milestone.contentTitle,
+        status: this.deriveUiStatusFromSubmission(latest, milestone.amount),
+        latestSubmission: latest,
+        submissionHistory: history,
+      },
+    };
+  }
+
+  // 11. Admin Force Status Change
+  async adminSetInfluencerMilestoneStatus(
+    milestoneId: string,
+    assignmentId: string,
+    adminUserId: string,
+    dto: UpdateCampaignStatusDto, // Ensure this DTO is imported
+  ) {
+    const milestone = await this.milestoneRepo.findOne({
+      where: { id: milestoneId },
+    });
+    if (!milestone) throw new NotFoundException('Milestone not found');
+
+    const job = await this.assignmentRepo.findOne({
+      where: { id: assignmentId },
+    });
+    if (!job) throw new NotFoundException('Job assignment not found');
+
+    let latest = await this.submissionRepo.findOne({
+      where: { milestoneId, assignmentId },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!latest) {
+      latest = this.submissionRepo.create({
+        milestoneId,
+        assignmentId,
+        submittedByRole: 'admin',
+        status: 'pending',
+        paymentStatus: 'unpaid',
+        paidAmount: 0,
+      });
+    }
+
+    // Update Status
+    if (dto.status === 'approved') {
+      latest.status = 'client_approved';
+      latest.isClientApproved = true;
+    } else if (dto.status === 'declined') {
+      latest.status = 'declined';
+      latest.isClientApproved = false;
+      latest.rejectionReason = dto.reason || 'Declined by Admin';
+    } else {
+      latest.status = dto.status;
+    }
+
+    if (dto.reason) {
+      latest.rejectionReason = dto.reason;
+    }
+
+    const saved = await this.submissionRepo.save(latest);
+
+    // Audit Log
+    await this.reportRepo.save({
+      submissionId: saved.id,
+      content: `Admin changed status to "${dto.status}". Note: ${dto.reason}`,
+      authorRole: UserRole.ADMIN,
+      authorId: adminUserId,
+      actionTaken: 'status_changed',
+    });
+
+    return { success: true, data: saved };
+  }
+
+  async adminPayInfluencerSubmission(
+    submissionId: string,
+    dto: AdminPayMilestoneDto, // { amount: number, note?: string }
+  ) {
+    // 1. Fetch Submission with Assignment & Milestone context
+    const submission = await this.submissionRepo.findOne({
+      where: { id: submissionId },
+      relations: ['assignment', 'assignment.campaign', 'milestone'],
+    });
+
+    if (!submission) throw new NotFoundException('Submission not found');
+
+    // 2. Strict Validation: Must be an Influencer Submission
+    if (
+      submission.submittedByRole !== 'influencer' &&
+      submission.assignment?.campaign?.campaignType !== 'influencer_promotion'
+    ) {
+      throw new BadRequestException(
+        'This API is for Influencer payments only.',
+      );
+    }
+
+    if (submission.status === 'declined') {
+      throw new BadRequestException('Cannot pay for a declined submission.');
+    }
+
+    // 3. Financial Calculations
+    const currentPaid = Number(submission.paidAmount || 0);
+    const incomingPayment = Number(dto.amount);
+    const milestoneTarget = Number(submission.milestone.amount);
+
+    const newTotalPaid = currentPaid + incomingPayment;
+
+    // Safety Check: Prevent overpaying (Optional, but good practice)
+    if (newTotalPaid > milestoneTarget) {
+      throw new BadRequestException(
+        `Payment exceeds milestone amount. Target: ${milestoneTarget}, Already Paid: ${currentPaid}, Attempting: ${incomingPayment}`,
+      );
+    }
+
+    // 4. Update Submission State
+    submission.paidAmount = newTotalPaid;
+
+    // Logic: Is it fully paid now?
+    if (newTotalPaid >= milestoneTarget) {
+      submission.paymentStatus = 'paid';
+      submission.status = 'approved'; // Mark work as fully done/approved
+    } else {
+      submission.paymentStatus = 'partial_paid';
+      // We keep status as 'approved' (work is good) or 'pending_payment' depending on your UI preference.
+      // Usually, if you pay *anything*, the work is implicitly "Approved".
+      submission.status = 'approved';
+    }
+
+    submission.adminFeedback = 'Payment Processed';
+    submission.isClientApproved = true;
+
+    await this.submissionRepo.save(submission);
+
+    return {
+      success: true,
+      message: `Payment of ${incomingPayment} released. Status: ${submission.paymentStatus}`,
+      data: {
+        submissionId: submission.id,
+        milestoneAmount: milestoneTarget,
+        totalPaid: newTotalPaid,
+        remainingDue: milestoneTarget - newTotalPaid,
+        paymentStatus: submission.paymentStatus,
+      },
+    };
+  }
+
+  // 12. List Reports
+  async adminListReports(status?: string) {
+    const whereCondition = status ? { actionTaken: status } : {};
+
+    const reports = await this.reportRepo.find({
+      where: whereCondition,
+      order: { createdAt: 'DESC' },
+    });
+
+    return { success: true, data: reports };
+  }
+
+  // 13. Get Reports for Specific Submission
+  async adminGetSubmissionReports(submissionId: string) {
+    const reports = await this.reportRepo.find({
+      where: { submissionId },
+      order: { createdAt: 'DESC' },
+    });
+
+    return { success: true, data: reports };
   }
 
   // ============================================
@@ -2009,12 +3424,12 @@ export class CampaignService {
     campaign.totalBudget = base + campaign.vatAmount;
 
     campaign.platformFeeAmount = base * ADMIN_FEE_RATE;
-    campaign.availableBudgetForAgency = base - campaign.platformFeeAmount;
+    campaign.availableBudgetForExecution = base - campaign.platformFeeAmount;
 
     const milestoneCount = campaign.milestones.length;
     if (milestoneCount > 0) {
       const perMilestoneAmount =
-        campaign.availableBudgetForAgency / milestoneCount;
+        campaign.availableBudgetForExecution / milestoneCount;
 
       campaign.milestones.forEach((m) => {
         m.amount = perMilestoneAmount;
@@ -2154,22 +3569,8 @@ export class CampaignService {
       ? latestBid.proposedServiceFeePercent
       : campaign.proposedServiceFeePercent;
 
-    const totalAmount = Number(campaign.totalBudget);
-    const payAmount = Number(dto.paymentAmount);
-
-    if (payAmount > totalAmount)
-      throw new BadRequestException('Payment exceeds total budget');
-
-    campaign.paidAmount = payAmount;
-    campaign.dueAmount = totalAmount - payAmount;
     campaign.selectedAgencyId = dto.agencyId;
     campaign.proposedServiceFeePercent = finalPercent;
-
-    if (campaign.dueAmount === 0) {
-      campaign.paymentStatus = PaymentStatus.FULL;
-    } else {
-      campaign.paymentStatus = PaymentStatus.PARTIAL;
-    }
 
     campaign.status = CampaignStatus.AGENCY_ACCEPTED;
     if (campaign.milestones) {
@@ -2186,10 +3587,10 @@ export class CampaignService {
       message: `Agency ${selectedAgency.agencyName} selected successfully and milestones activated (todo).`,
       finalFee: `${campaign.proposedServiceFeePercent}%`,
       data: {
-        paymentStatus: campaign.paymentStatus,
+        campaignId: campaign.id,
+        selectedAgency: selectedAgency.agencyName,
+        finalServiceFeePercent: finalPercent,
         totalBudget: campaign.totalBudget,
-        paidAmount: campaign.paidAmount,
-        dueAmount: campaign.dueAmount,
       },
     };
   }
@@ -2495,7 +3896,7 @@ export class CampaignService {
 
     const { totalEarnings } = await baseQuery
       .clone()
-      .select('SUM(c.availableBudgetForAgency)', 'totalEarnings')
+      .select('SUM(c.availableBudgetForExecution)', 'totalEarnings')
       .andWhere('c.status = :status', { status: CampaignStatus.COMPLETED })
       .getRawOne();
 
@@ -2530,7 +3931,7 @@ export class CampaignService {
         'c.campaignName',
         'c.status',
         'c.startingDate',
-        'c.availableBudgetForAgency',
+        'c.availableBudgetForExecution',
         'c.createdAt',
         'client.brandName',
         'client.profileImg',
@@ -2589,7 +3990,7 @@ export class CampaignService {
     const vat = Number(campaign.vatAmount);
     const total = Number(campaign.totalBudget);
     const adminFee = Number(campaign.platformFeeAmount);
-    const netAvailable = Number(campaign.availableBudgetForAgency);
+    const netAvailable = Number(campaign.availableBudgetForExecution);
 
     const feePercent = Number(
       campaign.proposedServiceFeePercent || agency.serviceFee || 0,
@@ -2605,7 +4006,7 @@ export class CampaignService {
       vatAmount,
       totalBudget,
       platformFeeAmount,
-      availableBudgetForAgency,
+      availableBudgetForExecution,
       netPayableAmount,
       paidAmount,
       dueAmount,
@@ -2894,7 +4295,7 @@ export class CampaignService {
     // Requested Amount Validation Logic
     const alreadyPaid =
       milestone.submissions?.reduce((sum, sub) => {
-        return sum + (Number(sub.paidToAgencyAmount) || 0);
+        return sum + (Number(sub.paidAmount) || 0);
       }, 0) || 0;
     const totalBudget = Number(milestone.amount);
     const availableBalance = totalBudget - alreadyPaid;
@@ -2976,7 +4377,7 @@ export class CampaignService {
     const totalBudget = Number(milestone.amount);
 
     const totalPaid = milestone.submissions.reduce((sum, sub) => {
-      return sum + (Number(sub.paidToAgencyAmount) || 0);
+      return sum + (Number(sub.paidAmount) || 0);
     }, 0);
 
     const availableBalance = totalBudget - totalPaid;
@@ -3035,50 +4436,64 @@ export class CampaignService {
   ) {
     const submission = await this.submissionRepo.findOne({
       where: { id: submissionId },
-      relations: ['milestone', 'milestone.campaign'],
+      relations: ['assignment', 'assignment.campaign'],
     });
 
     if (!submission) throw new NotFoundException('Submission not found');
 
     // 2. Auth Check
     const client = await this.getClientProfile(userId);
-    if (submission.milestone.campaign.clientId !== client.id) {
-      throw new ForbiddenException('Access Denied');
+    // if (submission.milestone.campaign.clientId !== client.id) {
+    //   throw new ForbiddenException('Access Denied');
+    // }
+
+    // Validate Ownership
+    if (submission.assignment?.campaign?.clientId !== client.id) {
+      throw new ForbiddenException(
+        'You do not have permission to review this submission',
+      );
     }
 
-    // A. Save Report/Comment History
-    if (dto.report || dto.reason) {
-      const report = this.reportRepo.create({
-        submissionId: submission.id,
-        authorId: userId,
-        authorRole: 'client',
-        content: dto.report || dto.reason,
-        actionTaken: dto.action || 'comment',
-      });
-      await this.reportRepo.save(report);
-    }
-
-    // B. Handle Actions (If provided)
+    // 3. Logic based on Action
     if (dto.action === 'approve') {
-      submission.status = 'client_approved'; // Admin এর জন্য রেডি
       submission.isClientApproved = true;
+      submission.status = 'client_approved';
+      // Optional: Clear any previous rejection reasons
       submission.rejectionReason = null;
+
+      // Optional: If you want to track who approved it
+      submission.adminFeedback = dto.reason || 'Approved by Client';
     } else if (dto.action === 'decline') {
-      submission.status = 'declined';
+      if (!dto.reason) {
+        throw new BadRequestException(
+          'A reason is required when rejecting a submission.',
+        );
+      }
       submission.isClientApproved = false;
-      submission.rejectionReason = dto.reason || dto.report || null;
-      // Milestone status also updates to reflect feedback needed
-      submission.milestone.status = 'declined';
+      submission.status = 'client_declined';
+      submission.rejectionReason = dto.reason;
     }
 
     await this.submissionRepo.save(submission);
-    if (dto.action === 'decline') {
-      await this.milestoneRepo.save(submission.milestone);
+
+    if (dto.report) {
+      await this.reportRepo.save({
+        submissionId: submission.id,
+        authorId: userId,
+        authorRole: UserRole.CLIENT,
+        content: dto.report,
+        actionTaken: dto.action,
+      });
     }
+
     return {
       success: true,
-      message: dto.action ? `Submission ${dto.action}d.` : 'Comment added.',
-      data: { status: submission.status },
+      message: `Submission ${dto.action === 'approve' ? 'client_approved' : 'returned for changes'} successfully`,
+      data: {
+        submissionId: submission.id,
+        status: submission.status,
+        isClientApproved: submission.isClientApproved,
+      },
     };
   }
 
@@ -3142,7 +4557,7 @@ export class CampaignService {
       throw new BadRequestException('Already paid/completed.');
     }
 
-    submission.paidToAgencyAmount = dto.amount;
+    submission.paidAmount = dto.amount;
     submission.status = 'approved';
     submission.paymentStatus = 'paid';
     submission.adminFeedback = 'Payment Released';
@@ -3233,7 +4648,7 @@ export class CampaignService {
                 id: s.id,
                 status: s.status,
                 requestedAmount: s.requestedAmount,
-                paidAmount: s.paidToAgencyAmount,
+                paidAmount: s.paidAmount,
                 createdAt: s.createdAt,
               }))
           : [];
@@ -3525,7 +4940,7 @@ export class CampaignService {
       m.submissions.forEach((s) => {
         totalAchievedViews += s.achievedViews || 0;
         totalAchievedReach += s.achievedReach || 0;
-        totalPaid += Number(s.paidToAgencyAmount || 0);
+        totalPaid += Number(s.paidAmount || 0);
       });
     });
 

@@ -1804,7 +1804,7 @@ export class AdminService {
         .leftJoinAndSelect('sub.milestone', 'milestone')
         .leftJoinAndSelect('milestone.campaign', 'campaign')
         .leftJoinAndSelect('campaign.assignedAgencies', 'agency')
-        .where('sub.paidToAgencyAmount > 0 OR sub.requestedAmount > 0');
+        .where('sub.paidAmount > 0 OR sub.requestedAmount > 0');
 
       if (status) {
         if (status === PaymentStatus.COMPLETED)
@@ -1895,7 +1895,7 @@ export class AdminService {
           campaign: item.milestone.campaign.campaignName,
           milestone: item.milestone.contentTitle,
           amountRequested: item.requestedAmount,
-          amountPaid: item.paidToAgencyAmount,
+          amountPaid: item.paidAmount,
           status:
             item.paymentStatus === 'paid' ? 'Completed' : 'Pending Clearance',
           date: item.updatedAt,
@@ -1952,7 +1952,7 @@ export class AdminService {
     // 2. Total Expense (Agency Paid)
     const { expense } = await this.submissionRepo
       .createQueryBuilder('s')
-      .select('SUM(s.paidToAgencyAmount)', 'expense')
+      .select('SUM(s.paidAmount)', 'expense')
       .getRawOne();
 
     const profit = (Number(income) || 0) - (Number(expense) || 0);

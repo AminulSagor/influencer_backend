@@ -51,7 +51,7 @@ export class SelectAgencyDto {
   @IsUUID()
   agencyId: string;
 
-  @IsNumber()
-  @Min(1)
-  paymentAmount: number;
+  // @IsNumber()
+  // @Min(1)
+  // paymentAmount: number;
 }

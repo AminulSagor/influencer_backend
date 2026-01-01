@@ -10,6 +10,8 @@ import {
 } from 'typeorm';
 import { CampaignMilestoneEntity } from './campaign-milestone.entity';
 import { SubmissionReportEntity } from './submission-report.entity';
+import { CampaignAssignmentEntity } from './campaign-assignment.entity';
+import { InfluencerProfileEntity } from 'src/influencer/influencer/entities/influencer-profile.entity';
 
 @Entity('milestone_submissions')
 export class MilestoneSubmissionEntity {
@@ -30,6 +32,9 @@ export class MilestoneSubmissionEntity {
   // ✅ New Field: Payment Request Amount
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   requestedAmount: number | null;
+
+  @Column({ type: 'varchar', length: 20, default: 'agency' })
+  submittedByRole: string; // 'agency' | 'influencer'
 
   @Column({ type: 'text', nullable: true })
   rejectionReason: string | null;
@@ -54,7 +59,7 @@ export class MilestoneSubmissionEntity {
   achievedComments: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  paidToAgencyAmount: number;
+  paidAmount: number;
 
   @Column({ default: 'unpaid' }) // unpaid, paid
   paymentStatus: string;
@@ -65,8 +70,12 @@ export class MilestoneSubmissionEntity {
   @Column({ default: 'pending' }) // pending, approved, declined
   status: string;
 
-  // @Column({ type: 'uuid' })
-  // milestoneId: string;
+  @Column({ type: 'uuid', nullable: true })
+  assignmentId: string | null;
+
+  @ManyToOne(() => CampaignAssignmentEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'assignmentId' })
+  assignment: CampaignAssignmentEntity;
 
   @ManyToOne(() => CampaignMilestoneEntity, (m) => m.submissions)
   @JoinColumn({ name: 'milestoneId' })

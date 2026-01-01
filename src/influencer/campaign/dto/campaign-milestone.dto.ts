@@ -37,9 +37,20 @@ export class UpdateMilestoneAmountDto {
 }
 
 export class ReviewMilestoneDto {
-  @IsEnum(['approve', 'decline', 'comment'])
+  @IsEnum([
+    'approve',
+    'decline',
+    'comment',
+    'client_approved',
+    'client_declined',
+  ])
   @IsOptional()
-  action?: 'approve' | 'decline' | 'comment';
+  action?:
+    | 'approve'
+    | 'decline'
+    | 'comment'
+    | 'client_approved'
+    | 'client_declined';
 
   @IsString()
   @IsOptional()
