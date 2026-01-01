@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -34,6 +35,13 @@ export class AgencyService {
   async updateOnboarding(userId: string, dto: AgencyOnboardingDto) {
     const profile = await this.getProfile(userId);
 
+    // CHECK: If onboarding is already complete, block access
+    if (profile['isOnboardingComplete']) {
+      throw new ForbiddenException(
+        'Onboarding is already completed. Please use Edit Profile to make changes.',
+      );
+    }
+
     // 1. Update Address (if provided)
     if (dto.addressLine || dto.city || dto.country) {
       profile.address = {
@@ -61,6 +69,8 @@ export class AgencyService {
     if (dto.nidFrontImg || dto.nidNumber) {
       profile.nidVerification = { nidStatus: 'pending', nidRejectReason: '' };
     }
+
+    profile.isOnboardingComplete = true;
 
     return this.agencyRepo.save(profile);
   }

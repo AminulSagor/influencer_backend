@@ -10,21 +10,17 @@ import {
 import { CampaignEntity } from './campaign.entity';
 import { InfluencerProfileEntity } from 'src/influencer/influencer/entities/influencer-profile.entity';
 
-// ============================================
-// Job Status - Simple 5-Stage Workflow
-// ============================================
-// NEW_OFFER  → Influencer receives offer (can accept or decline)
-// PENDING    → Accepted but work not started yet
-// ACTIVE     → Work in progress
-// COMPLETED  → Job finished successfully
-// DECLINED   → Influencer declined the offer
-// ============================================
 export enum JobStatus {
-  NEW_OFFER = 'new_offer',   // Campaign assigned, waiting for response
-  PENDING = 'pending',       // Accepted, but not started yet
-  ACTIVE = 'active',         // Work in progress
-  COMPLETED = 'completed',   // Job finished
-  DECLINED = 'declined',     // Influencer declined
+  DRAFT = 'draft',
+  NEW_OFFER = 'new_offer',
+  PENDING = 'pending', // Accepted, but not started yet
+  ACTIVE = 'active',
+  TO_DO = 'to_do', // Work in progress
+  COMPLETED = 'completed', // Job finished
+  DECLINED = 'declined', // Influencer declined
+  PARTIAL_PAID = 'partial_paid',
+  PAID = 'paid',
+  INREVIEW = 'in_review',
 }
 
 // Keep old enum for backward compatibility (alias)
@@ -109,20 +105,28 @@ export class CampaignAssignmentEntity {
   })
   status: JobStatus;
 
+  @Column({ type: 'decimal', precision: 3, scale: 1, default: 0 })
+  rating: number; // e.g., 4.5
+
+  @Column({ default: false })
+  isRated: boolean;
   // ============================================
   // Timeline Tracking
   // ============================================
   @Column({ type: 'timestamp', nullable: true })
-  acceptedAt: Date; // When influencer accepted
+  invitedAt: Date | null; // When work started
 
   @Column({ type: 'timestamp', nullable: true })
-  startedAt: Date; // When work started
+  acceptedAt: Date | null; // When influencer accepted
 
   @Column({ type: 'timestamp', nullable: true })
-  completedAt: Date; // When job completed
+  startedAt: Date | null; // When work started
 
   @Column({ type: 'timestamp', nullable: true })
-  declinedAt: Date; // When declined
+  completedAt: Date | null; // When job completed
+
+  @Column({ type: 'timestamp', nullable: true })
+  declinedAt: Date | null; // When declined
 
   // ============================================
   // Timestamps

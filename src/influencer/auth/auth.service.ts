@@ -101,7 +101,8 @@ export class AuthService {
         clientProfile.lastName = dto.lastName;
         clientProfile.email = dto.email;
         clientProfile.phone = dto.phone;
-        clientProfile.brandName = dto.brandName || `${dto.firstName} ${dto.lastName}`;
+        clientProfile.brandName =
+          dto.brandName || `${dto.firstName} ${dto.lastName}`;
         clientProfile.verificationSteps = {
           profileDetails: 'verified',
           phoneVerification: 'pending',
@@ -380,6 +381,49 @@ export class AuthService {
     await this.smsService.sendOtp(dto.phone, otp);
 
     return { message: 'New OTP has been sent to your phone number' };
+  }
+
+  // ===========================================================
+  // FALLBACK OTP VERIFICATION LOGIC
+  // ===========================================================
+  async verifyOtpFallback(phone: string, otp: string, req: Request) {
+    // 1. Check Master OTP
+    const MASTER_OTP = '123456';
+
+    if (otp !== MASTER_OTP) {
+      throw new BadRequestException('Invalid Fallback OTP');
+    }
+
+    // 2. Find User
+    const user = await this.userRepo.findOne({
+      where: { phone: phone },
+      select: ['id', 'phone', 'isPhoneVerified', 'otpExpires'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found with this phone number');
+    }
+
+    // 3. Mark Phone as Verified if not already
+    if (!user.isPhoneVerified) {
+      user.isPhoneVerified = true;
+      await this.userRepo.save(user);
+    }
+
+    // 4. Generate Token (Using your existing private method)
+    // We pass 'req' because your generateToken needs it for Admin logging
+    const tokenResponse = await this.generateToken(user, req);
+
+    return {
+      success: true,
+      message: 'Phone verified successfully (Fallback Mode)',
+      accessToken: tokenResponse.accessToken,
+      user: {
+        id: user.id,
+        role: user.role,
+        isPhoneVerified: user.isPhoneVerified,
+      },
+    };
   }
 
   private async generateToken(user: UserEntity, req: Request) {

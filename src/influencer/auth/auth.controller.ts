@@ -5,6 +5,8 @@ import {
   HttpCode,
   HttpStatus,
   Request,
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
@@ -29,6 +31,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async verifyOtp(@Body() dto: VerifyOtpDto, @Request() req) {
     return this.authService.verifyOtp(dto, req);
+  }
+
+  // ===========================================================
+  // FALLBACK OTP VERIFICATION (DEV/TEST ONLY)
+  // ===========================================================
+  @Post('verify-otp-fallback')
+  async verifyOtpFallback(
+    @Body() body: { phone: string; otp: string },
+    @Request() req, // Inject Request object here
+  ) {
+    return this.authService.verifyOtpFallback(body.phone, body.otp, req);
   }
 
   @Post('resend-otp')

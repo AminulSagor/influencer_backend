@@ -11,6 +11,7 @@ import {
   Query,
   ParseUUIDPipe,
   BadRequestException,
+  Req,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CampaignService } from './campaign.service';
@@ -50,7 +51,7 @@ import {
   AssignAgencyDto,
   SelectAgencyDto,
 } from './dto/admin-agency.dto';
-import { PayBonusDto, PayDueDto } from './dto/payment.dto';
+import { PayBonusDto, PayCampaignDto, PayDueDto } from './dto/payment.dto';
 import {
   AdminPayMilestoneDto,
   ApproveMilestoneDto,
@@ -59,6 +60,11 @@ import {
   UpdateMilestoneResultDto,
 } from './dto/campaign-milestone.dto';
 import { RateCampaignDto } from './dto/rate-campaign.dto';
+import {
+  InfluencerResubmitSubmissionDto,
+  InfluencerSubmitMilestoneDto,
+  InfluencerUpdateSubmissionMetricsDto,
+} from './dto/influencer-milestone.dto';
 
 @Controller('campaign')
 export class CampaignController {
@@ -232,138 +238,6 @@ export class CampaignController {
   }
 
   // ============================================
-  // ADMIN ROUTES
-  // ============================================
-
-  // --- Admin: Get All Campaigns ---
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Get('admin/all')
-  adminGetAllCampaigns(@Query() query: SearchCampaignDto) {
-    return this.campaignService.getAllCampaigns(query);
-  }
-
-  // --- Admin: Get Single Campaign ---
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Get('admin/:id')
-  adminGetCampaign(@Param('id', ParseUUIDPipe) id: string) {
-    return this.campaignService.getCampaignById(id);
-  }
-
-  // --- Admin: Update Campaign Status ---
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Patch('admin/:id/status')
-  adminUpdateStatus(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateCampaignStatusDto,
-  ) {
-    return this.campaignService.updateCampaignStatus(id, dto);
-  }
-
-  // --- Admin: Send Quote ---
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Post('admin/negotiation/send-quote')
-  adminSendQuote(@Request() req, @Body() dto: SendQuoteDto) {
-    return this.campaignService.sendQuote(req.user.sub, dto);
-  }
-
-  // --- Admin: Accept Client's Counter-offer ---
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Post('admin/negotiation/accept')
-  adminAccept(@Request() req, @Body() dto: AcceptNegotiationDto) {
-    return this.campaignService.acceptQuote(req.user.sub, 'admin', dto);
-  }
-
-  // --- Admin: Reject Campaign ---
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Post('admin/negotiation/reject')
-  adminReject(@Request() req, @Body() dto: RejectCampaignDto) {
-    return this.campaignService.rejectCampaign(req.user.sub, 'admin', dto);
-  }
-
-  // --- Admin: Get Negotiation History ---
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Get('admin/:id/negotiations')
-  adminGetNegotiations(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
-    return this.campaignService.getNegotiationHistory(
-      id,
-      req.user.sub,
-      'admin',
-    );
-  }
-
-  // --- Admin: Reset Negotiation (to resend quote) ---
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Post('admin/:id/reset-negotiation')
-  resetNegotiation(@Param('id', ParseUUIDPipe) id: string) {
-    return this.campaignService.resetNegotiation(id);
-  }
-
-  // --- Mark Negotiation as Read ---
-  @UseGuards(AuthGuard('jwt-brandguru'))
-  @Patch('negotiation/:negotiationId/read')
-  markAsRead(@Param('negotiationId', ParseUUIDPipe) negotiationId: string) {
-    return this.campaignService.markNegotiationRead(negotiationId);
-  }
-
-  // ============================================
-  // ADMIN: CAMPAIGN ASSIGNMENT ROUTES
-  // ============================================
-
-  // --- Admin: Assign Campaign to Influencer ---
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Post('admin/assign')
-  assignCampaign(@Request() req, @Body() dto: AssignCampaignDto) {
-    return this.campaignService.assignCampaignToInfluencers(
-      req.user.userId,
-      dto,
-    );
-  }
-
-  // --- Admin: Get Campaign Assignments ---
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Get('admin/:id/assignments')
-  getCampaignAssignments(@Param('id', ParseUUIDPipe) id: string) {
-    return this.campaignService.getCampaignAssignments(id);
-  }
-
-  // --- Admin: Get All Assignments ---
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Get('admin/assignments/all')
-  getAllAssignments(@Query() query: SearchAssignmentDto) {
-    return this.campaignService.getAllAssignments(query);
-  }
-
-  // --- Admin: Update Assignment ---
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Patch('admin/assignment/:assignmentId')
-  updateAssignment(
-    @Param('assignmentId', ParseUUIDPipe) assignmentId: string,
-    @Body() dto: UpdateAssignmentDto,
-  ) {
-    return this.campaignService.updateAssignment(assignmentId, dto);
-  }
-
-  // --- Admin: Cancel Assignment ---
-  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Delete('admin/assignment/:assignmentId')
-  cancelAssignment(@Param('assignmentId', ParseUUIDPipe) assignmentId: string) {
-    return this.campaignService.cancelAssignment(assignmentId);
-  }
-
-  // ============================================
   // INFLUENCER: JOB ROUTES (Simple 5-Stage Flow)
   // ============================================
   // Sections: New Offers → Pending → Active → Completed / Declined
@@ -457,6 +331,323 @@ export class CampaignController {
     return this.campaignService.completeJob(jobId, req.user.sub);
   }
 
+  // ✅ Influencer Job -> Milestones list
+  @Get('influencer/job/:jobId/milestones')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.INFLUENCER)
+  getInfluencerJobMilestones(
+    @Param('jobId', ParseUUIDPipe) jobId: string,
+    @Req() req,
+  ) {
+    return this.campaignService.getInfluencerJobMilestones(jobId, req.user.sub);
+  }
+
+  // ✅ Influencer Milestone Details (scoped to influencer’s job automatically)
+  @Get('influencer/milestone/:milestoneId')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.INFLUENCER)
+  getInfluencerMilestoneDetails(
+    @Param('milestoneId', ParseUUIDPipe) milestoneId: string,
+    @Req() req,
+  ) {
+    return this.campaignService.getInfluencerMilestoneDetails(
+      milestoneId,
+      req.user.sub,
+    );
+  }
+
+  // ✅ Influencer submit milestone proof
+  @Post('influencer/milestone/:milestoneId/submit')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.INFLUENCER)
+  submitInfluencerMilestone(
+    @Param('milestoneId', ParseUUIDPipe) milestoneId: string,
+    @Body() dto: InfluencerSubmitMilestoneDto,
+    @Req() req,
+  ) {
+    return this.campaignService.submitInfluencerMilestone(
+      milestoneId,
+      req.user.sub,
+      dto,
+    );
+  }
+
+  // ✅ Influencer resubmit after decline
+  @Patch('influencer/submission/:submissionId/resubmit')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.INFLUENCER)
+  resubmitInfluencerSubmission(
+    @Param('submissionId', ParseUUIDPipe) submissionId: string,
+    @Body() dto: InfluencerResubmitSubmissionDto,
+    @Req() req,
+  ) {
+    return this.campaignService.resubmitInfluencerSubmission(
+      submissionId,
+      req.user.sub,
+      dto,
+    );
+  }
+
+  // ✅ Influencer update metrics (while pending/in-review)
+  @Patch('influencer/submission/:submissionId/metrics')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.INFLUENCER)
+  updateInfluencerSubmissionMetrics(
+    @Param('submissionId', ParseUUIDPipe) submissionId: string,
+    @Body() dto: InfluencerUpdateSubmissionMetricsDto,
+    @Req() req,
+  ) {
+    return this.campaignService.updateInfluencerSubmissionMetrics(
+      submissionId,
+      req.user.sub,
+      dto,
+    );
+  }
+
+  @Get('influencer/submissions')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.INFLUENCER)
+  async getInfluencerSubmissions(@Req() req, @Query('status') status?: string) {
+    return this.campaignService.getInfluencerSubmissions(req.user.sub, status);
+  }
+
+  // Get Single Submission (Influencer View)
+  @Get('influencer/submissions/:submissionId')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.INFLUENCER)
+  async getInfluencerSubmissionById(
+    @Param('submissionId', ParseUUIDPipe) submissionId: string,
+    @Req() req,
+  ) {
+    return this.campaignService.getInfluencerSubmissionById(
+      submissionId,
+      req.user.sub,
+    );
+  }
+
+  // ============================================
+  // Client-Influencer ROUTES
+  // ============================================
+
+  @Get('client/submissions')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  async getClientSubmissions(@Req() req, @Query('status') status?: string) {
+    return this.campaignService.getClientSubmissions(req.user.sub, status);
+  }
+
+  // Get Single Submission (Client View)
+  @Get('client/submissions/:submissionId')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  async getClientSubmissionById(
+    @Param('submissionId', ParseUUIDPipe) submissionId: string,
+    @Req() req,
+  ) {
+    return this.campaignService.getClientSubmissionById(
+      submissionId,
+      req.user.sub,
+    );
+  }
+
+  // Pay Campaign (Process payment & Activate Milestones)
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  @Post('client/campaign/pay')
+  async payCampaign(@Request() req, @Body() dto: PayCampaignDto) {
+    return this.campaignService.clientPayCampaign(req.user.sub, dto);
+  }
+
+  @Post('client/submissions/:submissionId/report')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  async clientReportSubmission(
+    @Param('submissionId') submissionId: string,
+    @Body() dto: ReviewMilestoneDto,
+    @Req() req: any,
+  ) {
+    return this.campaignService.clientReportSubmission(
+      submissionId,
+      req.user.sub,
+      dto,
+    );
+  }
+
+  // Combined response for client UI (dropdown influencer + milestones progress)
+  @Get('client/:campaignId/influencers-progress')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  async getClientInfluencersProgress(
+    @Param('campaignId') campaignId: string,
+    @Query('influencerId') influencerId: string | undefined,
+    @Req() req: any,
+  ) {
+    return this.campaignService.getClientInfluencersProgress(
+      campaignId,
+      req.user.sub,
+      influencerId,
+    );
+  }
+
+  @Post('client/:campaignId/influencers/:influencerId/rate')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  async clientRateInfluencer(
+    @Param('campaignId') campaignId: string,
+    @Param('influencerId') influencerId: string,
+    @Body() dto: RateCampaignDto,
+    @Req() req: any,
+  ) {
+    return this.campaignService.clientRateInfluencer(
+      campaignId,
+      influencerId,
+      req.user.sub,
+      dto,
+    );
+  }
+
+  @Get('client/:campaignId/ratings')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  async getClientRatings(
+    @Param('campaignId') campaignId: string,
+    @Req() req: any,
+  ) {
+    return this.campaignService.getClientInfluencerRatings(
+      campaignId,
+      req.user.sub,
+    );
+  }
+
+  // Bonus tied to influencer submission (NOT global milestone)
+  @Post('client/submissions/:submissionId/bonus')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.CLIENT)
+  async clientPayBonusForSubmission(
+    @Param('submissionId') submissionId: string,
+    @Body() dto: PayBonusDto,
+    @Req() req: any,
+  ) {
+    return this.campaignService.clientPayBonusForSubmission(
+      submissionId,
+      req.user.sub,
+      dto,
+    );
+  }
+
+  // ============================================
+  // ADMIN-INFLUENCER ROUTES
+  // ============================================
+
+  // Usage: GET /campaign/admin/submissions?status=pending
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/submissions')
+  async adminGetSubmissions(
+    @Query('status') status?: string,
+    @Query('campaignId') campaignId?: string,
+  ) {
+    return this.campaignService.adminGetSubmissions(status, campaignId);
+  }
+
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Get('admin/reports')
+  @Roles(UserRole.ADMIN)
+  async adminListReports(@Query('status') status?: string) {
+    return this.campaignService.adminListReports(status);
+  }
+
+  // Get Single Submission by ID
+  @Get('admin/submissions/:submissionId')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async adminGetSubmissionById(@Param('submissionId') submissionId: string) {
+    return this.campaignService.adminGetSubmissionById(submissionId);
+  }
+
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Get('admin/submissions/:submissionId/reports')
+  @Roles(UserRole.ADMIN)
+  async adminSubmissionReports(@Param('submissionId') submissionId: string) {
+    return this.campaignService.adminGetSubmissionReports(submissionId);
+  }
+
+  @Patch('admin/submissions/:submissionId/pay-influencer')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async adminPayInfluencerSubmission(
+    @Param('submissionId', ParseUUIDPipe) submissionId: string,
+    @Body() dto: AdminPayMilestoneDto,
+  ) {
+    return this.campaignService.adminPayInfluencerSubmission(submissionId, dto);
+  }
+
+  @Patch('admin/invitations/:jobId/cancel')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async adminCancelInvitation(@Param('jobId') jobId: string) {
+    return this.campaignService.adminCancelInvitation(jobId);
+  }
+
+  @Patch('admin/invitations/:jobId/resend')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async adminResendInvitation(@Param('jobId') jobId: string) {
+    return this.campaignService.adminResendInvitation(jobId);
+  }
+
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Patch('admin/influencer-milestones/:milestoneId/status')
+  @Roles(UserRole.ADMIN)
+  async adminSetInfluencerMilestoneStatus(
+    @Param('milestoneId') milestoneId: string,
+    @Query('assignmentId') assignmentId: string,
+    @Body() dto: UpdateCampaignStatusDto,
+    @Req() req: any,
+  ) {
+    return this.campaignService.adminSetInfluencerMilestoneStatus(
+      milestoneId,
+      assignmentId,
+      req.user.sub,
+      dto,
+    );
+  }
+
+  @Get('admin/:campaignId/invitations')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async adminListInvitations(@Param('campaignId') campaignId: string) {
+    return this.campaignService.adminListInvitations(campaignId);
+  }
+
+  @Get('admin/:campaignId/influencers/:influencerId/milestones')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async adminGetInfluencerMilestones(
+    @Param('campaignId') campaignId: string,
+    @Param('influencerId') influencerId: string,
+  ) {
+    return this.campaignService.adminGetInfluencerMilestones(
+      campaignId,
+      influencerId,
+    );
+  }
+
+  @Get('admin/:campaignId/influencers/:influencerId/milestones/:milestoneId')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async adminGetInfluencerMilestoneDetails(
+    @Param('campaignId') campaignId: string,
+    @Param('influencerId') influencerId: string,
+    @Param('milestoneId') milestoneId: string,
+  ) {
+    return this.campaignService.adminGetInfluencerMilestoneDetails(
+      campaignId,
+      influencerId,
+      milestoneId,
+    );
+  }
+
   // ============================================
   // ADMIN-AGENCY ROUTES
   // ============================================
@@ -505,7 +696,7 @@ export class CampaignController {
   @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
   @Roles(UserRole.CLIENT)
   @Post('client/select-agency')
-  selectWinner(@Request() req, @Body() dto: SelectAgencyDto) {
+  async selectAgency(@Request() req, @Body() dto: SelectAgencyDto) {
     return this.campaignService.clientSelectAgency(req.user.sub, dto);
   }
 
@@ -650,6 +841,152 @@ export class CampaignController {
       submissionId,
       reason,
     );
+  }
+
+  // ============================================
+  // ADMIN ROUTES
+  // ============================================
+
+  // --- Admin: Get All Campaigns ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/all')
+  adminGetAllCampaigns(@Query() query: SearchCampaignDto) {
+    return this.campaignService.getAllCampaigns(query);
+  }
+
+  // --- Admin: Get Single Campaign ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/:id')
+  adminGetCampaign(@Param('id', ParseUUIDPipe) id: string) {
+    return this.campaignService.getCampaignById(id);
+  }
+
+  // --- Admin: Update Campaign Status ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch('admin/:id/status')
+  adminUpdateStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateCampaignStatusDto,
+  ) {
+    return this.campaignService.updateCampaignStatus(id, dto);
+  }
+
+  // --- Admin: Send Quote ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/negotiation/send-quote')
+  adminSendQuote(@Request() req, @Body() dto: SendQuoteDto) {
+    return this.campaignService.sendQuote(req.user.sub, dto);
+  }
+
+  // --- Admin: Accept Client's Counter-offer ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/negotiation/accept')
+  adminAccept(@Request() req, @Body() dto: AcceptNegotiationDto) {
+    return this.campaignService.acceptQuote(req.user.sub, 'admin', dto);
+  }
+
+  // --- Admin: Reject Campaign ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/negotiation/reject')
+  adminReject(@Request() req, @Body() dto: RejectCampaignDto) {
+    return this.campaignService.rejectCampaign(req.user.sub, 'admin', dto);
+  }
+
+  // --- Admin: Get Negotiation History ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/:id/negotiations')
+  adminGetNegotiations(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    return this.campaignService.getNegotiationHistory(
+      id,
+      req.user.sub,
+      'admin',
+    );
+  }
+
+  // --- Admin: Reset Negotiation (to resend quote) ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/:id/reset-negotiation')
+  resetNegotiation(@Param('id', ParseUUIDPipe) id: string) {
+    return this.campaignService.resetNegotiation(id);
+  }
+
+  // --- Mark Negotiation as Read ---
+  @UseGuards(AuthGuard('jwt-brandguru'))
+  @Patch('negotiation/:negotiationId/read')
+  markAsRead(@Param('negotiationId', ParseUUIDPipe) negotiationId: string) {
+    return this.campaignService.markNegotiationRead(negotiationId);
+  }
+
+  // ============================================
+  // ADMIN: CAMPAIGN ASSIGNMENT ROUTES
+  // ============================================
+
+  // --- Admin: Assign Campaign to Influencer ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('admin/assign')
+  assignCampaign(@Request() req, @Body() dto: AssignCampaignDto) {
+    return this.campaignService.assignCampaignToInfluencers(
+      req.user.userId,
+      dto,
+    );
+  }
+
+  // Send Invitation (Trigger Notification)
+  @Patch('admin/assignments/:assignmentId/invite')
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async sendInvitation(
+    @Param('assignmentId') assignmentId: string,
+    @Req() req,
+  ) {
+    return this.campaignService.sendInfluencerInvitation(
+      assignmentId,
+      req.user.sub,
+    );
+  }
+
+  // --- Admin: Get Campaign Assignments ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/:id/assignments')
+  getCampaignAssignments(@Param('id', ParseUUIDPipe) id: string) {
+    return this.campaignService.getCampaignAssignments(id);
+  }
+
+  // --- Admin: Get All Assignments ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin/assignments/all')
+  getAllAssignments(@Query() query: SearchAssignmentDto) {
+    return this.campaignService.getAllAssignments(query);
+  }
+
+  // --- Admin: Update Assignment ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch('admin/assignment/:assignmentId')
+  updateAssignment(
+    @Param('assignmentId', ParseUUIDPipe) assignmentId: string,
+    @Body() dto: UpdateAssignmentDto,
+  ) {
+    return this.campaignService.updateAssignment(assignmentId, dto);
+  }
+
+  // --- Admin: Cancel Assignment ---
+  @UseGuards(AuthGuard('jwt-brandguru'), RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Delete('admin/assignment/:assignmentId')
+  cancelAssignment(@Param('assignmentId', ParseUUIDPipe) assignmentId: string) {
+    return this.campaignService.cancelAssignment(assignmentId);
   }
 
   // ============================================
